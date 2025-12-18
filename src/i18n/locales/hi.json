@@ -1,0 +1,68 @@
+{
+  "signUp": {
+    "title": "खाता बनाएं",
+    "accountInfo": "खाता जानकारी",
+    "personalInfo": "व्यक्तिगत जानकारी",
+    "farmingInfo": "कृषि जानकारी",
+    "fullName": "पूरा नाम",
+    "fullNamePlaceholder": "रंजीत दास",
+    "mobileNumber": "मोबाइल नंबर",
+    "mobileNumberPlaceholder": "9876543210",
+    "email": "ईमेल (वैकल्पिक)",
+    "emailPlaceholder": "आपका@ईमेल.com",
+    "password": "पासवर्ड",
+    "passwordPlaceholder": "पासवर्ड दर्ज करें",
+    "confirmPassword": "पासवर्ड की पुष्टि करें",
+    "confirmPasswordPlaceholder": "पासवर्ड फिर से दर्ज करें",
+    "state": "राज्य",
+    "statePlaceholder": "अपना राज्य चुनें",
+    "district": "जिला",
+    "districtPlaceholder": "जिला चुनें या दर्ज करें",
+    "preferredLanguage": "पसंदीदा भाषा",
+    "languagePlaceholder": "भाषा चुनें",
+    "farmerType": "किसान का प्रकार",
+    "farmerTypePlaceholder": "किसान का प्रकार चुनें",
+    "landSize": "भूमि का आकार",
+    "landSizePlaceholder": "0",
+    "acres": "एकड़",
+    "createAccount": "खाता बनाएं",
+    "alreadyHaveAccount": "पहले से खाता है?",
+    "signIn": "साइन इन करें",
+    "creating": "खाता बनाया जा रहा है...",
+    "errors": {
+      "required": "यह फ़ील्ड आवश्यक है",
+      "invalidEmail": "कृपया एक वैध ईमेल दर्ज करें",
+      "invalidMobile": "कृपया एक वैध 10 अंकों का मोबाइल नंबर दर्ज करें",
+      "passwordMinLength": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+      "passwordMismatch": "पासवर्ड मेल नहीं खाते"
+    },
+    "farmerTypes": {
+      "small": "छोटा किसान",
+      "medium": "मध्यम किसान",
+      "large": "बड़ा किसान"
+    },
+    "languages": {
+      "en": "अंग्रेज़ी",
+      "bn": "बंगाली",
+      "hi": "हिंदी"
+    }
+  },
+  "signIn": {
+    "title": "स्वागत है",
+    "subtitle": "जारी रखने के लिए साइन इन करें",
+    "mobileNumber": "मोबाइल नंबर",
+    "mobileNumberPlaceholder": "9876543210",
+    "password": "पासवर्ड",
+    "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
+    "preferredLanguage": "भाषा",
+    "languagePlaceholder": "भाषा चुनें",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "signInButton": "साइन इन करें",
+    "noAccount": "खाता नहीं है?",
+    "signUp": "साइन अप करें",
+    "errors": {
+      "required": "यह फ़ील्ड आवश्यक है",
+      "invalidMobile": "कृपया एक वैध 10 अंकों का मोबाइल नंबर दर्ज करें"
+    }
+  }
+}

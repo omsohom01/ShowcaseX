@@ -1,0 +1,68 @@
+{
+  "signUp": {
+    "title": "Create Account",
+    "accountInfo": "Account Information",
+    "personalInfo": "Personal Information",
+    "farmingInfo": "Farming Information",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Ranjit Das",
+    "mobileNumber": "Mobile Number",
+    "mobileNumberPlaceholder": "9876543210",
+    "email": "Email (Optional)",
+    "emailPlaceholder": "your@email.com",
+    "password": "Password",
+    "passwordPlaceholder": "Enter password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Re-enter password",
+    "state": "State",
+    "statePlaceholder": "Select your state",
+    "district": "District",
+    "districtPlaceholder": "Select or enter district",
+    "preferredLanguage": "Preferred Language",
+    "languagePlaceholder": "Select language",
+    "farmerType": "Farmer Type",
+    "farmerTypePlaceholder": "Select farmer type",
+    "landSize": "Land Size",
+    "landSizePlaceholder": "0",
+    "acres": "acres",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign In",
+    "creating": "Creating Account...",
+    "errors": {
+      "required": "This field is required",
+      "invalidEmail": "Please enter a valid email",
+      "invalidMobile": "Please enter a valid 10-digit mobile number",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "passwordMismatch": "Passwords do not match"
+    },
+    "farmerTypes": {
+      "small": "Small Farmer",
+      "medium": "Medium Farmer",
+      "large": "Large Farmer"
+    },
+    "languages": {
+      "en": "English",
+      "bn": "Bengali",
+      "hi": "Hindi"
+    }
+  },
+  "signIn": {
+    "title": "Welcome Back",
+    "subtitle": "Sign in to continue",
+    "mobileNumber": "Mobile Number",
+    "mobileNumberPlaceholder": "9876543210",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "preferredLanguage": "Language",
+    "languagePlaceholder": "Select language",
+    "forgotPassword": "Forgot Password?",
+    "signInButton": "Sign In",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up",
+    "errors": {
+      "required": "This field is required",
+      "invalidMobile": "Please enter a valid 10-digit mobile number"
+    }
+  }
+}
