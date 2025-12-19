@@ -1,0 +1,68 @@
+{
+  "signUp": {
+    "title": "অ্যাকাউন্ট তৈরি করুন",
+    "accountInfo": "অ্যাকাউন্ট তথ্য",
+    "personalInfo": "ব্যক্তিগত তথ্য",
+    "farmingInfo": "কৃষি তথ্য",
+    "fullName": "পুরো নাম",
+    "fullNamePlaceholder": "রঞ্জিত দাস",
+    "mobileNumber": "মোবাইল নম্বর",
+    "mobileNumberPlaceholder": "৯৮৭৬৫৪৩২১০",
+    "email": "ইমেইল (ঐচ্ছিক)",
+    "emailPlaceholder": "আপনার@ইমেইল.com",
+    "password": "পাসওয়ার্ড",
+    "passwordPlaceholder": "পাসওয়ার্ড লিখুন",
+    "confirmPassword": "পাসওয়ার্ড নিশ্চিত করুন",
+    "confirmPasswordPlaceholder": "পাসওয়ার্ড পুনরায় লিখুন",
+    "state": "রাজ্য",
+    "statePlaceholder": "আপনার রাজ্য নির্বাচন করুন",
+    "district": "জেলা",
+    "districtPlaceholder": "জেলা নির্বাচন বা লিখুন",
+    "preferredLanguage": "পছন্দের ভাষা",
+    "languagePlaceholder": "ভাষা নির্বাচন করুন",
+    "farmerType": "কৃষকের ধরন",
+    "farmerTypePlaceholder": "কৃষকের ধরন নির্বাচন করুন",
+    "landSize": "জমির আকার",
+    "landSizePlaceholder": "০",
+    "acres": "একর",
+    "createAccount": "অ্যাকাউন্ট তৈরি করুন",
+    "alreadyHaveAccount": "ইতিমধ্যে একটি অ্যাকাউন্ট আছে?",
+    "signIn": "সাইন ইন",
+    "creating": "অ্যাকাউন্ট তৈরি হচ্ছে...",
+    "errors": {
+      "required": "এই ক্ষেত্রটি প্রয়োজনীয়",
+      "invalidEmail": "দয়া করে একটি বৈধ ইমেইল লিখুন",
+      "invalidMobile": "দয়া করে একটি বৈধ ১০ ডিজিটের মোবাইল নম্বর লিখুন",
+      "passwordMinLength": "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে",
+      "passwordMismatch": "পাসওয়ার্ড মিলছে না"
+    },
+    "farmerTypes": {
+      "small": "ছোট কৃষক",
+      "medium": "মাঝারি কৃষক",
+      "large": "বড় কৃষক"
+    },
+    "languages": {
+      "en": "ইংরেজি",
+      "bn": "বাংলা",
+      "hi": "হিন্দি"
+    }
+  },
+  "signIn": {
+    "title": "স্বাগতম",
+    "subtitle": "চালিয়ে যেতে সাইন ইন করুন",
+    "mobileNumber": "মোবাইল নম্বর",
+    "mobileNumberPlaceholder": "৯৮৭৬৫৪৩২১০",
+    "password": "পাসওয়ার্ড",
+    "passwordPlaceholder": "আপনার পাসওয়ার্ড লিখুন",
+    "preferredLanguage": "ভাষা",
+    "languagePlaceholder": "ভাষা নির্বাচন করুন",
+    "forgotPassword": "পাসওয়ার্ড ভুলে গেছেন?",
+    "signInButton": "সাইন ইন",
+    "noAccount": "অ্যাকাউন্ট নেই?",
+    "signUp": "সাইন আপ",
+    "errors": {
+      "required": "এই ক্ষেত্রটি প্রয়োজনীয়",
+      "invalidMobile": "দয়া করে একটি বৈধ ১০ ডিজিটের মোবাইল নম্বর লিখুন"
+    }
+  }
+}
