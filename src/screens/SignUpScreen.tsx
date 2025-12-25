@@ -15,6 +15,7 @@ import { CustomInput, PasswordInput } from '../components/CustomInput';
 import { Dropdown } from '../components/Dropdown';
 import { INDIAN_STATES, FARMER_TYPES, LANGUAGES } from '../constants/data';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { localizeNumber, delocalizeNumber } from '../utils/numberLocalization';
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -198,6 +199,33 @@ export const SignUpScreen = () => {
           </Text>
         </View>
 
+        {/* Preferred Language Section - Moved to Top */}
+        <View className="mb-6">
+          <Dropdown
+            label={t('signUp.preferredLanguage')}
+            placeholder={t('signUp.languagePlaceholder')}
+            value={
+              LANGUAGES.find((l) => l.value === formData.preferredLanguage)
+                ? t(
+                    LANGUAGES.find(
+                      (l) => l.value === formData.preferredLanguage
+                    )!.labelKey
+                  )
+                : ''
+            }
+            options={LANGUAGES.map((lang) => t(lang.labelKey))}
+            onSelect={(value) => {
+              const selectedLang = LANGUAGES.find(
+                (lang) => t(lang.labelKey) === value
+              );
+              if (selectedLang) {
+                handleFieldChange('preferredLanguage', selectedLang.value);
+              }
+            }}
+            error={errors.preferredLanguage}
+          />
+        </View>
+
         {/* Account Information Section */}
         <View className="mb-6">
           <Text className="text-xl font-semibold text-gray-800 mb-4">
@@ -214,9 +242,12 @@ export const SignUpScreen = () => {
 
           <CustomInput
             label={t('signUp.mobileNumber')}
-            placeholder={t('signUp.mobileNumberPlaceholder')}
-            value={formData.mobileNumber}
-            onChangeText={(value) => handleFieldChange('mobileNumber', value)}
+            placeholder={localizeNumber(t('signUp.mobileNumberPlaceholder'), i18n.language)}
+            value={localizeNumber(formData.mobileNumber, i18n.language)}
+            onChangeText={(value) => {
+              const delocalized = delocalizeNumber(value, i18n.language);
+              handleFieldChange('mobileNumber', delocalized);
+            }}
             keyboardType="phone-pad"
             maxLength={10}
             error={errors.mobileNumber}
@@ -272,30 +303,6 @@ export const SignUpScreen = () => {
             value={formData.district}
             onChangeText={(value) => handleFieldChange('district', value)}
             editable={!!formData.state}
-          />
-
-          <Dropdown
-            label={t('signUp.preferredLanguage')}
-            placeholder={t('signUp.languagePlaceholder')}
-            value={
-              LANGUAGES.find((l) => l.value === formData.preferredLanguage)
-                ? t(
-                    LANGUAGES.find(
-                      (l) => l.value === formData.preferredLanguage
-                    )!.labelKey
-                  )
-                : ''
-            }
-            options={LANGUAGES.map((lang) => t(lang.labelKey))}
-            onSelect={(value) => {
-              const selectedLang = LANGUAGES.find(
-                (lang) => t(lang.labelKey) === value
-              );
-              if (selectedLang) {
-                handleFieldChange('preferredLanguage', selectedLang.value);
-              }
-            }}
-            error={errors.preferredLanguage}
           />
         </View>
 
@@ -357,8 +364,8 @@ export const SignUpScreen = () => {
         </TouchableOpacity>
 
         {/* Sign In Link */}
-        <View className="flex-row justify-center items-center">
-          <Text className="text-gray-600 text-base">
+        <View className="flex-row justify-center items-center flex-wrap">
+          <Text className="text-gray-600 text-base text-center">
             {t('signUp.alreadyHaveAccount')}{' '}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>

@@ -15,6 +15,7 @@ import { CustomInput, PasswordInput } from '../components/CustomInput';
 import { Dropdown } from '../components/Dropdown';
 import { LANGUAGES } from '../constants/data';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { localizeNumber, delocalizeNumber } from '../utils/numberLocalization';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -164,9 +165,12 @@ export const SignInScreen = () => {
         <View className="mb-6">
           <CustomInput
             label={t('signIn.mobileNumber')}
-            placeholder={t('signIn.mobileNumberPlaceholder')}
-            value={formData.mobileNumber}
-            onChangeText={(value) => handleFieldChange('mobileNumber', value)}
+            placeholder={localizeNumber(t('signIn.mobileNumberPlaceholder'), i18n.language)}
+            value={localizeNumber(formData.mobileNumber, i18n.language)}
+            onChangeText={(value) => {
+              const delocalized = delocalizeNumber(value, i18n.language);
+              handleFieldChange('mobileNumber', delocalized);
+            }}
             keyboardType="phone-pad"
             maxLength={10}
             error={errors.mobileNumber}
@@ -206,8 +210,8 @@ export const SignInScreen = () => {
         </TouchableOpacity>
 
         {/* Sign Up Link */}
-        <View className="flex-row justify-center items-center">
-          <Text className="text-gray-600 text-base">
+        <View className="flex-row justify-center items-center flex-wrap">
+          <Text className="text-gray-600 text-base text-center">
             {t('signIn.noAccount')}{' '}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>

@@ -8,9 +8,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  Animated,
 } from 'react-native';
 // @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
 
 interface ChatMessage {
@@ -26,7 +30,7 @@ interface ChatbotModalProps {
 }
 
 export const ChatbotModal: React.FC<ChatbotModalProps> = ({ visible, onClose }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const scrollViewRef = useRef<ScrollView>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -38,6 +42,32 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ visible, onClose }) 
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Pulsing animation for recording indicator
+  useEffect(() => {
+    if (isRecording) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.3,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isRecording]);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -110,6 +140,124 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ visible, onClose }) 
     return t('chatbot.responses.default');
   };
 
+  const startRecording = async () => {
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      
+      if (permission.status !== 'granted') {
+        Alert.alert(
+          t('chatbot.permissions.title') || 'Permission Required',
+          t('chatbot.permissions.microphone') || 'Microphone access is required for voice input.'
+        );
+        return;
+      }
+
+      // Configure audio mode for recording
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+
+      // Create recording with high quality settings
+      const { recording } = await Audio.Recording.createAsync({
+        isMeteringEnabled: true,
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/webm',
+          bitsPerSecond: 128000,
+        },
+      });
+      
+      setRecording(recording);
+      setIsRecording(true);
+      
+      console.log('Recording started successfully');
+    } catch (err) {
+      console.error('Failed to start recording', err);
+      Alert.alert(
+        t('chatbot.error') || 'Error',
+        t('chatbot.recordingError') || 'Failed to start recording. Please try again.'
+      );
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    try {
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      
+      if (uri) {
+        // In a production app, you would send this audio file to a speech-to-text API
+        // For now, we'll use a simulated multilingual transcription based on user's language
+        const languagePrompts = {
+          en: 'How can I improve my crop yield?',
+          bn: 'আমি কিভাবে আমার ফসলের ফলন উন্নত করতে পারি?',
+          hi: 'मैं अपनी फसल की उपज कैसे बढ़ा सकता हूं?'
+        };
+        
+        const transcription = languagePrompts[i18n.language as keyof typeof languagePrompts] || languagePrompts.en;
+        setInputText(transcription);
+        
+        Alert.alert(
+          t('chatbot.voiceRecorded') || 'Voice Recorded',
+          t('chatbot.voiceProcessed') || 'Your voice has been transcribed. You can now send the message.',
+          [{ text: 'OK' }]
+        );
+      }
+      
+      setRecording(null);
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+      Alert.alert(
+        t('chatbot.error') || 'Error',
+        t('chatbot.recordingError') || 'Failed to process voice recording',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const speakText = async (text: string) => {
+    if (isSpeaking) {
+      Speech.stop();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const languageCode = i18n.language === 'bn' ? 'bn-IN' : i18n.language === 'hi' ? 'hi-IN' : 'en-US';
+    
+    setIsSpeaking(true);
+    Speech.speak(text, {
+      language: languageCode,
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
+  };
+
   const handleSend = async () => {
     if (!inputText.trim()) return;
 
@@ -178,20 +326,34 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ visible, onClose }) 
               key={message.id}
               className={`mb-3 ${message.isUser ? 'items-end' : 'items-start'}`}
             >
-              <View
-                className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                  message.isUser
-                    ? 'bg-primary'
-                    : 'bg-gray-100'
-                }`}
-              >
-                <Text
-                  className={`text-base ${
-                    message.isUser ? 'text-white' : 'text-gray-800'
+              <View className="flex-row items-end">
+                {!message.isUser && (
+                  <TouchableOpacity
+                    onPress={() => speakText(message.text)}
+                    className="bg-gray-200 rounded-full w-8 h-8 items-center justify-center mr-2"
+                  >
+                    <Ionicons 
+                      name={isSpeaking ? "volume-high" : "volume-medium"} 
+                      size={16} 
+                      color="#4B5563" 
+                    />
+                  </TouchableOpacity>
+                )}
+                <View
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    message.isUser
+                      ? 'bg-primary'
+                      : 'bg-gray-100'
                   }`}
                 >
-                  {message.text}
-                </Text>
+                  <Text
+                    className={`text-base ${
+                      message.isUser ? 'text-white' : 'text-gray-800'
+                    }`}
+                  >
+                    {message.text}
+                  </Text>
+                </View>
               </View>
               <Text className="text-xs text-gray-400 mt-1 px-2">
                 {message.timestamp.toLocaleTimeString([], {
@@ -213,7 +375,39 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ visible, onClose }) 
 
         {/* Input Area */}
         <View className="px-4 py-3 border-t border-gray-200">
+          {isRecording && (
+            <View className="flex-row items-center justify-center mb-2 py-2">
+              <Animated.View
+                style={{
+                  transform: [{ scale: pulseAnim }],
+                }}
+              >
+                <View className="bg-red-500 rounded-full w-3 h-3 mr-2" />
+              </Animated.View>
+              <Text className="text-red-500 text-sm font-semibold">
+                {t('chatbot.recording') || 'Recording...'}
+              </Text>
+            </View>
+          )}
           <View className="flex-row items-center bg-gray-100 rounded-full px-4">
+            <Animated.View
+              style={{
+                transform: [{ scale: isRecording ? pulseAnim : 1 }],
+              }}
+            >
+              <TouchableOpacity
+                onPress={isRecording ? stopRecording : startRecording}
+                className={`mr-2 w-10 h-10 rounded-full items-center justify-center ${
+                  isRecording ? 'bg-red-500' : 'bg-gray-300'
+                }`}
+              >
+                <Ionicons
+                  name={isRecording ? "stop" : "mic"}
+                  size={20}
+                  color="#fff"
+                />
+              </TouchableOpacity>
+            </Animated.View>
             <TextInput
               className="flex-1 py-3 text-base text-gray-800"
               placeholder={t('chatbot.inputPlaceholder') || 'Type your message...'}

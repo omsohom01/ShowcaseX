@@ -8,12 +8,14 @@ import {
 } from 'react-native';
 // @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
+import { HandHeart, Sun, Droplets, Wind, Wheat, Ruler, Heart, MapPin } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { ChatbotModal } from '../components/ChatbotModal';
 import { SideDrawer } from '../components/SideDrawer';
+import { localizeNumber } from '../utils/numberLocalization';
 
 type DashboardScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -21,7 +23,7 @@ type DashboardScreenNavigationProp = NativeStackNavigationProp<
 >;
 
 export const DashboardScreen = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation<DashboardScreenNavigationProp>();
   const [isChatbotVisible, setIsChatbotVisible] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
@@ -82,9 +84,12 @@ export const DashboardScreen = () => {
         <View className="bg-primary px-6 pt-12 pb-8 rounded-b-3xl">
           <View className="flex-row items-center mb-4">
             <View className="flex-1">
-              <Text className="text-white text-3xl font-bold">
-                🙏🏻 {t('dashboard.greeting')}
-              </Text>
+              <View className="flex-row items-center">
+                <HandHeart size={32} color="#fff" strokeWidth={2} />
+                <Text className="text-white text-3xl font-bold ml-2">
+                  {t('dashboard.greeting')}
+                </Text>
+              </View>
               <Text className="text-white/90 text-base mt-1">
                 {t('dashboard.subtitle')}
               </Text>
@@ -114,10 +119,10 @@ export const DashboardScreen = () => {
             }}
           >
             <View className="flex-row items-center mb-4">
-              <Text className="text-6xl mr-4">☀️</Text>
-              <View>
+              <Sun size={56} color="#FFA500" strokeWidth={2} />
+              <View className="ml-4">
                 <Text className="text-4xl font-bold text-gray-900">
-                  {WEATHER_DATA.temperature}°C
+                  {localizeNumber(WEATHER_DATA.temperature, i18n.language)}°C
                 </Text>
                 <Text className="text-gray-600 text-base">
                   {WEATHER_DATA.condition}
@@ -127,8 +132,8 @@ export const DashboardScreen = () => {
             
             <View className="flex-row justify-between pt-4 border-t border-gray-100">
               <View className="items-center flex-1">
-                <Text className="text-3xl mb-1">💧</Text>
-                <Text className="text-gray-600 text-sm">
+                <Droplets size={32} color="#3B82F6" strokeWidth={2} />
+                <Text className="text-gray-600 text-sm mt-2">
                   {t('dashboard.weather.rain')}
                 </Text>
                 <Text className="text-gray-900 text-base font-semibold">
@@ -136,12 +141,12 @@ export const DashboardScreen = () => {
                 </Text>
               </View>
               <View className="items-center flex-1 border-l border-gray-100">
-                <Text className="text-3xl mb-1">💨</Text>
-                <Text className="text-gray-600 text-sm">
+                <Wind size={32} color="#10B981" strokeWidth={2} />
+                <Text className="text-gray-600 text-sm mt-2">
                   {t('dashboard.weather.humidity')}
                 </Text>
                 <Text className="text-gray-900 text-base font-semibold">
-                  {WEATHER_DATA.humidity}%
+                  {localizeNumber(WEATHER_DATA.humidity, i18n.language)}%
                 </Text>
               </View>
             </View>
@@ -149,7 +154,7 @@ export const DashboardScreen = () => {
         </View>
 
         {/* Farm Summary */}
-        <View className="px-6 mt-4">
+        <View className="px-6 mt-6">
           <Text className="text-gray-900 text-xl font-bold mb-3">
             {t('dashboard.farmSummary.title')}
           </Text>
@@ -163,63 +168,62 @@ export const DashboardScreen = () => {
               elevation: 2,
             }}
           >
-            <View className="space-y-4">
-              <View className="flex-row items-center">
-                <View className="bg-green-100 rounded-full w-12 h-12 items-center justify-center mr-4">
-                  <Text className="text-2xl">🌾</Text>
-                </View>
-                <View>
-                  <Text className="text-gray-600 text-sm">
-                    {t('dashboard.farmSummary.crops')}
-                  </Text>
-                  <Text className="text-gray-900 text-lg font-semibold">
-                    {FARM_SUMMARY.crops}
-                  </Text>
-                </View>
+            <View className="flex-row items-center mb-5">
+              <View className="bg-green-100 rounded-full w-12 h-12 items-center justify-center mr-4">
+                <Wheat size={24} color="#22C55E" strokeWidth={2} />
               </View>
-
-              <View className="flex-row items-center">
-                <View className="bg-blue-100 rounded-full w-12 h-12 items-center justify-center mr-4">
-                  <Text className="text-2xl">📏</Text>
-                </View>
-                <View>
-                  <Text className="text-gray-600 text-sm">
-                    {t('dashboard.farmSummary.area')}
-                  </Text>
-                  <Text className="text-gray-900 text-lg font-semibold">
-                    {FARM_SUMMARY.area} {t('dashboard.farmSummary.acres')}
-                  </Text>
-                </View>
+              <View>
+                <Text className="text-gray-600 text-sm">
+                  {t('dashboard.farmSummary.crops')}
+                </Text>
+                <Text className="text-gray-900 text-lg font-semibold">
+                  {FARM_SUMMARY.crops}
+                </Text>
               </View>
+            </View>
 
-              <View className="flex-row items-center">
-                <View className="bg-yellow-100 rounded-full w-12 h-12 items-center justify-center mr-4">
-                  <Text className="text-2xl">💚</Text>
-                </View>
-                <View>
-                  <Text className="text-gray-600 text-sm">
-                    {t('dashboard.farmSummary.status')}
-                  </Text>
-                  <Text className="text-green-600 text-lg font-semibold">
-                    {t('dashboard.farmSummary.healthy')}
-                  </Text>
-                </View>
+            <View className="flex-row items-center mb-5">
+              <View className="bg-blue-100 rounded-full w-12 h-12 items-center justify-center mr-4">
+                <Ruler size={24} color="#3B82F6" strokeWidth={2} />
+              </View>
+              <View>
+                <Text className="text-gray-600 text-sm">
+                  {t('dashboard.farmSummary.area')}
+                </Text>
+                <Text className="text-gray-900 text-lg font-semibold">
+                  {localizeNumber(FARM_SUMMARY.area, i18n.language)} {t('dashboard.farmSummary.acres')}
+                </Text>
+              </View>
+            </View>
+
+            <View className="flex-row items-center">
+              <View className="bg-yellow-100 rounded-full w-12 h-12 items-center justify-center mr-4">
+                <Heart size={24} color="#EAB308" strokeWidth={2} fill="#EAB308" />
+              </View>
+              <View>
+                <Text className="text-gray-600 text-sm">
+                  {t('dashboard.farmSummary.status')}
+                </Text>
+                <Text className="text-green-600 text-lg font-semibold">
+                  {t('dashboard.farmSummary.healthy')}
+                </Text>
               </View>
             </View>
           </View>
         </View>
 
         {/* Farming Feed */}
-        <View className="px-6 mt-4">
+        <View className="px-6 mt-6">
           <Text className="text-gray-900 text-xl font-bold mb-3">
             {t('dashboard.farmingFeed.title')}
           </Text>
-          <View className="space-y-3">
-            {FARMING_UPDATES.map((update) => (
+          <View>
+            {FARMING_UPDATES.map((update, index) => (
               <View
                 key={update.id}
                 className="bg-white rounded-xl p-4 shadow-sm"
                 style={{
+                  marginBottom: index < FARMING_UPDATES.length - 1 ? 16 : 0,
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.05,
@@ -228,9 +232,10 @@ export const DashboardScreen = () => {
                 }}
               >
                 <View className="flex-row items-start mb-2">
-                  <View className="bg-primary/10 rounded-lg px-3 py-1">
-                    <Text className="text-primary text-xs font-semibold">
-                      📍 {update.region}
+                  <View className="bg-primary/10 rounded-lg px-3 py-1 flex-row items-center">
+                    <MapPin size={12} color="#22C55E" strokeWidth={2} />
+                    <Text className="text-primary text-xs font-semibold ml-1">
+                      {update.region}
                     </Text>
                   </View>
                 </View>

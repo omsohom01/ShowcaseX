@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
 import { Dropdown } from '../components/Dropdown';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { localizeNumber, delocalizeNumber } from '../utils/numberLocalization';
 
 type CropDiseaseDetectionScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -31,7 +32,7 @@ interface FormData {
 }
 
 export const CropDiseaseDetectionScreen = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation<CropDiseaseDetectionScreenNavigationProp>();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -207,9 +208,13 @@ export const CropDiseaseDetectionScreen = () => {
           <View className="flex-row items-center">
             <View className="flex-1">
               <CustomInput
-                value={formData.cropAge}
-                onChangeText={(value) => handleFieldChange('cropAge', value)}
-                placeholder={t('disease.cropAgePlaceholder')}
+                label=""
+                value={localizeNumber(formData.cropAge, i18n.language)}
+                onChangeText={(value) => {
+                  const delocalized = delocalizeNumber(value, i18n.language);
+                  handleFieldChange('cropAge', delocalized);
+                }}
+                placeholder={localizeNumber(t('disease.cropAgePlaceholder'), i18n.language)}
                 keyboardType="numeric"
               />
             </View>
@@ -266,12 +271,12 @@ export const CropDiseaseDetectionScreen = () => {
           {isAnalyzing ? (
             <View className="flex-row items-center">
               <ActivityIndicator color="#fff" />
-              <Text className="text-white text-lg font-semibold ml-2">
+              <Text className="text-white text-lg font-semibold ml-2" numberOfLines={1} adjustsFontSizeToFit>
                 {t('disease.analyzing')}
               </Text>
             </View>
           ) : (
-            <Text className="text-white text-lg font-semibold">
+            <Text className="text-white text-lg font-semibold px-4" numberOfLines={1} adjustsFontSizeToFit>
               {t('disease.analyzeButton')}
             </Text>
           )}

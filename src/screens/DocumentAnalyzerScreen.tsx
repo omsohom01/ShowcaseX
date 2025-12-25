@@ -8,6 +8,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { ArrowLeft, FileText, Paperclip, ClipboardList, AlertTriangle } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -85,7 +86,7 @@ export const DocumentAnalyzerScreen = () => {
     setIsAnalyzing(true);
     try {
       // Simulate API call for document analysis
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise<void>((resolve) => setTimeout(resolve, 3000));
       setHasAnalyzed(true);
     } catch (error) {
       console.error('Analysis error:', error);
@@ -109,18 +110,18 @@ export const DocumentAnalyzerScreen = () => {
       >
         {/* Header */}
         <View className="bg-primary px-6 pt-12 pb-6 rounded-b-3xl mb-6">
-          <View className="flex-row items-center mb-2">
+          <View className="items-center mb-2">
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              className="bg-white/20 rounded-full w-10 h-10 items-center justify-center mr-4"
+              className="bg-white/20 rounded-full w-10 h-10 items-center justify-center mb-4"
             >
-              <Text className="text-white text-xl font-bold">←</Text>
+              <ArrowLeft size={24} color="#fff" strokeWidth={2} />
             </TouchableOpacity>
-            <View className="flex-1">
-              <Text className="text-white text-3xl font-bold">
+            <View className="items-center">
+              <Text className="text-white text-3xl font-bold text-center">
                 {t('analyzer.title')}
               </Text>
-              <Text className="text-white/90 text-base mt-1">
+              <Text className="text-white/90 text-base mt-1 text-center">
                 {t('analyzer.subtitle')}
               </Text>
             </View>
@@ -150,7 +151,7 @@ export const DocumentAnalyzerScreen = () => {
               >
                 <View className="items-center">
                   <View className="bg-primary/10 rounded-full w-16 h-16 items-center justify-center mb-3">
-                    <Text className="text-4xl">📄</Text>
+                    <FileText size={40} color="#22C55E" strokeWidth={2} />
                   </View>
                   <Text className="text-gray-900 text-base font-semibold mb-2 text-center">
                     {selectedDocument
@@ -158,9 +159,10 @@ export const DocumentAnalyzerScreen = () => {
                       : t('analyzer.uploadLabel')}
                   </Text>
                   {selectedDocument ? (
-                    <View className="bg-primary/10 rounded-lg px-4 py-2 mb-2">
-                      <Text className="text-primary text-sm font-medium">
-                        📎 {selectedDocument.name}
+                    <View className="bg-primary/10 rounded-lg px-4 py-2 mb-2 flex-row items-center">
+                      <Paperclip size={16} color="#22C55E" strokeWidth={2} />
+                      <Text className="text-primary text-sm font-medium ml-2" numberOfLines={1}>
+                        {selectedDocument.name}
                       </Text>
                       {selectedDocument.size && (
                         <Text className="text-gray-500 text-xs mt-1">
@@ -247,7 +249,7 @@ export const DocumentAnalyzerScreen = () => {
               {/* Document Summary */}
               <View className="mb-6">
                 <Text className="text-gray-900 text-xl font-bold mb-4">
-                  {t('analyzer.documentSummary')}
+                  {t('analyzer.summary')}
                 </Text>
                 <View
                   className="bg-white rounded-xl p-5"
@@ -260,9 +262,9 @@ export const DocumentAnalyzerScreen = () => {
                   }}
                 >
                   <View className="flex-row items-start mb-3">
-                    <Text className="text-2xl mr-3">📋</Text>
-                    <Text className="flex-1 text-gray-700 text-base leading-6">
-                      {MOCK_ANALYSIS_RESULT.summary}
+                    <ClipboardList size={24} color="#3B82F6" strokeWidth={2} />
+                    <Text className="flex-1 text-gray-700 text-base leading-6 ml-3">
+                      {t('analyzer.results.summary', { lng: resultLanguage })}
                     </Text>
                   </View>
                 </View>
@@ -283,7 +285,7 @@ export const DocumentAnalyzerScreen = () => {
                     elevation: 2,
                   }}
                 >
-                  {MOCK_ANALYSIS_RESULT.keyPoints.map((point, index) => (
+                  {(t('analyzer.results.keyPoints', { returnObjects: true, lng: resultLanguage }) as string[]).map((point: string, index: number) => (
                     <View key={index} className="flex-row items-start mb-3">
                       <View className="bg-primary/10 rounded-full w-6 h-6 items-center justify-center mr-3 mt-0.5">
                         <Text className="text-primary text-xs font-bold">
@@ -315,14 +317,14 @@ export const DocumentAnalyzerScreen = () => {
                 >
                   <View className="flex-row items-start">
                     <View className="bg-yellow-200 rounded-full w-10 h-10 items-center justify-center mr-3">
-                      <Text className="text-2xl">⚠️</Text>
+                      <AlertTriangle size={24} color="#92400E" strokeWidth={2} />
                     </View>
                     <View className="flex-1">
                       <Text className="text-yellow-900 text-base font-bold mb-1">
                         {t('analyzer.importantAction')}
                       </Text>
                       <Text className="text-yellow-800 text-base leading-6">
-                        {MOCK_ANALYSIS_RESULT.actionRequired}
+                        {t('analyzer.results.actionRequired', { lng: resultLanguage })}
                       </Text>
                     </View>
                   </View>

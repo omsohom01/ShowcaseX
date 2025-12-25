@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { ArrowLeft, Bug, AlertTriangle, Heart, TrendingUp, Pill, Shield } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -92,7 +93,7 @@ export const DiseaseResultScreen = () => {
             onPress={() => navigation.goBack()}
             className="mb-4"
           >
-            <Ionicons name="arrow-back" size={24} color="#000" />
+            <ArrowLeft size={24} color="#000" strokeWidth={2} />
           </TouchableOpacity>
           <Text className="text-3xl font-bold text-gray-800">
             {t('diseaseResult.title')}
@@ -113,7 +114,7 @@ export const DiseaseResultScreen = () => {
         {/* Analysis Details Card */}
         <View className="bg-blue-50 rounded-xl p-4 mb-4">
           <Text className="text-blue-900 font-semibold text-lg mb-2">
-            {t('diseaseResult.analysisDetails')}
+            {t('Result Details')}
           </Text>
           <View className="space-y-1">
             <Text className="text-blue-800">
@@ -134,14 +135,14 @@ export const DiseaseResultScreen = () => {
         <View className="bg-white border border-gray-200 rounded-xl p-4 mb-4 shadow-sm">
           <View className="flex-row items-center mb-2">
             <View className="bg-red-100 rounded-full w-10 h-10 items-center justify-center mr-3">
-              <Text className="text-xl">🦠</Text>
+              <Bug size={24} color="#DC2626" strokeWidth={2} />
             </View>
             <View className="flex-1">
               <Text className="text-gray-600 text-sm">
                 {t('diseaseResult.detectedDisease')}
               </Text>
               <Text className="text-gray-900 text-lg font-bold">
-                {diseaseData.diseaseName}
+                {t('')}
               </Text>
             </View>
           </View>
@@ -152,7 +153,7 @@ export const DiseaseResultScreen = () => {
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
               <View className="bg-orange-100 rounded-full w-10 h-10 items-center justify-center mr-3">
-                <Text className="text-xl">⚠️</Text>
+                <AlertTriangle size={24} color="#F97316" strokeWidth={2} />
               </View>
               <Text className="text-gray-600 text-sm">
                 {t('diseaseResult.severity')}
@@ -174,14 +175,14 @@ export const DiseaseResultScreen = () => {
         <View className="bg-white border border-gray-200 rounded-xl p-4 mb-4 shadow-sm">
           <View className="flex-row items-center mb-3">
             <View className="bg-green-100 rounded-full w-10 h-10 items-center justify-center mr-3">
-              <Text className="text-xl">💚</Text>
+              <Heart size={24} color="#22C55E" strokeWidth={2} fill="#22C55E" />
             </View>
             <View className="flex-1">
               <Text className="text-gray-600 text-sm">
                 {t('diseaseResult.cropHealth')}
               </Text>
               <Text className="text-gray-900 text-lg font-bold">
-                {diseaseData.healthPercentage}% {t('diseaseResult.healthy')}
+                {diseaseData.healthPercentage}% {t('Healthy')}
               </Text>
             </View>
           </View>
@@ -202,7 +203,7 @@ export const DiseaseResultScreen = () => {
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
               <View className="bg-purple-100 rounded-full w-10 h-10 items-center justify-center mr-3">
-                <Text className="text-xl">📈</Text>
+                <TrendingUp size={24} color="#A855F7" strokeWidth={2} />
               </View>
               <Text className="text-gray-600 text-sm">
                 {t('diseaseResult.recoveryChance')}
@@ -213,7 +214,7 @@ export const DiseaseResultScreen = () => {
                 diseaseData.recoveryChance
               )}`}
             >
-              {t(`diseaseResult.recoveryLevels.${diseaseData.recoveryChance}`)}
+              {t(`${diseaseData.recoveryChance}`)}
             </Text>
           </View>
         </View>
@@ -221,21 +222,21 @@ export const DiseaseResultScreen = () => {
         {/* Recommendations Section */}
         <View className="mb-6">
           <Text className="text-xl font-bold text-gray-800 mb-3">
-            {t('diseaseResult.recommendations')}
+            {t('Result Recommendations')}
           </Text>
 
           {/* Treatment Card */}
           <View className="bg-green-50 border border-green-200 rounded-xl p-4 mb-3">
             <View className="flex-row items-start mb-2">
               <View className="bg-green-200 rounded-full w-8 h-8 items-center justify-center mr-3 mt-1">
-                <Text className="text-lg">💊</Text>
+                <Pill size={20} color="#15803D" strokeWidth={2} />
               </View>
               <View className="flex-1">
                 <Text className="text-green-900 font-semibold text-base mb-1">
                   {t('diseaseResult.treatment')}
                 </Text>
                 <Text className="text-green-800 text-sm leading-5">
-                  {diseaseData.treatment}
+                  {t('')}
                 </Text>
               </View>
             </View>
@@ -245,14 +246,14 @@ export const DiseaseResultScreen = () => {
           <View className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <View className="flex-row items-start">
               <View className="bg-blue-200 rounded-full w-8 h-8 items-center justify-center mr-3 mt-1">
-                <Text className="text-lg">🛡️</Text>
+                <Shield size={20} color="#1E40AF" strokeWidth={2} />
               </View>
               <View className="flex-1">
                 <Text className="text-blue-900 font-semibold text-base mb-1">
                   {t('diseaseResult.prevention')}
                 </Text>
                 <Text className="text-blue-800 text-sm leading-5">
-                  {diseaseData.prevention}
+                  {t('')}
                 </Text>
               </View>
             </View>

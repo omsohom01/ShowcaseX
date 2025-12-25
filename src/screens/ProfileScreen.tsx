@@ -20,6 +20,7 @@ import { Dropdown } from '../components/Dropdown';
 import { INDIAN_STATES, FARMER_TYPES, LANGUAGES } from '../constants/data';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { saveLanguage } from '../i18n/i18n';
+import { localizeNumber, delocalizeNumber } from '../utils/numberLocalization';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -47,9 +48,9 @@ export const ProfileScreen = () => {
 
   // Initial profile data (would come from API/storage in real app)
   const [initialData] = useState<ProfileData>({
-    fullName: 'Ranjit Das',
+    fullName: 'Your name',
     mobileNumber: '9876543210',
-    email: 'ranjit@example.com',
+    email: 'your.email@example.com',
     state: 'West Bengal',
     district: 'North 24 Parganas',
     preferredLanguage: i18n.language,
@@ -84,8 +85,8 @@ export const ProfileScreen = () => {
     
     if (permissionResult.granted === false) {
       Alert.alert(
-        t('profile.permissions.title'),
-        t('profile.permissions.message')
+        t('profilepermissionstitle'),
+        t('profilepermissionsmessage')
       );
       return;
     }
@@ -107,8 +108,8 @@ export const ProfileScreen = () => {
     
     if (permissionResult.granted === false) {
       Alert.alert(
-        t('profile.permissions.cameraTitle'),
-        t('profile.permissions.cameraMessage')
+        t('profilepermissionscameraTitle'),
+        t('profilepermissionscameraMessage')
       );
       return;
     }
@@ -126,12 +127,12 @@ export const ProfileScreen = () => {
 
   const showImageOptions = () => {
     Alert.alert(
-      t('profile.photoOptions.title'),
-      t('profile.photoOptions.message'),
+      t('profilephotoOptionstitle'),
+      t('profilephotoOptionsmessage'),
       [
-        { text: t('profile.photoOptions.camera'), onPress: takePhoto },
-        { text: t('profile.photoOptions.gallery'), onPress: pickImage },
-        { text: t('profile.photoOptions.cancel'), style: 'cancel' },
+        { text: t('profilephotoOptionscamera'), onPress: takePhoto },
+        { text: t('profilephotoOptionsgallery'), onPress: pickImage },
+        { text: t('profilephotoOptionscancel'), style: 'cancel' },
       ]
     );
   };
@@ -140,13 +141,13 @@ export const ProfileScreen = () => {
     setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise<void>((resolve) => setTimeout(resolve, 2000));
       console.log('Profile updated:', profileData);
-      Alert.alert(t('profile.success.title'), t('profile.success.message'));
+      Alert.alert(t('profilesuccesstitle'), t('profilesuccessmessage'));
       setHasChanges(false);
     } catch (error) {
       console.error('Update error:', error);
-      Alert.alert(t('profile.error.title'), t('profile.error.message'));
+      Alert.alert(t('profileerrortitle'), t('profileerrormessage'));
     } finally {
       setIsLoading(false);
     }
@@ -154,12 +155,12 @@ export const ProfileScreen = () => {
 
   const handleLogout = () => {
     Alert.alert(
-      t('profile.logout.confirmTitle'),
-      t('profile.logout.confirmMessage'),
+      t('profilelogoutconfirmTitle'),
+      t('profilelogoutconfirmMessage'),
       [
-        { text: t('profile.logout.cancel'), style: 'cancel' },
+        { text: t('profilelogoutcancel'), style: 'cancel' },
         {
-          text: t('profile.logout.confirm'),
+          text: t('profilelogoutconfirm'),
           style: 'destructive',
           onPress: () => {
             // Navigate back to sign in
@@ -201,42 +202,42 @@ export const ProfileScreen = () => {
                   className="w-full h-full"
                 />
               ) : (
-                <Ionicons name="person" size={64} color="#9CA3AF" />
+                <Ionicons name="person" size={55} color="#9CA3AF" />
               )}
             </View>
             <View className="absolute bottom-0 right-0 bg-primary rounded-full p-2 border-2 border-white">
-              <Ionicons name="camera" size={20} color="white" />
+              <Ionicons name="camera" size={18} color="white" />
             </View>
           </TouchableOpacity>
           <Text className="text-gray-500 text-sm mt-2">
-            {t('profile.tapToChange')}
+            {t('Tap To Change')}
           </Text>
         </View>
 
         {/* Basic Information Section */}
         <View className="mb-6">
           <Text className="text-xl font-semibold text-gray-800 mb-4">
-            {t('profile.basicInfo')}
+            {t('Profile basic Info')}
           </Text>
 
           <CustomInput
-            label={t('profile.fullName')}
-            placeholder={t('profile.fullNamePlaceholder')}
+            label={t('Full Name')}
+            placeholder={t('FullNamePlaceholder')}
             value={profileData.fullName}
             onChangeText={(value) => handleFieldChange('fullName', value)}
           />
 
           <CustomInput
-            label={t('profile.mobileNumber')}
-            placeholder={t('profile.mobileNumberPlaceholder')}
-            value={profileData.mobileNumber}
+            label={t('Mobile Number')}
+            placeholder={localizeNumber(t('MobileNumberPlaceholder'), i18n.language)}
+            value={localizeNumber(profileData.mobileNumber, i18n.language)}
             editable={false}
             style={{ backgroundColor: '#F3F4F6' }}
           />
 
           <CustomInput
-            label={t('profile.email')}
-            placeholder={t('profile.emailPlaceholder')}
+            label={t('Email')}
+            placeholder={t('EmailPlaceholder')}
             value={profileData.email}
             onChangeText={(value) => handleFieldChange('email', value)}
             keyboardType="email-address"
@@ -247,20 +248,20 @@ export const ProfileScreen = () => {
         {/* Location Information Section */}
         <View className="mb-6">
           <Text className="text-xl font-semibold text-gray-800 mb-4">
-            {t('profile.locationInfo')}
+            {t('Location Info')}
           </Text>
 
           <Dropdown
-            label={t('profile.state')}
-            placeholder={t('profile.statePlaceholder')}
+            label={t('State')}
+            placeholder={t('StatePlaceholder')}
             value={profileData.state}
             options={INDIAN_STATES}
             onSelect={(value) => handleFieldChange('state', value)}
           />
 
           <CustomInput
-            label={t('profile.district')}
-            placeholder={t('profile.districtPlaceholder')}
+            label={t('District')}
+            placeholder={t('DistrictPlaceholder')}
             value={profileData.district}
             onChangeText={(value) => handleFieldChange('district', value)}
           />
@@ -269,12 +270,12 @@ export const ProfileScreen = () => {
         {/* Language Preference Section */}
         <View className="mb-6">
           <Text className="text-xl font-semibold text-gray-800 mb-4">
-            {t('profile.languagePreference')}
+            {t('Language Preference')}
           </Text>
 
           <Dropdown
-            label={t('profile.preferredLanguage')}
-            placeholder={t('profile.languagePlaceholder')}
+            label={t('Preferred Language')}
+            placeholder={t('LanguagePlaceholder')}
             value={
               LANGUAGES.find((l) => l.value === profileData.preferredLanguage)
                 ? t(
@@ -303,8 +304,8 @@ export const ProfileScreen = () => {
           </Text>
 
           <Dropdown
-            label={t('profile.farmerType')}
-            placeholder={t('profile.farmerTypePlaceholder')}
+            label={t('Farmer Type')}
+            placeholder={t('FarmerTypePlaceholder')}
             value={
               FARMER_TYPES.find((f) => f.value === profileData.farmerType)
                 ? t(
@@ -325,28 +326,28 @@ export const ProfileScreen = () => {
           />
 
           <CustomInput
-            label={t('profile.landSize')}
-            placeholder={t('profile.landSizePlaceholder')}
+            label={t('Land Size')}
+            placeholder={t('LandSizePlaceholder')}
             value={profileData.landSize}
             onChangeText={(value) => handleFieldChange('landSize', value)}
             keyboardType="decimal-pad"
-            suffix={t('profile.acres')}
+            suffix={t('Acres')}
           />
         </View>
 
         {/* Preferences Section */}
         <View className="mb-8">
           <Text className="text-xl font-semibold text-gray-800 mb-4">
-            {t('profile.preferences')}
+            {t('Preferences')}
           </Text>
 
           <View className="bg-gray-50 rounded-xl p-4 flex-row justify-between items-center">
             <View className="flex-1">
               <Text className="text-gray-900 font-medium text-base mb-1">
-                {t('profile.notifications')}
+                {t('Enable Notification ')}
               </Text>
               <Text className="text-gray-600 text-sm">
-                {t('profile.notificationsDesc')}
+                {t('For update all time ')}
               </Text>
             </View>
             <Switch
@@ -371,8 +372,8 @@ export const ProfileScreen = () => {
           {isLoading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text className="text-white text-center text-lg font-semibold">
-              {t('profile.saveChanges')}
+            <Text className="text-white text-center text-lg font-semibold" numberOfLines={1} adjustsFontSizeToFit>
+              {t('SaveChanges')}
             </Text>
           )}
         </TouchableOpacity>
@@ -381,8 +382,8 @@ export const ProfileScreen = () => {
           onPress={handleLogout}
           className="rounded-xl py-4 border-2 border-red-500 mb-4"
         >
-          <Text className="text-red-500 text-center text-lg font-semibold">
-            {t('profile.logout.button')}
+          <Text className="text-red-500 text-center text-lg font-semibold" numberOfLines={1} adjustsFontSizeToFit>
+            {t('Logout')}
           </Text>
         </TouchableOpacity>
       </View>

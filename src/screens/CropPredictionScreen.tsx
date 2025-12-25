@@ -9,12 +9,14 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomInput } from '../components/CustomInput';
 import { Dropdown } from '../components/Dropdown';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { localizeNumber, delocalizeNumber } from '../utils/numberLocalization';
 
 type CropPredictionScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -36,14 +38,8 @@ interface FormErrors {
   [key: string]: string;
 }
 
-// Mock data for dropdowns
-const CROP_TYPES = ['Rice', 'Wheat', 'Cotton', 'Sugarcane', 'Corn', 'Potato', 'Tomato', 'Onion'];
-const SOIL_TYPES = ['Alluvial', 'Black', 'Red', 'Laterite', 'Desert', 'Mountain'];
-const FARMING_METHODS = ['Traditional', 'Organic', 'Modern'];
-const LOCATIONS = ['Nadia, WB', 'Mumbai, MH', 'Delhi, DL', 'Bangalore, KA', 'Chennai, TN'];
-
 export const CropPredictionScreen = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation<CropPredictionScreenNavigationProp>();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -57,6 +53,41 @@ export const CropPredictionScreen = () => {
     location: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Get translated dropdown options
+  const getCropTypes = () => [
+    { label: t('prediction.cropTypes.rice'), value: 'rice' },
+    { label: t('prediction.cropTypes.wheat'), value: 'wheat' },
+    { label: t('prediction.cropTypes.cotton'), value: 'cotton' },
+    { label: t('prediction.cropTypes.sugarcane'), value: 'sugarcane' },
+    { label: t('prediction.cropTypes.corn'), value: 'corn' },
+    { label: t('prediction.cropTypes.potato'), value: 'potato' },
+    { label: t('prediction.cropTypes.tomato'), value: 'tomato' },
+    { label: t('prediction.cropTypes.onion'), value: 'onion' },
+  ];
+
+  const getSoilTypes = () => [
+    { label: t('prediction.soilTypes.alluvial'), value: 'alluvial' },
+    { label: t('prediction.soilTypes.black'), value: 'black' },
+    { label: t('prediction.soilTypes.red'), value: 'red' },
+    { label: t('prediction.soilTypes.laterite'), value: 'laterite' },
+    { label: t('prediction.soilTypes.desert'), value: 'desert' },
+    { label: t('prediction.soilTypes.mountain'), value: 'mountain' },
+  ];
+
+  const getFarmingMethods = () => [
+    { label: t('prediction.farmingMethods.traditional'), value: 'traditional' },
+    { label: t('prediction.farmingMethods.organic'), value: 'organic' },
+    { label: t('prediction.farmingMethods.modern'), value: 'modern' },
+  ];
+
+  const getLocations = () => [
+    { label: t('prediction.locations.nadia'), value: 'nadia' },
+    { label: t('prediction.locations.mumbai'), value: 'mumbai' },
+    { label: t('prediction.locations.delhi'), value: 'delhi' },
+    { label: t('prediction.locations.bangalore'), value: 'bangalore' },
+    { label: t('prediction.locations.chennai'), value: 'chennai' },
+  ];
 
   const validateField = (name: keyof FormData, value: string): string => {
     switch (name) {
@@ -84,9 +115,34 @@ export const CropPredictionScreen = () => {
   };
 
   const handleFieldChange = (name: keyof FormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    const error = validateField(name, value);
-    setErrors((prev) => ({ ...prev, [name]: error }));
+    // Auto-format date fields (DD/MM/YYYY) with localized numerals
+    if (name === 'plantingDate' || name === 'harvestDate') {
+      // Delocalize to get western numerals, then remove all non-numeric characters
+      const delocalizedValue = delocalizeNumber(value, i18n.language);
+      const cleanValue = delocalizedValue.replace(/[^0-9]/g, '');
+      
+      // Format as DD/MM/YYYY in western numerals first
+      let formattedValue = cleanValue;
+      if (cleanValue.length >= 2) {
+        formattedValue = cleanValue.slice(0, 2);
+        if (cleanValue.length >= 4) {
+          formattedValue += '/' + cleanValue.slice(2, 4) + '/' + cleanValue.slice(4, 8);
+        } else if (cleanValue.length > 2) {
+          formattedValue += '/' + cleanValue.slice(2);
+        }
+      }
+      
+      // Localize the formatted date for display
+      const localizedValue = localizeNumber(formattedValue, i18n.language);
+      
+      setFormData((prev) => ({ ...prev, [name]: localizedValue }));
+      const error = validateField(name, formattedValue);
+      setErrors((prev) => ({ ...prev, [name]: error }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      const error = validateField(name, value);
+      setErrors((prev) => ({ ...prev, [name]: error }));
+    }
   };
 
   const validateForm = (): boolean => {
@@ -116,7 +172,7 @@ export const CropPredictionScreen = () => {
     setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise<void>((resolve) => setTimeout(resolve, 2000));
       console.log('Prediction submitted:', formData);
       // Navigate to results screen
       navigation.navigate('PredictionResult');
@@ -164,7 +220,7 @@ export const CropPredictionScreen = () => {
               onPress={() => navigation.goBack()}
               className="bg-white/20 rounded-full w-10 h-10 items-center justify-center mr-4"
             >
-              <Text className="text-white text-xl font-bold">←</Text>
+              <ArrowLeft size={24} color="#fff" strokeWidth={2} />
             </TouchableOpacity>
             <View className="flex-1">
               <Text className="text-white text-3xl font-bold">
@@ -187,10 +243,10 @@ export const CropPredictionScreen = () => {
             <Dropdown
               label={t('prediction.cropType')}
               placeholder={t('prediction.cropTypePlaceholder')}
-              value={formData.cropType}
-              options={CROP_TYPES}
+              value={formData.cropType ? getCropTypes().find(c => c.value === formData.cropType)?.label || '' : ''}
+              options={getCropTypes()}
               onSelect={(value) => {
-                const val = typeof value === 'string' ? value : value.value;
+                const val = typeof value === 'string' ? value : (value as any)?.value || value;
                 handleFieldChange('cropType', val);
               }}
               error={errors.cropType}
@@ -198,9 +254,12 @@ export const CropPredictionScreen = () => {
 
             <CustomInput
               label={t('prediction.acres')}
-              placeholder={t('prediction.acresPlaceholder')}
-              value={formData.acres}
-              onChangeText={(value) => handleFieldChange('acres', value)}
+              placeholder={localizeNumber(t('prediction.acresPlaceholder'), i18n.language)}
+              value={localizeNumber(formData.acres, i18n.language)}
+              onChangeText={(value) => {
+                const delocalized = delocalizeNumber(value, i18n.language);
+                handleFieldChange('acres', delocalized);
+              }}
               keyboardType="numeric"
               error={errors.acres}
             />
@@ -217,6 +276,7 @@ export const CropPredictionScreen = () => {
               placeholder={t('prediction.plantingDatePlaceholder')}
               value={formData.plantingDate}
               onChangeText={(value) => handleFieldChange('plantingDate', value)}
+              keyboardType="number-pad"
               error={errors.plantingDate}
             />
 
@@ -225,6 +285,7 @@ export const CropPredictionScreen = () => {
               placeholder={t('prediction.harvestDatePlaceholder')}
               value={formData.harvestDate}
               onChangeText={(value) => handleFieldChange('harvestDate', value)}
+              keyboardType="number-pad"
               error={errors.harvestDate}
             />
           </View>
@@ -238,10 +299,10 @@ export const CropPredictionScreen = () => {
             <Dropdown
               label={t('prediction.soilType')}
               placeholder={t('prediction.soilTypePlaceholder')}
-              value={formData.soilType}
-              options={SOIL_TYPES}
+              value={formData.soilType ? getSoilTypes().find(s => s.value === formData.soilType)?.label || '' : ''}
+              options={getSoilTypes()}
               onSelect={(value) => {
-                const val = typeof value === 'string' ? value : value.value;
+                const val = typeof value === 'string' ? value : (value as any)?.value || value;
                 handleFieldChange('soilType', val);
               }}
               error={errors.soilType}
@@ -250,10 +311,10 @@ export const CropPredictionScreen = () => {
             <Dropdown
               label={t('prediction.farmingMethod')}
               placeholder={t('prediction.farmingMethodPlaceholder')}
-              value={formData.farmingMethod}
-              options={FARMING_METHODS}
+              value={formData.farmingMethod ? getFarmingMethods().find(f => f.value === formData.farmingMethod)?.label || '' : ''}
+              options={getFarmingMethods()}
               onSelect={(value) => {
-                const val = typeof value === 'string' ? value : value.value;
+                const val = typeof value === 'string' ? value : (value as any)?.value || value;
                 handleFieldChange('farmingMethod', val);
               }}
               error={errors.farmingMethod}
@@ -269,10 +330,10 @@ export const CropPredictionScreen = () => {
             <Dropdown
               label={t('prediction.location')}
               placeholder={t('prediction.locationPlaceholder')}
-              value={formData.location}
-              options={LOCATIONS}
+              value={formData.location ? getLocations().find(l => l.value === formData.location)?.label || '' : ''}
+              options={getLocations()}
               onSelect={(value) => {
-                const val = typeof value === 'string' ? value : value.value;
+                const val = typeof value === 'string' ? value : (value as any)?.value || value;
                 handleFieldChange('location', val);
               }}
               error={errors.location}
@@ -330,7 +391,7 @@ export const CropPredictionScreen = () => {
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text className="text-white text-center text-lg font-semibold">
+              <Text className="text-white text-center text-lg font-semibold" numberOfLines={1} adjustsFontSizeToFit>
                 {t('prediction.submitButton')}
               </Text>
             )}
