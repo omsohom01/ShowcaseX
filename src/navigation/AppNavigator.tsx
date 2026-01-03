@@ -10,13 +10,16 @@ import { DocumentAnalyzerScreen } from '../screens/DocumentAnalyzerScreen';
 import { CropDiseaseDetectionScreen } from '../screens/CropDiseaseDetectionScreen';
 import { DiseaseResultScreen } from '../screens/DiseaseResultScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { CropPredictionResult } from '../services/gemini';
 
 export type RootStackParamList = {
   SignIn: undefined;
   SignUp: undefined;
   Dashboard: undefined;
   CropPrediction: undefined;
-  PredictionResult: undefined;
+  PredictionResult: {
+    predictionData: CropPredictionResult;
+  };
   DocumentAnalyzer: undefined;
   CropDiseaseDetection: undefined;
   DiseaseResult: {

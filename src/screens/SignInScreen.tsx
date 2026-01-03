@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -15,7 +16,10 @@ import { CustomInput, PasswordInput } from '../components/CustomInput';
 import { Dropdown } from '../components/Dropdown';
 import { LANGUAGES } from '../constants/data';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { localizeNumber, delocalizeNumber } from '../utils/numberLocalization';
+import {
+  signIn,
+  signInWithGoogle,
+} from '../services/auth';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -23,7 +27,7 @@ type SignInScreenNavigationProp = NativeStackNavigationProp<
 >;
 
 interface FormData {
-  mobileNumber: string;
+  email: string;
   password: string;
   preferredLanguage: string;
 }
@@ -37,22 +41,30 @@ export const SignInScreen = () => {
   const navigation = useNavigation<SignInScreenNavigationProp>();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    mobileNumber: '',
+    email: '',
     password: '',
     preferredLanguage: i18n.language || 'en',
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
+  const tr = (key: string, fallback: string) => {
+    try {
+      return i18n.exists(key) ? (t(key) as string) : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   const validateField = (name: keyof FormData, value: string): string => {
     switch (name) {
-      case 'mobileNumber':
+      case 'email':
         return !value.trim()
-          ? t('signIn.errors.required')
-          : !/^\d{10}$/.test(value)
-          ? t('signIn.errors.invalidMobile')
+          ? tr('signIn.errors.required', 'Required')
+          : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+          ? tr('signIn.errors.invalidEmail', 'Enter a valid email address')
           : '';
       case 'password':
-        return !value ? t('signIn.errors.required') : '';
+        return !value ? tr('signIn.errors.required', 'Required') : '';
       default:
         return '';
     }
@@ -66,7 +78,7 @@ export const SignInScreen = () => {
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    const requiredFields: (keyof FormData)[] = ['mobileNumber', 'password'];
+    const requiredFields: (keyof FormData)[] = ['email', 'password'];
 
     requiredFields.forEach((field) => {
       const error = validateField(field, formData[field]);
@@ -82,13 +94,59 @@ export const SignInScreen = () => {
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log('Sign in:', formData);
-      // Navigate to Dashboard on successful login
+      const result = await signIn(formData.email, formData.password);
+      if (!result.success) {
+        const title = tr('signIn.title', 'Sign In');
+
+        if (result.errorCode === 'auth/user-not-found') {
+          Alert.alert(
+            title,
+            "No account found for this email. Don't have an account? Sign Up.",
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Sign Up',
+                onPress: () => navigation.navigate('SignUp'),
+              },
+            ]
+          );
+          return;
+        }
+
+        Alert.alert(title, result.message);
+        return;
+      }
+
       navigation.navigate('Dashboard');
     } catch (error) {
       console.error('Sign in error:', error);
+      Alert.alert(tr('signIn.title', 'Sign In'), tr('signIn.errors.default', 'Sign in failed.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (isLoading) return;
+
+    // This project intentionally supports Google sign-in only on web.
+    // Native Google sign-in requires OAuth client IDs (Android/iOS) which we are not using.
+    if (Platform.OS !== 'web') {
+      Alert.alert(
+        tr('signIn.title', 'Sign In'),
+        'Google sign-in is available on web only. Please sign in with email/password on mobile.'
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      if (!result.success) {
+        Alert.alert(tr('signIn.title', 'Sign In'), result.message);
+        return;
+      }
+      navigation.navigate('Dashboard');
     } finally {
       setIsLoading(false);
     }
@@ -96,9 +154,9 @@ export const SignInScreen = () => {
 
   const isFormValid = () => {
     return (
-      formData.mobileNumber &&
+      formData.email &&
       formData.password &&
-      !errors.mobileNumber &&
+      !errors.email &&
       !errors.password
     );
   };
@@ -128,18 +186,18 @@ export const SignInScreen = () => {
         {/* Header */}
         <View className="mb-12 mt-12">
           <Text className="text-4xl font-bold text-gray-900 mb-2">
-            {t('signIn.title')}
+            {tr('signIn.title', 'Sign In')}
           </Text>
           <Text className="text-gray-600 text-base">
-            {t('signIn.subtitle')}
+            {tr('signIn.subtitle', 'Welcome back')}
           </Text>
         </View>
 
         {/* Language Selection */}
         <View className="mb-8">
           <Dropdown
-            label={t('signIn.preferredLanguage')}
-            placeholder={t('signIn.languagePlaceholder')}
+            label={tr('signIn.preferredLanguage', 'Preferred language')}
+            placeholder={tr('signIn.languagePlaceholder', 'Select language')}
             value={
               LANGUAGES.find((l) => l.value === formData.preferredLanguage)
                 ? t(
@@ -164,21 +222,18 @@ export const SignInScreen = () => {
         {/* Login Form */}
         <View className="mb-6">
           <CustomInput
-            label={t('signIn.mobileNumber')}
-            placeholder={localizeNumber(t('signIn.mobileNumberPlaceholder'), i18n.language)}
-            value={localizeNumber(formData.mobileNumber, i18n.language)}
-            onChangeText={(value) => {
-              const delocalized = delocalizeNumber(value, i18n.language);
-              handleFieldChange('mobileNumber', delocalized);
-            }}
-            keyboardType="phone-pad"
-            maxLength={10}
-            error={errors.mobileNumber}
+            label={tr('signIn.email', 'Email')}
+            placeholder={tr('signIn.emailPlaceholder', 'Enter your email')}
+            value={formData.email}
+            onChangeText={(value) => handleFieldChange('email', value)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={errors.email}
           />
 
           <PasswordInput
-            label={t('signIn.password')}
-            placeholder={t('signIn.passwordPlaceholder')}
+            label={tr('signIn.password', 'Password')}
+            placeholder={tr('signIn.passwordPlaceholder', 'Enter your password')}
             value={formData.password}
             onChangeText={(value) => handleFieldChange('password', value)}
             error={errors.password}
@@ -187,7 +242,7 @@ export const SignInScreen = () => {
           {/* Forgot Password Link */}
           <TouchableOpacity className="mb-4">
             <Text className="text-primary text-right text-base font-medium">
-              {t('signIn.forgotPassword')}
+              {tr('signIn.forgotPassword', 'Forgot password?')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -204,19 +259,40 @@ export const SignInScreen = () => {
             <ActivityIndicator color="white" />
           ) : (
             <Text className="text-white text-center text-lg font-semibold">
-              {t('signIn.signInButton')}
+              {tr('signIn.signInButton', 'Sign In')}
             </Text>
           )}
         </TouchableOpacity>
 
+        {/* Google Sign In (web only) */}
+        {Platform.OS === 'web' ? (
+          <TouchableOpacity
+            onPress={handleGoogleSignIn}
+            disabled={isLoading}
+            className={`rounded-xl py-4 mb-6 border ${
+              isLoading
+                ? 'border-gray-300 bg-gray-50'
+                : 'border-gray-300 bg-white'
+            }`}
+          >
+            <Text
+              className={`text-center text-lg font-semibold ${
+                isLoading ? 'text-gray-400' : 'text-gray-900'
+              }`}
+            >
+              {tr('signIn.googleButton', 'Sign in with Google')}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         {/* Sign Up Link */}
         <View className="flex-row justify-center items-center flex-wrap">
           <Text className="text-gray-600 text-base text-center">
-            {t('signIn.noAccount')}{' '}
+            {tr('signIn.noAccount', "Don't have an account?")}{' '}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
             <Text className="text-primary font-semibold text-base">
-              {t('signIn.signUp')}
+              {tr('signIn.signUp', 'Sign Up')}
             </Text>
           </TouchableOpacity>
         </View>

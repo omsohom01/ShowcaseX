@@ -16,3 +16,8 @@ node_modules/
 .pnpm-debug.log
 node_modules 2/
 .vscode/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
