@@ -233,8 +233,8 @@ export const ProfileScreen = () => {
 
   const handleLogout = () => {
     Alert.alert(
-      tr('profile.logoutConfirm.title', 'Confirm Logout'),
-      tr('profile.logoutConfirm.message', 'Are you sure you want to logout?'),
+      tr('profile.logout.confirmTitle', 'Confirm Logout'),
+      tr('profile.logout.confirmMessage', 'Are you sure you want to logout?'),
       [
         { text: tr('profile.logout.cancel', 'Cancel'), style: 'cancel' },
         {
@@ -471,7 +471,7 @@ export const ProfileScreen = () => {
           className="rounded-xl py-4 border-2 border-red-500 mb-4"
         >
           <Text className="text-red-500 text-center text-lg font-semibold" numberOfLines={1} adjustsFontSizeToFit>
-            {tr('profile.logout', 'Logout')}
+            {tr('profile.logoutButton', 'Logout')}
           </Text>
         </TouchableOpacity>
       </View>

@@ -9,8 +9,14 @@
     "buyer": "खरीदार",
     "buyerDescription": "किसानों से जुड़ें और कृषि उत्पाद खरीदें",
     "footerNote": "वह भूमिका चुनें जो आपका सबसे अच्छा वर्णन करती है"
+  },  "documentAnalyzer": {
+    "title": "दस्तावेज़ विश्लेषक",
+    "subtitle": "कृषि दस्तावेजों का विश्लेषण करें"
   },
-  "buyerSignIn": {
+  "cropDisease": {
+    "title": "रोग का पता लगाना",
+    "subtitle": "फसल रोगों का पता लगाएं"
+  },  "buyerSignIn": {
     "title": "खरीदार साइन इन",
     "subtitle": "वापसी पर स्वागत है, खरीदार",
     "mobileNumber": "मोबाइल नंबर",
@@ -549,10 +555,12 @@
   },
   "diseaseResult": {
     "title": "रोग विश्लेषण",
+    "analysisDetails": "विश्लेषण विवरण",
     "detectedDisease": "पहचानी गई बीमारी",
     "severity": "गंभीरता",
     "cropHealth": "फसल स्वास्थ्य",
-    "recoveryChance": "रिकवरी की संभावना",
+    "recoveryChance": "ठीक होने की संभावना",
+    "recommendations": "सिफारिशें",
     "treatment": "उपचार",
     "prevention": "रोकथाम",
     "backToDashboard": "डैशबोर्ड पर वापस जाएं",
@@ -571,6 +579,9 @@
     "notCropWarning": "यह छवि फसल या पौधे की नहीं लगती। कृपया रोग विश्लेषण के लिए फसल की छवि अपलोड करें।",
     "uploadNewImage": "नयी छवि अपलोड करें"
   },
+  "common": {
+    "unknown": "अज्ञात"
+  },
   "profile": {
     "title": "मेरी प्रोफ़ाइल",
     "subtitle": "अपना खाता प्रबंधित करें",
@@ -579,7 +590,7 @@
     "settings": "सेटिंग्स",
     "notifications": "सूचनाएं सक्षम करें",
     "saveChanges": "परिवर्तन सहेजें",
-    "logout": "लॉगआउट",
+    "logoutButton": "लॉगआउट",
     "photoOptions": {
       "title": "प्रोफ़ाइल फोटो",
       "message": "एक विकल्प चुनें",
@@ -601,7 +612,7 @@
       "title": "त्रुटि",
       "message": "प्रोफ़ाइल अपडेट करने में विफल"
     },
-    "logoutConfirm": {
+    "logout": {
       "confirmTitle": "लॉगआउट",
       "confirmMessage": "क्या आप निश्चित रूप से लॉगआउट करना चाहते हैं?",
       "cancel": "रद्द करें",

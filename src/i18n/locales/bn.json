@@ -10,6 +10,14 @@
     "buyerDescription": "কৃষকদের সাথে সংযুক্ত হন এবং কৃষি পণ্য ক্রয় করুন",
     "footerNote": "সেই ভূমিকা নির্বাচন করুন যা আপনাকে সবচেয়ে ভালভাবে বর্ণনা করে"
   },
+  "documentAnalyzer": {
+    "title": "নথি বিশ্লেষক",
+    "subtitle": "কৃষি নথি বিশ্লেষণ করুন"
+  },
+  "cropDisease": {
+    "title": "রোগ সনাক্তকরণ",
+    "subtitle": "ফসলের রোগ সনাক্ত করুন"
+  },
   "buyerSignIn": {
     "title": "ক্রেতা সাইন ইন",
     "subtitle": "স্বাগতম, ক্রেতা",
@@ -547,10 +555,12 @@
   },
   "diseaseResult": {
     "title": "রোগ বিশ্লেষণ",
+    "analysisDetails": "বিশ্লেষণের বিবরণ",
     "detectedDisease": "সনাক্ত করা রোগ",
     "severity": "তীব্রতা",
     "cropHealth": "ফসলের স্বাস্থ্য",
     "recoveryChance": "পুনরুদ্ধারের সম্ভাবনা",
+    "recommendations": "সুপারিশ",
     "treatment": "চিকিৎসা",
     "prevention": "প্রতিরোধ",
     "backToDashboard": "ড্যাশবোর্ডে ফিরে যান",
@@ -577,7 +587,7 @@
     "settings": "সেটিংস",
     "notifications": "বিজ্ঞপ্তি সক্ষম করুন",
     "saveChanges": "পরিবর্তন সংরক্ষণ করুন",
-    "logout": "লগআউট",
+    "logoutButton": "লগআউট",
     "photoOptions": {
       "title": "প্রোফাইল ছবি",
       "message": "একটি বিকল্প নির্বাচন করুন",

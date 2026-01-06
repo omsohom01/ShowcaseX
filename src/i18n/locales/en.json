@@ -9,8 +9,14 @@
     "buyer": "Buyer",
     "buyerDescription": "Connect with farmers and purchase agricultural products",
     "footerNote": "Choose the role that best describes you"
+  },  "documentAnalyzer": {
+    "title": "Document Analyzer",
+    "subtitle": "Analyze farming documents"
   },
-  "buyerSignIn": {
+  "cropDisease": {
+    "title": "Disease Detection",
+    "subtitle": "Detect crop diseases"
+  },  "buyerSignIn": {
     "title": "Buyer Sign In",
     "subtitle": "Welcome back, buyer",
     "mobileNumber": "Mobile Number",
@@ -523,10 +529,12 @@
   },
   "diseaseResult": {
     "title": "Disease Analysis",
+    "analysisDetails": "Analysis Details",
     "detectedDisease": "Detected Disease",
     "severity": "Severity",
     "cropHealth": "Crop Health",
     "recoveryChance": "Recovery Chance",
+    "recommendations": "Recommendations",
     "treatment": "Treatment",
     "prevention": "Prevention",
     "backToDashboard": "Back to Dashboard",
@@ -545,6 +553,9 @@
     "notCropWarning": "This image does not appear to be a crop or plant. Please upload an image of a crop for disease analysis.",
     "uploadNewImage": "Upload New Image"
   },
+  "common": {
+    "unknown": "unknown"
+  },
   "profile": {
     "title": "My Profile",
     "subtitle": "Manage your account",
@@ -553,7 +564,7 @@
     "settings": "Settings",
     "notifications": "Enable Notifications",
     "saveChanges": "Save Changes",
-    "logout": "Logout",
+    "logoutButton": "Logout",
     "photoOptions": {
       "title": "Profile Photo",
       "message": "Choose an option",
@@ -575,7 +586,7 @@
       "title": "Error",
       "message": "Failed to update profile"
     },
-    "logoutConfirm": {
+    "logout": {
       "confirmTitle": "Logout",
       "confirmMessage": "Are you sure you want to logout?",
       "cancel": "Cancel",
