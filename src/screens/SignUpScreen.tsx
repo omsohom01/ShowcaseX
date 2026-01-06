@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -49,6 +50,7 @@ interface FormErrors {
 export const SignUpScreen = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation<SignUpScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -253,7 +255,7 @@ export const SignUpScreen = () => {
     >
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingBottom: 32 }}
+        contentContainerStyle={{ padding: 24, paddingBottom: Math.max(insets.bottom, 24) + 24 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -271,20 +273,41 @@ export const SignUpScreen = () => {
             placeholder={tr('signUp.languagePlaceholder', 'Select language')}
             value={
               LANGUAGES.find((l) => l.value === formData.preferredLanguage)
-                ? t(
-                  LANGUAGES.find(
-                    (l) => l.value === formData.preferredLanguage
-                  )!.labelKey
-                )
+                ? (() => {
+                    try {
+                      const lang = LANGUAGES.find(
+                        (l) => l.value === formData.preferredLanguage
+                      );
+                      return lang ? t(lang.labelKey) : '';
+                    } catch {
+                      return '';
+                    }
+                  })()
                 : ''
             }
-            options={LANGUAGES.map((lang) => t(lang.labelKey))}
+            options={LANGUAGES.map((lang) => {
+              try {
+                return t(lang.labelKey);
+              } catch {
+                return lang.value.toUpperCase();
+              }
+            })}
             onSelect={(value) => {
-              const selectedLang = LANGUAGES.find(
-                (lang) => t(lang.labelKey) === value
-              );
-              if (selectedLang) {
-                handleFieldChange('preferredLanguage', selectedLang.value);
+              try {
+                const selectedLang = LANGUAGES.find(
+                  (lang) => {
+                    try {
+                      return t(lang.labelKey) === value;
+                    } catch {
+                      return lang.value.toUpperCase() === value;
+                    }
+                  }
+                );
+                if (selectedLang) {
+                  handleFieldChange('preferredLanguage', selectedLang.value);
+                }
+              } catch (error) {
+                console.error('Language selection error:', error);
               }
             }}
             error={errors.preferredLanguage}
@@ -387,19 +410,39 @@ export const SignUpScreen = () => {
             placeholder={tr('signUp.farmerTypePlaceholder', 'Select farmer type')}
             value={
               FARMER_TYPES.find((f) => f.value === formData.farmerType)
-                ? t(
-                  FARMER_TYPES.find((f) => f.value === formData.farmerType)!
-                    .labelKey
-                )
+                ? (() => {
+                    try {
+                      const type = FARMER_TYPES.find((f) => f.value === formData.farmerType);
+                      return type ? t(type.labelKey) : '';
+                    } catch {
+                      return '';
+                    }
+                  })()
                 : ''
             }
-            options={FARMER_TYPES.map((type) => t(type.labelKey))}
+            options={FARMER_TYPES.map((type) => {
+              try {
+                return t(type.labelKey);
+              } catch {
+                return type.value;
+              }
+            })}
             onSelect={(value) => {
-              const selectedType = FARMER_TYPES.find(
-                (type) => t(type.labelKey) === value
-              );
-              if (selectedType) {
-                handleFieldChange('farmerType', selectedType.value);
+              try {
+                const selectedType = FARMER_TYPES.find(
+                  (type) => {
+                    try {
+                      return t(type.labelKey) === value;
+                    } catch {
+                      return type.value === value;
+                    }
+                  }
+                );
+                if (selectedType) {
+                  handleFieldChange('farmerType', selectedType.value);
+                }
+              } catch (error) {
+                console.error('Farmer type selection error:', error);
               }
             }}
             error={errors.farmerType}

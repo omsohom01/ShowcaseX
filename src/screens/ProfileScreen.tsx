@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -50,6 +51,7 @@ interface ProfileData {
 export const ProfileScreen = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
@@ -254,7 +256,7 @@ export const ProfileScreen = () => {
   return (
     <ScrollView
       className="flex-1 bg-white"
-      contentContainerStyle={{ paddingBottom: 32 }}
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 24 }}
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}

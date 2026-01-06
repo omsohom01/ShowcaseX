@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
 import { HandHeart, Sun, Droplets, Wind, Wheat, Ruler, Heart, MapPin, Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog } from 'lucide-react-native';
@@ -27,11 +28,28 @@ type DashboardScreenNavigationProp = NativeStackNavigationProp<
 export const DashboardScreen = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation<DashboardScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [isChatbotVisible, setIsChatbotVisible] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(true);
   const [weatherError, setWeatherError] = useState(false);
+  // Hardcoded: 2 buyers have contacted this farmer
+  const notificationCount = 2;
+
+  // Safe translation helper
+  const tr = (key: string, fallback?: string) => {
+    try {
+      if (!i18n || !i18n.isInitialized) {
+        return fallback || key;
+      }
+      const translated = t(key);
+      return translated || fallback || key;
+    } catch (error) {
+      console.error('Translation error:', error);
+      return fallback || key;
+    }
+  };
 
   // Fetch weather data on component mount
   useEffect(() => {
@@ -98,37 +116,37 @@ export const DashboardScreen = () => {
   const FARMING_UPDATES = [
     {
       id: '1',
-      title: t('dashboard.farmingFeed.update1Title'),
-      description: t('dashboard.farmingFeed.update1Description'),
-      region: t('dashboard.farmingFeed.update1Region'),
+      title: tr('dashboard.farmingFeed.update1Title', 'Rice Yield Expected to Increase'),
+      description: tr('dashboard.farmingFeed.update1Description', 'West Bengal farmers report positive crop growth this season.'),
+      region: tr('dashboard.farmingFeed.update1Region', 'West Bengal'),
     },
     {
       id: '2',
-      title: t('dashboard.farmingFeed.update2Title'),
-      description: t('dashboard.farmingFeed.update2Description'),
-      region: t('dashboard.farmingFeed.update2Region'),
+      title: tr('dashboard.farmingFeed.update2Title', 'Drought Alert Issued'),
+      description: tr('dashboard.farmingFeed.update2Description', 'Maharashtra regions facing water scarcity.'),
+      region: tr('dashboard.farmingFeed.update2Region', 'Maharashtra'),
     },
     {
       id: '3',
-      title: t('dashboard.farmingFeed.update3Title'),
-      description: t('dashboard.farmingFeed.update3Description'),
-      region: t('dashboard.farmingFeed.update3Region'),
+      title: tr('dashboard.farmingFeed.update3Title', 'New Organic Farming Initiative'),
+      description: tr('dashboard.farmingFeed.update3Description', 'Punjab government launches support program for organic farming.'),
+      region: tr('dashboard.farmingFeed.update3Region', 'Punjab'),
     },
     {
       id: '4',
-      title: t('dashboard.farmingFeed.update4Title'),
-      description: t('dashboard.farmingFeed.update4Description'),
-      region: t('dashboard.farmingFeed.update4Region'),
+      title: tr('dashboard.farmingFeed.update4Title', 'Wheat Market Price Surge'),
+      description: tr('dashboard.farmingFeed.update4Description', 'Wheat prices increase by 15% due to high demand.'),
+      region: tr('dashboard.farmingFeed.update4Region', 'Haryana'),
     },
   ];
 
   const FARM_SUMMARY = {
-    crops: t('dashboard.crops.rice'),
+    crops: tr('dashboard.crops.rice', 'Rice'),
     area: 2,
-    status: t('dashboard.farmSummary.healthy'),
+    status: tr('dashboard.farmSummary.healthy', 'Healthy'),
   };
 
-  const handleDrawerNavigate = (screen: 'Profile' | 'CropPrediction' | 'DocumentAnalyzer' | 'CropDiseaseDetection') => {
+  const handleDrawerNavigate = (screen: 'Profile' | 'CropPrediction' | 'DocumentAnalyzer' | 'CropDiseaseDetection' | 'ContactBuyer') => {
     navigation.navigate(screen);
   };
 
@@ -136,7 +154,7 @@ export const DashboardScreen = () => {
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 24 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
@@ -146,11 +164,11 @@ export const DashboardScreen = () => {
               <View className="flex-row items-center">
                 <HandHeart size={32} color="#fff" strokeWidth={2} />
                 <Text className="text-white text-3xl font-bold ml-2">
-                  {t('dashboard.greeting')}
+                  {tr('dashboard.greeting', 'Hello Farmer!')}
                 </Text>
               </View>
               <Text className="text-white/90 text-base mt-1">
-                {t('dashboard.subtitle')}
+                {tr('dashboard.subtitle', 'Welcome to KrishakSharthi')}
               </Text>
             </View>
             <TouchableOpacity
@@ -165,7 +183,7 @@ export const DashboardScreen = () => {
         {/* Weather Forecast */}
         <View className="px-6 mt-4">
           <Text className="text-gray-900 text-xl font-bold mb-3">
-            {t('dashboard.weather.title')}
+            {tr('dashboard.weather.title', "Today's Weather")}
           </Text>
           
           {isLoadingWeather ? (
@@ -182,7 +200,7 @@ export const DashboardScreen = () => {
             >
               <ActivityIndicator size="large" color="#22C55E" />
               <Text className="text-gray-600 text-base mt-3">
-                {t('dashboard.weather.loading')}
+                {tr('dashboard.weather.loading', 'Loading weather...')}
               </Text>
             </View>
           ) : weatherError || !weatherData ? (
@@ -198,14 +216,14 @@ export const DashboardScreen = () => {
               }}
             >
               <Text className="text-gray-600 text-base mb-3">
-                {t('dashboard.weather.error')}
+                {tr('dashboard.weather.error', 'Unable to load weather')}
               </Text>
               <TouchableOpacity
                 onPress={fetchWeather}
                 className="bg-primary rounded-lg px-4 py-2"
               >
                 <Text className="text-white font-semibold">
-                  {t('dashboard.weather.retry') || 'Retry'}
+                  {tr('dashboard.weather.retry', 'Retry')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -228,7 +246,7 @@ export const DashboardScreen = () => {
                     {localizeNumber(weatherData.current.temperature, i18n.language)}°C
                   </Text>
                   <Text className="text-gray-600 text-base">
-                    {t(`dashboard.weather.conditions.${getWeatherConditionKey(weatherData.current.weatherCode)}`)}
+                    {tr(`dashboard.weather.conditions.${getWeatherConditionKey(weatherData.current.weatherCode)}`, 'Partly Cloudy')}
                   </Text>
                 </View>
               </View>
@@ -238,7 +256,7 @@ export const DashboardScreen = () => {
                 <View className="items-center flex-1">
                   <Droplets size={32} color="#3B82F6" strokeWidth={2} />
                   <Text className="text-gray-600 text-sm mt-2">
-                    {t('dashboard.weather.precipitation')}
+                    {tr('dashboard.weather.precipitation', 'Precipitation')}
                   </Text>
                   <Text className="text-gray-900 text-base font-semibold">
                     {localizeNumber(weatherData.current.precipitation, i18n.language)} mm
@@ -247,7 +265,7 @@ export const DashboardScreen = () => {
                 <View className="items-center flex-1 border-l border-gray-100">
                   <Wind size={32} color="#10B981" strokeWidth={2} />
                   <Text className="text-gray-600 text-sm mt-2">
-                    {t('dashboard.weather.humidity')}
+                    {tr('dashboard.weather.humidity', 'Humidity')}
                   </Text>
                   <Text className="text-gray-900 text-base font-semibold">
                     {localizeNumber(weatherData.current.humidity, i18n.language)}%
@@ -258,7 +276,7 @@ export const DashboardScreen = () => {
               {/* Hourly Forecast */}
               <View className="pt-4 border-t border-gray-100">
                 <Text className="text-gray-900 text-base font-bold mb-3">
-                  {t('dashboard.weather.hourlyForecast')}
+                  {tr('dashboard.weather.hourlyForecast', 'Hourly Forecast')}
                 </Text>
                 <ScrollView
                   horizontal
@@ -301,7 +319,7 @@ export const DashboardScreen = () => {
         {/* Farm Summary */}
         <View className="px-6 mt-6">
           <Text className="text-gray-900 text-xl font-bold mb-3">
-            {t('dashboard.farmSummary.title')}
+            {tr('dashboard.farmSummary.title', 'Farm Summary')}
           </Text>
           <View
             className="bg-white rounded-xl p-5 shadow-sm"
@@ -319,7 +337,7 @@ export const DashboardScreen = () => {
               </View>
               <View>
                 <Text className="text-gray-600 text-sm">
-                  {t('dashboard.farmSummary.crops')}
+                  {tr('dashboard.farmSummary.crops', 'Crops')}
                 </Text>
                 <Text className="text-gray-900 text-lg font-semibold">
                   {FARM_SUMMARY.crops}
@@ -333,10 +351,10 @@ export const DashboardScreen = () => {
               </View>
               <View>
                 <Text className="text-gray-600 text-sm">
-                  {t('dashboard.farmSummary.area')}
+                  {tr('dashboard.farmSummary.area', 'Area')}
                 </Text>
                 <Text className="text-gray-900 text-lg font-semibold">
-                  {localizeNumber(FARM_SUMMARY.area, i18n.language)} {t('dashboard.farmSummary.acres')}
+                  {localizeNumber(FARM_SUMMARY.area, i18n.language)} {tr('dashboard.farmSummary.acres', 'acres')}
                 </Text>
               </View>
             </View>
@@ -347,10 +365,10 @@ export const DashboardScreen = () => {
               </View>
               <View>
                 <Text className="text-gray-600 text-sm">
-                  {t('dashboard.farmSummary.status')}
+                  {tr('dashboard.farmSummary.status', 'Status')}
                 </Text>
                 <Text className="text-green-600 text-lg font-semibold">
-                  {t('dashboard.farmSummary.healthy')}
+                  {tr('dashboard.farmSummary.healthy', 'Healthy')}
                 </Text>
               </View>
             </View>
@@ -360,7 +378,7 @@ export const DashboardScreen = () => {
         {/* Farming Feed */}
         <View className="px-6 mt-6">
           <Text className="text-gray-900 text-xl font-bold mb-3">
-            {t('dashboard.farmingFeed.title')}
+            {tr('dashboard.farmingFeed.title', 'Farming Updates')}
           </Text>
           <View>
             {FARMING_UPDATES.map((update, index) => (
@@ -408,6 +426,7 @@ export const DashboardScreen = () => {
         onClose={() => setIsDrawerVisible(false)}
         onNavigate={handleDrawerNavigate}
         onChatbotOpen={() => setIsChatbotVisible(true)}
+        notificationCount={notificationCount}
       />
     </SafeAreaView>
   );

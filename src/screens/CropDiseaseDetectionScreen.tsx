@@ -11,6 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 // @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +38,7 @@ interface FormData {
 export const CropDiseaseDetectionScreen = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation<CropDiseaseDetectionScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     cropImage: null,
@@ -116,7 +118,7 @@ export const CropDiseaseDetectionScreen = () => {
   };
 
   const canAnalyze = () => {
-    // Only image is required now, crop type and age are optional
+    // Only image is required, other fields are optional
     return formData.cropImage !== null;
   };
 
@@ -132,10 +134,10 @@ export const CropDiseaseDetectionScreen = () => {
       // Auto-detect weather from user's location
       const weatherData = await getWeatherForCurrentLocation();
       const weatherCondition = weatherData 
-        ? getWeatherConditionKey(weatherData.current.weatherCode)
+        ? getWeatherConditionKey(weatherData.current.weatherCode) 
         : 'unknown';
 
-      // Determine final crop type (empty if not provided)
+      // Determine final crop type (use 'unknown' if not provided)
       const finalCropType = formData.cropType === 'other' 
         ? formData.otherCropType 
         : formData.cropType || 'unknown';
@@ -152,7 +154,7 @@ export const CropDiseaseDetectionScreen = () => {
       });
 
       setIsAnalyzing(false);
-      
+
       // Navigate to disease result screen with Gemini analysis
       navigation.navigate('DiseaseResult', {
         cropImage: formData.cropImage!,
@@ -165,8 +167,10 @@ export const CropDiseaseDetectionScreen = () => {
       setIsAnalyzing(false);
       console.error('Disease detection error:', error);
       Alert.alert(
-        t('Error'),
-        error instanceof Error ? error.message : t('Failed to analyze crop. Please try again.')
+        t('common.error'),
+        error instanceof Error 
+          ? error.message 
+          : t('disease.analysisFailed')
       );
     }
   };
@@ -175,10 +179,13 @@ export const CropDiseaseDetectionScreen = () => {
     <View className="flex-1 bg-white">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingBottom: 32 }}
+        contentContainerStyle={{ 
+          padding: 24, 
+          paddingBottom: Math.max(insets.bottom, 24) + 24 
+        }}
       >
         {/* Header */}
-        <View className="mb-8">
+        <View className="mb-6">
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             className="mb-4"
@@ -191,7 +198,7 @@ export const CropDiseaseDetectionScreen = () => {
         </View>
 
         {/* Crop Image Upload Section */}
-        <View className="mb-8">
+        <View className="mb-6">
           <Text className="text-base font-semibold text-gray-700 mb-2">
             {t('disease.uploadImage')} *
           </Text>
@@ -239,7 +246,7 @@ export const CropDiseaseDetectionScreen = () => {
         </View>
 
         {/* Crop Age Field */}
-        <View className="mb-8">
+        <View className="mb-6">
           <Text className="text-base font-semibold text-gray-700 mb-2">
             {t('disease.cropAge')}
           </Text>
@@ -265,7 +272,7 @@ export const CropDiseaseDetectionScreen = () => {
         </View>
 
         {/* Crop Type Dropdown */}
-        <View className="mb-8">
+        <View className="mb-6">
           <Text className="text-base font-semibold text-gray-700 mb-2">
             {t('disease.cropType')}
           </Text>
@@ -286,7 +293,7 @@ export const CropDiseaseDetectionScreen = () => {
 
         {/* Other Crop Type Input - Only show if 'other' is selected */}
         {formData.cropType === 'other' && (
-          <View className="mb-8">
+          <View className="mb-6">
             <Text className="text-base font-semibold text-gray-700 mb-2">
               {t('disease.otherCropType')}
             </Text>

@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -42,6 +43,7 @@ interface FormErrors {
 export const CropPredictionScreen = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation<CropPredictionScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     cropType: '',
@@ -244,7 +246,7 @@ export const CropPredictionScreen = () => {
     >
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 24 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
