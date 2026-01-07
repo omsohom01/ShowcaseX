@@ -28,6 +28,7 @@ import {
   onAuthStateChange,
   saveCurrentUserProfile,
   updateCurrentAuthProfile,
+  uploadProfilePicture,
 } from '../services/auth';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<
@@ -141,7 +142,7 @@ export const ProfileScreen = () => {
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
     if (permissionResult.granted === false) {
       Alert.alert(
         tr('profile.permissions.title', 'Permissions Required'),
@@ -164,7 +165,7 @@ export const ProfileScreen = () => {
 
   const takePhoto = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    
+
     if (permissionResult.granted === false) {
       Alert.alert(
         tr('profile.permissions.cameraTitle', 'Camera Permission Required'),
@@ -199,30 +200,44 @@ export const ProfileScreen = () => {
   const handleSaveChanges = async () => {
     setIsLoading(true);
     try {
-      // Persist to Firestore
-      await saveCurrentUserProfile({
-        fullName: profileData.fullName,
-        mobileNumber: profileData.mobileNumber,
-        email: profileData.email,
-        state: profileData.state,
-        district: profileData.district,
-        preferredLanguage: profileData.preferredLanguage,
-        farmerType: profileData.farmerType,
-        landSize: profileData.landSize,
-        notificationsEnabled: profileData.notificationsEnabled,
-        profilePhoto: profileData.profilePhoto,
-      });
+      let photoURL = profileData.profilePhoto;
 
-      // Keep Auth displayName in sync (useful for Google + email users)
+      // 1. If photo changed and is a local URI, upload it first
+      if (
+        profileData.profilePhoto &&
+        profileData.profilePhoto !== initialData.profilePhoto &&
+        (profileData.profilePhoto.startsWith('file://') ||
+          profileData.profilePhoto.startsWith('content://') ||
+          !profileData.profilePhoto.startsWith('http'))
+      ) {
+        const uploadedURL = await uploadProfilePicture(profileData.profilePhoto);
+        if (uploadedURL) {
+          photoURL = uploadedURL;
+        }
+      }
+
+      const updatedProfile = {
+        ...profileData,
+        profilePhoto: photoURL,
+      };
+
+      // 2. Persist to Firestore
+      await saveCurrentUserProfile(updatedProfile);
+
+      // 3. Keep Auth displayName/photoURL in sync
       if (profileData.fullName?.trim()) {
         await updateCurrentAuthProfile({
           displayName: profileData.fullName.trim(),
-          photoURL: profileData.profilePhoto ?? undefined,
+          photoURL: photoURL ?? undefined,
         });
       }
 
-      setInitialData(profileData);
-      Alert.alert(tr('profile.success.title', 'Success'), tr('profile.success.message', 'Profile updated successfully!'));
+      setProfileData(updatedProfile);
+      setInitialData(updatedProfile);
+      Alert.alert(
+        tr('profile.success.title', 'Success'),
+        tr('profile.success.message', 'Profile updated successfully!')
+      );
     } catch (error) {
       console.error('Update error:', error);
       Alert.alert(tr('profile.error.title', 'Error'), tr('profile.error.message', 'Failed to update profile. Please try again.'));
@@ -367,10 +382,10 @@ export const ProfileScreen = () => {
             value={
               LANGUAGES.find((l) => l.value === profileData.preferredLanguage)
                 ? t(
-                    LANGUAGES.find(
-                      (l) => l.value === profileData.preferredLanguage
-                    )!.labelKey
-                  )
+                  LANGUAGES.find(
+                    (l) => l.value === profileData.preferredLanguage
+                  )!.labelKey
+                )
                 : ''
             }
             options={LANGUAGES.map((lang) => t(lang.labelKey))}
@@ -397,9 +412,9 @@ export const ProfileScreen = () => {
             value={
               FARMER_TYPES.find((f) => f.value === profileData.farmerType)
                 ? t(
-                    FARMER_TYPES.find((f) => f.value === profileData.farmerType)!
-                      .labelKey
-                  )
+                  FARMER_TYPES.find((f) => f.value === profileData.farmerType)!
+                    .labelKey
+                )
                 : ''
             }
             options={FARMER_TYPES.map((type) => t(type.labelKey))}
@@ -453,9 +468,8 @@ export const ProfileScreen = () => {
         <TouchableOpacity
           onPress={handleSaveChanges}
           disabled={!hasChanges || isLoading}
-          className={`rounded-xl py-4 mb-4 ${
-            !hasChanges || isLoading ? 'bg-gray-300' : 'bg-primary'
-          }`}
+          className={`rounded-xl py-4 mb-4 ${!hasChanges || isLoading ? 'bg-gray-300' : 'bg-primary'
+            }`}
         >
           {isLoading ? (
             <ActivityIndicator color="white" />

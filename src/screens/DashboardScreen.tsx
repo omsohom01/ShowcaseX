@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // @ts-ignore
@@ -59,7 +60,7 @@ export const DashboardScreen = () => {
   const fetchWeather = async () => {
     setIsLoadingWeather(true);
     setWeatherError(false);
-    
+
     try {
       const data = await getWeatherForCurrentLocation();
       if (data) {
@@ -78,7 +79,7 @@ export const DashboardScreen = () => {
   // Get weather icon component based on weather code
   const getWeatherIconComponent = (weatherCode: number, size: number = 56, color: string = '#FFA500') => {
     const iconType = getWeatherIcon(weatherCode);
-    
+
     switch (iconType) {
       case 'clear':
         return <Sun size={size} color={color} strokeWidth={2} />;
@@ -152,32 +153,51 @@ export const DashboardScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      {/* Professional Navbar (Fixed) */}
+      <View
+        className="bg-white px-4 py-3 flex-row items-center justify-between border-b border-gray-100 shadow-sm"
+        style={{
+          paddingTop: Math.max(insets.top, 12),
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 3,
+          elevation: 3,
+          zIndex: 10,
+        }}
+      >
+        <View className="flex-row items-center">
+          <Image
+            source={require('../../public/KrishakSarthiLogoPNG.png')}
+            style={{ width: 40, height: 40, borderRadius: 8 }}
+            resizeMode="contain"
+          />
+        </View>
+
+        <TouchableOpacity
+          onPress={() => setIsDrawerVisible(true)}
+          className="p-2"
+        >
+          <Ionicons name="menu-outline" size={32} color="#16A34A" />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 24 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View className="bg-primary px-6 pt-12 pb-8 rounded-b-3xl">
-          <View className="flex-row items-center mb-4">
-            <View className="flex-1">
-              <View className="flex-row items-center">
-                <HandHeart size={32} color="#fff" strokeWidth={2} />
-                <Text className="text-white text-3xl font-bold ml-2">
-                  {tr('dashboard.greeting', 'Hello Farmer!')}
-                </Text>
-              </View>
-              <Text className="text-white/90 text-base mt-1">
-                {tr('dashboard.subtitle', 'Welcome to KrishakSharthi')}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setIsDrawerVisible(true)}
-              className="bg-white/20 rounded-full w-12 h-12 items-center justify-center ml-4"
-            >
-              <Ionicons name="menu" size={28} color="#fff" />
-            </TouchableOpacity>
-          </View>
+        {/* Greeting Section */}
+        <View className="px-6 py-8">
+          <Text className="text-gray-500 text-sm font-medium uppercase tracking-wider">
+            {tr('dashboard.greeting', 'Hello Farmer!')}
+          </Text>
+          <Text className="text-gray-900 text-3xl font-bold mt-1">
+            {tr('roleSelection.title', 'KrishakSarthi')}
+          </Text>
+          <Text className="text-gray-600 text-base mt-2">
+            {tr('dashboard.subtitle', 'Welcome to your smart farming assistant')}
+          </Text>
         </View>
 
         {/* Weather Forecast */}
@@ -185,7 +205,7 @@ export const DashboardScreen = () => {
           <Text className="text-gray-900 text-xl font-bold mb-3">
             {tr('dashboard.weather.title', "Today's Weather")}
           </Text>
-          
+
           {isLoadingWeather ? (
             <View
               className="bg-white rounded-xl p-5 shadow-sm items-center justify-center"
@@ -250,7 +270,7 @@ export const DashboardScreen = () => {
                   </Text>
                 </View>
               </View>
-              
+
               {/* Current Weather Details */}
               <View className="flex-row justify-between pt-4 border-t border-gray-100 mb-4">
                 <View className="items-center flex-1">

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Platform,
   Animated,
+  Image,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -25,7 +26,7 @@ export const RoleSelectionScreen = () => {
   const navigation = useNavigation<RoleSelectionNavigationProp>();
   const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || 'en');
   const insets = useSafeAreaInsets();
-  
+
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -77,8 +78,8 @@ export const RoleSelectionScreen = () => {
   return (
     <ScrollView
       className="flex-1 bg-white"
-      contentContainerStyle={{ 
-        padding: 24, 
+      contentContainerStyle={{
+        padding: 24,
         paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 60 : 40),
         paddingBottom: Math.max(insets.bottom, 24) + 24,
         justifyContent: 'center',
@@ -92,14 +93,18 @@ export const RoleSelectionScreen = () => {
           style={{
             opacity: fadeAnim,
             transform: [{ scale: scaleAnim }],
+            alignItems: 'center',
           }}
         >
-          <Text 
-            className="text-4xl font-bold text-gray-900 mb-2 text-center"
-            style={{ 
-              lineHeight: 56,
-              paddingTop: 8,
-              paddingBottom: 8,
+          <Image
+            source={require('../../public/KrishakSarthiLogoBG.jpg')}
+            style={{ width: 150, height: 150, borderRadius: 20 }}
+            resizeMode="contain"
+          />
+          <Text
+            className="text-4xl font-bold text-gray-900 mt-4 text-center"
+            style={{
+              lineHeight: 48,
               includeFontPadding: false,
             }}
           >
@@ -119,10 +124,10 @@ export const RoleSelectionScreen = () => {
           value={
             LANGUAGES.find((l) => l.value === selectedLanguage)
               ? t(
-                  LANGUAGES.find(
-                    (l) => l.value === selectedLanguage
-                  )!.labelKey
-                )
+                LANGUAGES.find(
+                  (l) => l.value === selectedLanguage
+                )!.labelKey
+              )
               : ''
           }
           options={LANGUAGES.map((lang) => t(lang.labelKey))}

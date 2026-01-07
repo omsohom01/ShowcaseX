@@ -56,8 +56,8 @@ export const BuyerSignInScreen = () => {
         return !value.trim()
           ? tr('buyerSignIn.errors.required', 'Required')
           : !/^\d{10}$/.test(value)
-          ? tr('buyerSignIn.errors.invalidMobile', 'Enter a valid 10-digit mobile number')
-          : '';
+            ? tr('buyerSignIn.errors.invalidMobile', 'Enter a valid 10-digit mobile number')
+            : '';
       case 'password':
         return !value ? tr('buyerSignIn.errors.required', 'Required') : '';
       default:
@@ -96,7 +96,7 @@ export const BuyerSignInScreen = () => {
       // Using mobile number as email format for Firebase auth
       const email = `${formData.mobileNumber}@buyer.krishaksarthi.app`;
       const result = await signIn(email, formData.password);
-      
+
       if (!result.success) {
         const title = tr('buyerSignIn.title', 'Buyer Sign In');
 
@@ -124,7 +124,7 @@ export const BuyerSignInScreen = () => {
     } catch (error) {
       console.error('Buyer sign in error:', error);
       Alert.alert(
-        tr('buyerSignIn.title', 'Buyer Sign In'), 
+        tr('buyerSignIn.title', 'Buyer Sign In'),
         tr('buyerSignIn.errors.default', 'Sign in failed.')
       );
     } finally {
@@ -143,12 +143,12 @@ export const BuyerSignInScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       className="flex-1 bg-white"
     >
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingTop: 60, paddingBottom: Math.max(insets.bottom, 24) + 24 }}
+        contentContainerStyle={{ padding: 24, paddingTop: 60, paddingBottom: Math.max(insets.bottom, 24) + 40 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -197,9 +197,8 @@ export const BuyerSignInScreen = () => {
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={!isFormValid() || isLoading}
-          className={`rounded-xl py-4 mb-6 ${
-            !isFormValid() || isLoading ? 'bg-gray-300' : 'bg-green-600'
-          }`}
+          className={`rounded-xl py-4 mb-6 ${!isFormValid() || isLoading ? 'bg-gray-300' : 'bg-green-600'
+            }`}
         >
           {isLoading ? (
             <ActivityIndicator color="white" />

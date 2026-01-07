@@ -9,18 +9,22 @@
     "buyer": "खरीदार",
     "buyerDescription": "किसानों से जुड़ें और कृषि उत्पाद खरीदें",
     "footerNote": "वह भूमिका चुनें जो आपका सबसे अच्छा वर्णन करती है"
-  },  "documentAnalyzer": {
+  },
+  "documentAnalyzer": {
     "title": "दस्तावेज़ विश्लेषक",
     "subtitle": "कृषि दस्तावेजों का विश्लेषण करें"
   },
   "cropDisease": {
     "title": "रोग का पता लगाना",
     "subtitle": "फसल रोगों का पता लगाएं"
-  },  "buyerSignIn": {
+  },
+  "buyerSignIn": {
     "title": "खरीदार साइन इन",
     "subtitle": "वापसी पर स्वागत है, खरीदार",
     "mobileNumber": "मोबाइल नंबर",
     "mobileNumberPlaceholder": "9876543210",
+    "email": "ईमेल",
+    "emailPlaceholder": "आपका@ईमेल.com",
     "password": "पासवर्ड",
     "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
     "signInButton": "साइन इन करें",
@@ -66,7 +70,7 @@
   },
   "buyerDashboard": {
     "greeting": "नमस्ते खरीदार!",
-    "subtitle": "किसानों से ताजा उपज देखें",
+    "subtitle": "आपको ताजा उपज से जोड़ रहा है",
     "language": "भाषा",
     "languagePlaceholder": "भाषा चुनें",
     "summary": {
@@ -219,8 +223,8 @@
     "fullNamePlaceholder": "रंजीत दास",
     "mobileNumber": "मोबाइल नंबर",
     "mobileNumberPlaceholder": "9876543210",
-    "email": "ईमेल (वैकल्पिक)",
-    "emailPlaceholder": "आपका@ईमेल.com",
+    "email": "ईमेल",
+    "emailPlaceholder": "अपना ईमेल दर्ज करें",
     "password": "पासवर्ड",
     "passwordPlaceholder": "पासवर्ड दर्ज करें",
     "confirmPassword": "पासवर्ड की पुष्टि करें",
@@ -267,6 +271,8 @@
     "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
     "preferredLanguage": "भाषा",
     "languagePlaceholder": "भाषा चुनें",
+    "email": "ईमेल",
+    "emailPlaceholder": "अपना ईमेल दर्ज करें",
     "forgotPassword": "पासवर्ड भूल गए?",
     "signInButton": "साइन इन करें",
     "noAccount": "खाता नहीं है?",
@@ -278,7 +284,7 @@
   },
   "dashboard": {
     "greeting": "नमस्ते किसान!",
-    "subtitle": "कृषकशार्थी में आपका स्वागत है",
+    "subtitle": "आपका स्मार्ट कृषि सहायक",
     "predictCrop": "फसल भविष्यवाणी",
     "predictSubtitle": "उपज की भविष्यवाणी प्राप्त करें",
     "analyzeDocument": "दस्तावेज़ विश्लेषक",
@@ -585,10 +591,32 @@
   "profile": {
     "title": "मेरी प्रोफ़ाइल",
     "subtitle": "अपना खाता प्रबंधित करें",
-    "personalInfo": "व्यक्तिगत जानकारी",
+    "tapToChange": "बदलने के लिए टैप करें",
+    "basicInfo": "बुनियादी जानकारी",
+    "fullName": "पूरा नाम",
+    "fullNamePlaceholder": "अपना पूरा नाम दर्ज करें",
+    "mobileNumber": "मोबाइल नंबर",
+    "mobileNumberPlaceholder": "मोबाइल नंबर दर्ज करें",
+    "email": "ईमेल",
+    "emailPlaceholder": "अपना ईमेल दर्ज करें",
+    "locationInfo": "स्थान की जानकारी",
+    "state": "राज्य",
+    "statePlaceholder": "अपना राज्य चुनें",
+    "district": "ज़िला",
+    "districtPlaceholder": "अपना ज़िला दर्ज करें",
+    "languagePreference": "भाषा प्राथमिकता",
+    "preferredLanguage": "पसंदीदा भाषा",
+    "languagePlaceholder": "भाषा चुनें",
     "farmingInfo": "कृषि जानकारी",
+    "farmerType": "किसान का प्रकार",
+    "farmerTypePlaceholder": "किसान का प्रकार चुनें",
+    "landSize": "भूमि का आकार",
+    "landSizePlaceholder": "०",
+    "acres": "एकड़",
+    "preferences": "प्राथमिकताएं",
+    "enableNotification": "सूचनाएं सक्षम करें",
+    "notificationDesc": "अपनी फसलों और मौसम के बारे में अपडेट प्राप्त करें",
     "settings": "सेटिंग्स",
-    "notifications": "सूचनाएं सक्षम करें",
     "saveChanges": "परिवर्तन सहेजें",
     "logoutButton": "लॉगआउट",
     "photoOptions": {

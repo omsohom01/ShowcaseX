@@ -9,18 +9,22 @@
     "buyer": "Buyer",
     "buyerDescription": "Connect with farmers and purchase agricultural products",
     "footerNote": "Choose the role that best describes you"
-  },  "documentAnalyzer": {
+  },
+  "documentAnalyzer": {
     "title": "Document Analyzer",
     "subtitle": "Analyze farming documents"
   },
   "cropDisease": {
     "title": "Disease Detection",
     "subtitle": "Detect crop diseases"
-  },  "buyerSignIn": {
+  },
+  "buyerSignIn": {
     "title": "Buyer Sign In",
     "subtitle": "Welcome back, buyer",
     "mobileNumber": "Mobile Number",
     "mobileNumberPlaceholder": "9876543210",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
     "password": "Password",
     "passwordPlaceholder": "Enter your password",
     "signInButton": "Sign In",
@@ -66,7 +70,7 @@
   },
   "buyerDashboard": {
     "greeting": "Hello Buyer!",
-    "subtitle": "Explore fresh produce from farmers",
+    "subtitle": "Connecting you with fresh produce",
     "language": "Language",
     "languagePlaceholder": "Select language",
     "summary": {
@@ -219,8 +223,8 @@
     "fullNamePlaceholder": "Ranjit Das",
     "mobileNumber": "Mobile Number",
     "mobileNumberPlaceholder": "9876543210",
-    "email": "Email (Optional)",
-    "emailPlaceholder": "your@email.com",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
     "password": "Password",
     "passwordPlaceholder": "Enter password",
     "confirmPassword": "Confirm Password",
@@ -267,6 +271,8 @@
     "passwordPlaceholder": "Enter your password",
     "preferredLanguage": "Language",
     "languagePlaceholder": "Select language",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
     "forgotPassword": "Forgot Password?",
     "signInButton": "Sign In",
     "noAccount": "Don't have an account?",
@@ -278,7 +284,7 @@
   },
   "dashboard": {
     "greeting": "Hello Farmer!",
-    "subtitle": "Welcome to KrishakSharthi",
+    "subtitle": "Your Smart Farming Assistant",
     "predictCrop": "Crop Prediction",
     "predictSubtitle": "Get yield predictions",
     "analyzeDocument": "Document Analyzer",
@@ -559,10 +565,32 @@
   "profile": {
     "title": "My Profile",
     "subtitle": "Manage your account",
-    "personalInfo": "Personal Information",
+    "tapToChange": "Tap to change",
+    "basicInfo": "Basic Information",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter your full name",
+    "mobileNumber": "Mobile Number",
+    "mobileNumberPlaceholder": "Enter mobile number",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "locationInfo": "Location Information",
+    "state": "State",
+    "statePlaceholder": "Select your state",
+    "district": "District",
+    "districtPlaceholder": "Enter your district",
+    "languagePreference": "Language Preference",
+    "preferredLanguage": "Preferred Language",
+    "languagePlaceholder": "Select language",
     "farmingInfo": "Farming Information",
+    "farmerType": "Farmer Type",
+    "farmerTypePlaceholder": "Select farmer type",
+    "landSize": "Land Size",
+    "landSizePlaceholder": "0",
+    "acres": "acres",
+    "preferences": "Preferences",
+    "enableNotification": "Enable Notifications",
+    "notificationDesc": "Get updates on your crops and weather",
     "settings": "Settings",
-    "notifications": "Enable Notifications",
     "saveChanges": "Save Changes",
     "logoutButton": "Logout",
     "photoOptions": {
@@ -624,4 +652,3 @@
     }
   }
 }
-
