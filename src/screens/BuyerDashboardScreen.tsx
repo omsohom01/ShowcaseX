@@ -41,8 +41,7 @@ export const BuyerDashboardScreen = () => {
       });
       if (selectedLang) {
         setSelectedLanguage(selectedLang.value);
-        i18n.changeLanguage(selectedLang.value);
-        // Save language preference
+        // Save language preference (which also changes the language)
         import('../i18n/i18n').then(({ saveLanguage }) => {
           saveLanguage(selectedLang.value);
         });
@@ -157,11 +156,11 @@ export const BuyerDashboardScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Greeting Section */}
-        <View className="px-6 py-8">
+        <View className="px-6 py-6 bg-white">
           <Text className="text-gray-500 text-sm font-medium uppercase tracking-wider">
             {tr('buyerDashboard.greeting', 'Hello Buyer!')}
           </Text>
-          <Text className="text-gray-900 text-3xl font-bold mt-1">
+          <Text className="text-gray-900 text-3xl font-bold mt-2 mb-1 leading-tight" style={{ lineHeight: 44 }}>
             {tr('roleSelection.title', 'KrishakSarthi')}
           </Text>
           <Text className="text-gray-600 text-base mt-2">
