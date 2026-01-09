@@ -99,7 +99,7 @@ export const ProfileScreen = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChange(async (user) => {
       if (!user) {
-        navigation.navigate('SignIn');
+        navigation.navigate('SignIn', {});
         return;
       }
 
@@ -273,7 +273,7 @@ export const ProfileScreen = () => {
               Alert.alert(tr('profile.error.title', 'Error'), result.message);
               return;
             }
-            navigation.navigate('SignIn');
+            navigation.navigate('SignIn', {});
           },
         },
       ]

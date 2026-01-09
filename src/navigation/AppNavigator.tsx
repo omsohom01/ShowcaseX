@@ -18,6 +18,7 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { ViewAllCropsScreen } from '../screens/ViewAllCropScreen';
 import { ContactFarmerScreen } from '../screens/ContactFarmerScreen';
 import { ContactBuyerScreen } from '../screens/ContactBuyerScreen';
+import { ChatScreen } from '../screens/ChatScreen';
 
 // Services
 import {
@@ -44,6 +45,11 @@ export type RootStackParamList = {
   ViewAllCrops: undefined;
   ContactFarmer: undefined;
   ContactBuyer: undefined;
+  Chat: {
+    contactName: string;
+    contactPhone: string;
+    userType: 'farmer' | 'buyer';
+  };
 
   // Crop Prediction
   CropPrediction: undefined;
@@ -96,6 +102,7 @@ export const AppNavigator = () => {
         <Stack.Screen name="ViewAllCrops" component={ViewAllCropsScreen} />
         <Stack.Screen name="ContactFarmer" component={ContactFarmerScreen} />
         <Stack.Screen name="ContactBuyer" component={ContactBuyerScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen} />
 
         {/* Features */}
         <Stack.Screen name="CropPrediction" component={CropPredictionScreen} />
