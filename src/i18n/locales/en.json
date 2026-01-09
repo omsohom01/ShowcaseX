@@ -115,6 +115,17 @@
       "update3Region": "Haryana"
     }
   },
+  "buyerDrawer": {
+    "title": "Buyer Menu",
+    "subtitle": "Navigate to features",
+    "viewAllCrops": "View All Crops",
+    "viewAllCropsSubtitle": "Browse available crops from farmers",
+    "contactFarmer": "Contact Farmer",
+    "contactFarmerSubtitle": "Connect with farmers directly",
+    "profile": "My Profile",
+    "profileSubtitle": "Manage your account settings",
+    "version": "Version"
+  },
   "viewAllCrops": {
     "title": "All Available Crops",
     "subtitle": "Browse and connect with farmers",

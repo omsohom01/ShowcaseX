@@ -65,7 +65,7 @@ const coerceLanguage = (lang: string): SupportedLanguageCode => {
   return isSupportedLanguage(lang) ? lang : 'en';
 };
 
-const getImageMimeType = (fileNameOrUri: string, providedMimeType?: string): string => {
+const getDocumentMimeType = (fileNameOrUri: string, providedMimeType?: string): string => {
   if (providedMimeType && providedMimeType.trim().length > 0) return providedMimeType.trim();
 
   const lower = fileNameOrUri.toLowerCase();
@@ -78,6 +78,8 @@ const getImageMimeType = (fileNameOrUri: string, providedMimeType?: string): str
       return 'image/png';
     case 'webp':
       return 'image/webp';
+    case 'pdf':
+      return 'application/pdf';
     default:
       return 'application/octet-stream';
   }
@@ -219,43 +221,55 @@ export const analyzeDocument = async (params: {
 
   const targetLanguage = coerceLanguage(language);
   const languageName = LANGUAGE_NAME[targetLanguage];
-  const detectedMimeType = getImageMimeType(fileName || fileUri, mimeType);
+  const detectedMimeType = getDocumentMimeType(fileName || fileUri, mimeType);
 
-  if (!detectedMimeType.startsWith('image/')) {
-    throw new Error('Currently only image files (JPG, PNG, WEBP) are supported for analysis.');
+  // Validate file type - accept both images and PDFs
+  const isImage = detectedMimeType.startsWith('image/');
+  const isPDF = detectedMimeType === 'application/pdf';
+  
+  if (!isImage && !isPDF) {
+    throw new Error('Only image files (JPG, PNG, WEBP) and PDF documents are supported for analysis.');
   }
 
-  const imageBase64 = await fileToBase64(fileUri);
+  const documentBase64 = await fileToBase64(fileUri);
   const model = getVisionModel();
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     model
   )}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
+  const fileTypeText = isPDF ? 'PDF document' : 'image of a document';
   const prompt = `You are an expert document analyzer for farmers, especially in India.
 
 IMPORTANT:
 - Respond ONLY in ${languageName}.
-- Respond as STRICT JSON only (no markdown, no extra text).
-- The user provided an image of a document.
+- Respond as STRICT JSON only (no markdown, no extra text, no code blocks).
+- The user provided a ${fileTypeText}.
 
 Your job:
-1) Identify what the document is (e.g., loan notice, KCC, land record, insurance policy, mandi receipt, government scheme letter, fertilizer invoice, soil test report, etc.).
-2) Extract the most important details farmers care about: dates, amounts, deadlines, reference numbers, names, crop/land details, bank/office names, and any required steps.
-3) Give clear, practical next steps that help the farmer.
+1) Carefully read and identify what the document is (e.g., loan notice, KCC, land record, insurance policy, mandi receipt, government scheme letter, fertilizer invoice, soil test report, subsidy letter, lease agreement, etc.).
+2) Extract ALL important details farmers care about: dates, amounts, deadlines, reference numbers, names, crop/land details, bank/office names, account numbers, and any required steps.
+3) List EVERY key point separately - do not miss any important information.
+4) Give clear, practical next steps that help the farmer.
 
 Return JSON exactly in this shape:
 {
-  "summary": "One clear paragraph (6-10 sentences) in ${languageName} that explains the entire document in simple terms for a farmer",
-  "keyPoints": ["3-7 bullet-like points with specific details"],
-  "actionRequired": "Clear action the farmer should take (with deadlines if present)"
+  "summary": "One comprehensive paragraph (8-12 sentences) in ${languageName} that explains the entire document in simple terms for a farmer. Include document type, issuing authority, purpose, and all critical information.",
+  "keyPoints": ["List EVERY important detail as separate points. Include: document type, dates, amounts, reference numbers, names, deadlines, requirements, and specific terms. Aim for 5-10 points depending on document complexity. Each point should be clear and specific in ${languageName}."],
+  "actionRequired": "Clear, step-by-step actions the farmer should take (with specific deadlines if present). If no action needed, say 'Keep this document safe for your records' in ${languageName}."
 }
 
-If the image is unclear or not a document, still return JSON and ask for a clearer photo (good lighting, full page visible, no blur).`;
+CRITICAL RULES:
+- Extract EVERY piece of important information - do not summarize or skip details
+- Each keyPoint should be a distinct, specific piece of information
+- Include ALL dates, amounts, reference numbers, and names found in the document
+- If the document is unclear or illegible, still return valid JSON and ask for a clearer copy
+- Ensure all text is in ${languageName} as specified
+- Do NOT wrap the JSON in markdown code blocks - return pure JSON only`;
 
   const requestBody = {
     systemInstruction: {
-      parts: [{ text: `Always respond in ${languageName}. Return JSON only.` }],
+      parts: [{ text: `You are an expert document analyzer for farmers. Always respond in ${languageName}. Return ONLY valid JSON without any markdown formatting or code blocks.` }],
     },
     contents: [
       {
@@ -264,7 +278,7 @@ If the image is unclear or not a document, still return JSON and ask for a clear
           {
             inlineData: {
               mimeType: detectedMimeType,
-              data: imageBase64,
+              data: documentBase64,
             },
           },
           { text: prompt },
@@ -272,9 +286,9 @@ If the image is unclear or not a document, still return JSON and ask for a clear
       },
     ],
     generationConfig: {
-      temperature: 0.2,
-      topP: 0.85,
-      maxOutputTokens: 2048,
+      temperature: 0.1,
+      topP: 0.9,
+      maxOutputTokens: 3072,
     },
   };
 
@@ -306,28 +320,40 @@ If the image is unclear or not a document, still return JSON and ask for a clear
   }
 
   try {
-    const jsonMatch = contentText.match(/\{[\s\S]*\}/);
-    const raw = jsonMatch ? jsonMatch[0] : contentText;
+    // Remove markdown code blocks if present
+    let cleanText = contentText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    
+    // Extract JSON object
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+    const raw = jsonMatch ? jsonMatch[0] : cleanText;
     const parsed = JSON.parse(raw);
+    
+    // Validate and return with proper defaults
     return {
       summary:
         typeof parsed?.summary === 'string' && parsed.summary.trim().length > 0
           ? parsed.summary.trim()
-          : 'Unable to extract summary from the document.',
-      keyPoints: Array.isArray(parsed?.keyPoints)
-        ? parsed.keyPoints.map((x: unknown) => String(x))
-        : ['No key points extracted'],
+          : 'Unable to extract summary from the document. Please ensure the document is clear and readable.',
+      keyPoints: Array.isArray(parsed?.keyPoints) && parsed.keyPoints.length > 0
+        ? parsed.keyPoints.map((x: unknown) => String(x).trim()).filter(Boolean)
+        : ['No key points could be extracted from the document. Please try uploading a clearer version.'],
       actionRequired:
         typeof parsed?.actionRequired === 'string' && parsed.actionRequired.trim().length > 0
           ? parsed.actionRequired.trim()
-          : 'No specific action required.',
+          : 'Keep this document safe for your records.',
     };
   } catch (parseError) {
     console.error('Error parsing Gemini response:', parseError);
+    console.error('Raw response:', contentText);
     return {
-      summary: contentText,
-      keyPoints: ['Please upload a clearer image of the document (full page, good light, no blur).'],
-      actionRequired: 'Upload a clearer document image for better analysis',
+      summary: 'The document analysis could not be completed. Please ensure you uploaded a clear, readable document or PDF file.',
+      keyPoints: [
+        'Upload a high-quality image or PDF',
+        'Ensure all text is visible and not cut off',
+        'Make sure the document is well-lit and in focus',
+        'For PDFs, ensure they are not password-protected or corrupted'
+      ],
+      actionRequired: 'Re-upload the document with better quality for accurate analysis',
     };
   }
 };
@@ -527,7 +553,7 @@ export const detectCropDisease = async (params: {
 
   // Convert image to base64
   const imageBase64 = await fileToBase64(input.imageUri);
-  const mimeType = getImageMimeType(input.imageUri);
+  const mimeType = getDocumentMimeType(input.imageUri);
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     model

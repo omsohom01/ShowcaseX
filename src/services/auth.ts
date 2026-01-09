@@ -57,6 +57,7 @@ export interface UserProfileData {
   notificationsEnabled?: boolean;
   profilePhoto?: string | null;
   userType?: 'farmer' | 'buyer';
+  role?: 'farmer' | 'buyer';
   companyName?: string;
   businessType?: string;
   updatedAt?: unknown;

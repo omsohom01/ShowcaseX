@@ -12,13 +12,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 // @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ShoppingBag, TrendingUp, Package, MapPin, Phone, Users, Leaf, Menu } from 'lucide-react-native';
+import { TrendingUp, MapPin, Users, Leaf, Menu } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { Dropdown } from '../components/Dropdown';
-import { LANGUAGES } from '../constants/data';
+import { BuyerSideDrawer } from '../components/BuyerSideDrawer';
 import { localizeNumber } from '../utils/numberLocalization';
 
 type BuyerDashboardNavigationProp = NativeStackNavigationProp<
@@ -28,30 +27,8 @@ type BuyerDashboardNavigationProp = NativeStackNavigationProp<
 
 export const BuyerDashboardScreen = () => {
   const { t, i18n } = useTranslation();
-  const navigation = useNavigation<BuyerDashboardNavigationProp>(); const insets = useSafeAreaInsets(); const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || 'en');
-
-  // Handle language change
-  const handleLanguageChange = (value: string | { label: string; value: string }) => {
-    try {
-      const valueString = typeof value === 'string' ? value : value.value;
-      const selectedLang = LANGUAGES.find((lang) => {
-        try {
-          return t(lang.labelKey) === valueString;
-        } catch {
-          return lang.value.toUpperCase() === valueString;
-        }
-      });
-      if (selectedLang) {
-        setSelectedLanguage(selectedLang.value);
-        // Save language preference (which also changes the language)
-        import('../i18n/i18n').then(({ saveLanguage }) => {
-          saveLanguage(selectedLang.value);
-        });
-      }
-    } catch (error) {
-      console.error('Language change error:', error);
-    }
-  };
+  const navigation = useNavigation<BuyerDashboardNavigationProp>(); const insets = useSafeAreaInsets();
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   const tr = (key: string, fallback: string) => {
     try {
@@ -167,102 +144,50 @@ export const BuyerDashboardScreen = () => {
         }} />
       </View>
 
-      {/* Professional Header */}
-      <LinearGradient
-        colors={['#3B82F6', '#2563EB', '#1D4ED8']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{
-          paddingTop: Math.max(insets.top, 12) + 12,
-          paddingBottom: 20,
-          paddingHorizontal: 20,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 12,
-          elevation: 8,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              borderRadius: 12,
-              padding: 6,
-              marginRight: 12,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3,
-            }}>
-              <Image
-                source={require('../../public/KrishakSarthiLogoPNG.png')}
-                style={{ width: 36, height: 36, borderRadius: 8 }}
-                resizeMode="contain"
-              />
-            </View>
-            <View>
-              <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600', opacity: 0.9 }}>
-                {tr('buyerDashboard.greeting', 'Hello Buyer!')}
-              </Text>
-              <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '800', letterSpacing: 0.3 }}>
-                {tr('roleSelection.title', 'KrishakSarthi')}
-              </Text>
-            </View>
-          </View>
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Profile')}
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: 12,
-              padding: 10,
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="person-circle-outline" size={28} color="#FFFFFF" />
-          </TouchableOpacity>
+
+      {/* Header with Menu */}
+      <View style={{
+        paddingTop: Math.max(insets.top, 12) + 12,
+        paddingBottom: 16,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Image
+            source={require('../../public/KrishakSarthiLogoPNG.png')}
+            style={{ width: 32, height: 32, marginRight: 12 }}
+            resizeMode="contain"
+          />
+          <View>
+            <Text style={{ color: '#111827', fontSize: 20, fontWeight: '800' }}>
+              {tr('roleSelection.title', 'KrishakSarthi')}
+            </Text>
+            <Text style={{ color: '#6B7280', fontSize: 12, marginTop: 2 }}>
+              {tr('buyerDashboard.subtitle', 'Connecting you with fresh produce')}
+            </Text>
+          </View>
         </View>
-        
-        <Text style={{ color: '#FFFFFF', fontSize: 14, marginTop: 8, opacity: 0.95 }}>
-          {tr('buyerDashboard.subtitle', 'Connecting you with fresh produce')}
-        </Text>
-      </LinearGradient>
+        <TouchableOpacity
+          onPress={() => setDrawerVisible(true)}
+          style={{
+            backgroundColor: '#F3F4F6',
+            borderRadius: 12,
+            padding: 10,
+          }}
+          activeOpacity={0.7}
+        >
+          <Menu size={24} color="#111827" strokeWidth={2} />
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 24 }}
         showsVerticalScrollIndicator={false}
       >
-
-        {/* Language Selector */}
-        <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
-          <Dropdown
-            label={tr('buyerDashboard.language', 'Language')}
-            placeholder={tr('buyerDashboard.languagePlaceholder', 'Select language')}
-            value={
-              LANGUAGES.find((l) => l.value === selectedLanguage)
-                ? (() => {
-                  try {
-                    const lang = LANGUAGES.find((l) => l.value === selectedLanguage);
-                    return lang ? t(lang.labelKey) : '';
-                  } catch {
-                    return '';
-                  }
-                })()
-                : ''
-            }
-            options={LANGUAGES.map((lang) => {
-              try {
-                return t(lang.labelKey);
-              } catch {
-                return lang.value.toUpperCase();
-              }
-            })}
-            onSelect={handleLanguageChange}
-          />
-        </View>
 
         {/* Market Summary */}
         <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
@@ -356,92 +281,6 @@ export const BuyerDashboardScreen = () => {
               </View>
             </View>
           </LinearGradient>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 16 }}>
-            {tr('buyerDashboard.quickActions.title', 'Quick Actions')}
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ViewAllCrops')}
-              style={{ flex: 1 }}
-              activeOpacity={0.7}
-            >
-              <LinearGradient
-                colors={['#FFFFFF', '#F8FAFC']}
-                style={{
-                  borderRadius: 16,
-                  padding: 18,
-                  alignItems: 'center',
-                  borderWidth: 1,
-                  borderColor: '#E5E7EB',
-                  shadowColor: '#10B981',
-                  shadowOffset: { width: 0, height: 3 },
-                  shadowOpacity: 0.12,
-                  shadowRadius: 8,
-                  elevation: 3,
-                }}
-              >
-                <LinearGradient
-                  colors={['#D1FAE5', '#A7F3D0']}
-                  style={{
-                    borderRadius: 14,
-                    width: 56,
-                    height: 56,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 12,
-                  }}
-                >
-                  <Package size={28} color="#10B981" strokeWidth={2.5} />
-                </LinearGradient>
-                <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>
-                  {tr('buyerDashboard.quickActions.viewAllCrops', 'View All Crops')}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ContactFarmer')}
-              style={{ flex: 1 }}
-              activeOpacity={0.7}
-            >
-              <LinearGradient
-                colors={['#FFFFFF', '#F8FAFC']}
-                style={{
-                  borderRadius: 16,
-                  padding: 18,
-                  alignItems: 'center',
-                  borderWidth: 1,
-                  borderColor: '#E5E7EB',
-                  shadowColor: '#3B82F6',
-                  shadowOffset: { width: 0, height: 3 },
-                  shadowOpacity: 0.12,
-                  shadowRadius: 8,
-                  elevation: 3,
-                }}
-              >
-                <LinearGradient
-                  colors={['#DBEAFE', '#BFDBFE']}
-                  style={{
-                    borderRadius: 14,
-                    width: 56,
-                    height: 56,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 12,
-                  }}
-                >
-                  <Phone size={28} color="#3B82F6" strokeWidth={2.5} />
-                </LinearGradient>
-                <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700', textAlign: 'center' }}>
-                  {tr('buyerDashboard.quickActions.contactFarmer', 'Contact Farmer')}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Available Crops */}
@@ -576,6 +415,16 @@ export const BuyerDashboardScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* Side Drawer */}
+      <BuyerSideDrawer
+        visible={drawerVisible}
+        onClose={() => setDrawerVisible(false)}
+        onNavigate={(screen) => {
+          setDrawerVisible(false);
+          navigation.navigate(screen);
+        }}
+      />
     </View>
   );
 };

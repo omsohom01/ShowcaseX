@@ -39,13 +39,13 @@ export const DashboardScreen = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(true);
   const [weatherError, setWeatherError] = useState(false);
-  
+
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const weatherCardScale = useRef(new Animated.Value(0.9)).current;
   const farmCardScale = useRef(new Animated.Value(0.9)).current;
-  
+
   // Hardcoded: 2 buyers have contacted this farmer
   const notificationCount = 2;
 
@@ -66,7 +66,7 @@ export const DashboardScreen = () => {
   // Fetch weather data on component mount
   useEffect(() => {
     fetchWeather();
-    
+
     // Entrance animations
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -138,7 +138,7 @@ export const DashboardScreen = () => {
 
     // For clear weather, show moon at night, sun during day
     if (iconType === 'clear') {
-      return isNight 
+      return isNight
         ? <Moon size={size} color="#60A5FA" strokeWidth={2.5} />
         : <Sun size={size} color="#FBBF24" strokeWidth={2.5} />;
     }
@@ -177,7 +177,7 @@ export const DashboardScreen = () => {
       case 'thunderstorm':
         return <CloudLightning size={size} color="#6366F1" strokeWidth={2} />;
       default:
-        return isNight 
+        return isNight
           ? <Moon size={size} color="#E0E7FF" strokeWidth={2.5} />
           : <Sun size={size} color="#FCD34D" strokeWidth={2.5} />;
     }
@@ -192,8 +192,8 @@ export const DashboardScreen = () => {
     const hours = date.getHours();
     const isPM = hours >= 12;
     const displayHours = hours % 12 || 12;
-    const ampmText = isPM 
-      ? tr('dashboard.weather.pm', 'PM') 
+    const ampmText = isPM
+      ? tr('dashboard.weather.pm', 'PM')
       : tr('dashboard.weather.am', 'AM');
     return `${localizeNumber(displayHours, i18n.language)} ${ampmText.toLowerCase()}`;
   };
@@ -237,124 +237,35 @@ export const DashboardScreen = () => {
   };
 
   return (
-    <View className="flex-1">
-      {/* Village Sky Gradient Background */}
-      <LinearGradient
-        colors={['#E0F2FE', '#F0F9FF', '#F0FDF4', '#FFFBEB']}
-        locations={[0, 0.3, 0.7, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-      
-      {/* Decorative Background Elements - Sun and Clouds */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        {/* Sun Glow */}
-        <View style={{
-          position: 'absolute',
-          top: 60,
-          right: 30,
-          width: 120,
-          height: 120,
-          borderRadius: 60,
-          backgroundColor: '#FCD34D',
-          opacity: 0.2,
-        }} />
-        {/* Cloud-like shapes */}
-        <View style={{
-          position: 'absolute',
-          top: 150,
-          left: 20,
-          width: 180,
-          height: 180,
-          borderRadius: 90,
-          backgroundColor: '#FFFFFF',
-          opacity: 0.3,
-        }} />
-        <View style={{
-          position: 'absolute',
-          bottom: 100,
-          right: 40,
-          width: 200,
-          height: 200,
-          borderRadius: 100,
-          backgroundColor: '#BBF7D0',
-          opacity: 0.15,
-        }} />
-      </View>
+    <View className="flex-1" style={{ backgroundColor: '#FFFFFF' }}>
 
-      {/* Professional Navbar (Fixed) */}
+      {/* Simple Navbar */}
       <View
-        className="bg-white/90 backdrop-blur flex-row items-center justify-between border-b border-gray-100"
         style={{
+          backgroundColor: '#FFFFFF',
           paddingTop: Math.max(insets.top, 12),
           paddingBottom: 12,
           paddingHorizontal: 20,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.08,
-          shadowRadius: 4,
-          elevation: 4,
-          zIndex: 10,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottomWidth: 1,
+          borderBottomColor: '#F3F4F6',
         }}
       >
-        <Animated.View 
-          className="flex-row items-center"
-          style={{
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          }}
-        >
-          <View style={{
-            shadowColor: '#16A34A',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.25,
-            shadowRadius: 8,
-            elevation: 5,
-            borderRadius: 14,
-            backgroundColor: 'white',
-          }}>
-            <Image
-              source={require('../../public/KrishakSarthiLogoPNG.png')}
-              style={{ width: 48, height: 48, borderRadius: 14 }}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={{ marginLeft: 12 }}>
-            <Text
-              style={{
-                color: '#16A34A',
-                fontSize: 16,
-                fontWeight: '600',
-                letterSpacing: -0.2,
-              }}
-            >
-              {tr('roleSelection.title', 'KrishakSarthi')}
-            </Text>
-            <View
-              style={{
-                height: 2,
-                width: '100%',
-                backgroundColor: '#22C55E',
-                borderRadius: 1,
-                marginTop: 2,
-              }}
-            />
-          </View>
-        </Animated.View>
+        <Image
+          source={require('../../public/KrishakSarthiLogoPNG.png')}
+          style={{ width: 48, height: 48 }}
+          resizeMode="contain"
+        />
 
         <TouchableOpacity
           onPress={() => setIsDrawerVisible(true)}
           style={{
-            borderRadius: 14,
-            backgroundColor: '#F0FDF4',
-            padding: 10,
-            shadowColor: '#16A34A',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 2,
+            padding: 8,
           }}
         >
-          <Ionicons name="menu-outline" size={28} color="#16A34A" />
+          <Ionicons name="menu-outline" size={28} color="#000000" />
         </TouchableOpacity>
       </View>
 
@@ -363,56 +274,15 @@ export const DashboardScreen = () => {
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 24 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Greeting Section - Village Theme */}
-        <Animated.View 
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 20,
-            paddingBottom: 12,
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <Sprout size={20} color="#22C55E" strokeWidth={2.5} />
-            <Text 
-              style={{ 
-                color: '#16A34A', 
-                fontSize: 14, 
-                fontWeight: '700',
-                letterSpacing: 0.5,
-                marginLeft: 8,
-                textTransform: 'uppercase'
-              }}
-            >
-              {tr('dashboard.greeting', 'Hello Farmer!')}
-            </Text>
-          </View>
-          
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-            <Leaf size={16} color="#16A34A" strokeWidth={2.5} />
-            <Text 
-              style={{ 
-                color: '#6B7280', 
-                fontSize: 14, 
-                fontWeight: '500',
-                marginLeft: 8,
-                lineHeight: 20,
-              }}
-            >
-              {tr('dashboard.subtitle', 'Welcome to your smart farming assistant')}
-            </Text>
-          </View>
-        </Animated.View>
 
         {/* Weather Forecast - Village Theme */}
         <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
             <Sun size={24} color="#F59E0B" strokeWidth={2.5} />
-            <Text 
-              style={{ 
-                color: '#111827', 
-                fontSize: 20, 
+            <Text
+              style={{
+                color: '#111827',
+                fontSize: 20,
                 fontWeight: '800',
                 marginLeft: 10,
                 letterSpacing: -0.3,
@@ -711,10 +581,10 @@ export const DashboardScreen = () => {
         <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
             <Wheat size={24} color="#16A34A" strokeWidth={2.5} />
-            <Text 
-              style={{ 
-                color: '#111827', 
-                fontSize: 20, 
+            <Text
+              style={{
+                color: '#111827',
+                fontSize: 20,
                 fontWeight: '800',
                 marginLeft: 10,
                 letterSpacing: -0.3,
@@ -764,20 +634,20 @@ export const DashboardScreen = () => {
                   <Wheat size={34} color="#FFFFFF" strokeWidth={2.5} />
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
-                  <Text 
-                    style={{ 
-                      color: '#6B7280', 
-                      fontSize: 14, 
+                  <Text
+                    style={{
+                      color: '#6B7280',
+                      fontSize: 14,
                       fontWeight: '600',
                       marginBottom: 6,
                     }}
                   >
                     {tr('dashboard.farmSummary.crops', 'Crops')}
                   </Text>
-                  <Text 
-                    style={{ 
-                      color: '#111827', 
-                      fontSize: 22, 
+                  <Text
+                    style={{
+                      color: '#111827',
+                      fontSize: 22,
                       fontWeight: '800',
                       letterSpacing: -0.5,
                       lineHeight: 28,
@@ -811,20 +681,20 @@ export const DashboardScreen = () => {
                   <Ruler size={34} color="#FFFFFF" strokeWidth={2.5} />
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
-                  <Text 
-                    style={{ 
-                      color: '#6B7280', 
-                      fontSize: 14, 
+                  <Text
+                    style={{
+                      color: '#6B7280',
+                      fontSize: 14,
                       fontWeight: '600',
                       marginBottom: 6,
                     }}
                   >
                     {tr('dashboard.farmSummary.area', 'Area')}
                   </Text>
-                  <Text 
-                    style={{ 
-                      color: '#111827', 
-                      fontSize: 22, 
+                  <Text
+                    style={{
+                      color: '#111827',
+                      fontSize: 22,
                       fontWeight: '800',
                       letterSpacing: -0.5,
                       lineHeight: 28,
@@ -858,17 +728,17 @@ export const DashboardScreen = () => {
                   <Heart size={34} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
-                  <Text 
-                    style={{ 
-                      color: '#6B7280', 
-                      fontSize: 14, 
+                  <Text
+                    style={{
+                      color: '#6B7280',
+                      fontSize: 14,
                       fontWeight: '600',
                       marginBottom: 8,
                     }}
                   >
                     {tr('dashboard.farmSummary.status', 'Status')}
                   </Text>
-                  <View style={{ 
+                  <View style={{
                     backgroundColor: '#D1FAE5',
                     paddingHorizontal: 16,
                     paddingVertical: 8,
@@ -880,10 +750,10 @@ export const DashboardScreen = () => {
                     shadowRadius: 4,
                     elevation: 2,
                   }}>
-                    <Text 
-                      style={{ 
-                        color: '#047857', 
-                        fontSize: 18, 
+                    <Text
+                      style={{
+                        color: '#047857',
+                        fontSize: 18,
                         fontWeight: '800',
                         letterSpacing: -0.3,
                       }}
@@ -901,10 +771,10 @@ export const DashboardScreen = () => {
         <View style={{ paddingHorizontal: 20, marginTop: 24, marginBottom: 28 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
             <Tractor size={24} color="#DC2626" strokeWidth={2.5} />
-            <Text 
-              style={{ 
-                color: '#111827', 
-                fontSize: 20, 
+            <Text
+              style={{
+                color: '#111827',
+                fontSize: 20,
                 fontWeight: '800',
                 marginLeft: 10,
                 letterSpacing: -0.3,
@@ -958,10 +828,10 @@ export const DashboardScreen = () => {
                       }}
                     >
                       <MapPin size={13} color="#FFFFFF" strokeWidth={2.5} />
-                      <Text 
-                        style={{ 
-                          color: '#FFFFFF', 
-                          fontSize: 13, 
+                      <Text
+                        style={{
+                          color: '#FFFFFF',
+                          fontSize: 13,
                           fontWeight: '800',
                           marginLeft: 6,
                         }}
@@ -970,10 +840,10 @@ export const DashboardScreen = () => {
                       </Text>
                     </LinearGradient>
                   </View>
-                  <Text 
-                    style={{ 
-                      color: '#111827', 
-                      fontSize: 16, 
+                  <Text
+                    style={{
+                      color: '#111827',
+                      fontSize: 16,
                       fontWeight: '800',
                       marginBottom: 8,
                       lineHeight: 24,
@@ -982,10 +852,10 @@ export const DashboardScreen = () => {
                   >
                     {update.title}
                   </Text>
-                  <Text 
-                    style={{ 
-                      color: '#6B7280', 
-                      fontSize: 14, 
+                  <Text
+                    style={{
+                      color: '#6B7280',
+                      fontSize: 14,
                       fontWeight: '500',
                       lineHeight: 22,
                     }}

@@ -13,7 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Sprout, ArrowLeft } from 'lucide-react-native';
+import { Sprout, ShoppingBasket, ArrowLeft } from 'lucide-react-native';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import { CustomInput, PasswordInput } from '../components/CustomInput';
 import { Dropdown } from '../components/Dropdown';
 import { INDIAN_STATES, FARMER_TYPES, LANGUAGES, INDIAN_DISTRICTS } from '../constants/data';
@@ -23,12 +24,15 @@ import {
   signUp,
   saveCurrentUserProfile,
   updateCurrentAuthProfile,
+  signInWithGoogle,
 } from '../services/auth';
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'SignUp'
 >;
+
+type SignUpScreenRouteProp = RouteProp<RootStackParamList, 'SignUp'>;
 
 interface FormData {
   fullName: string;
@@ -50,9 +54,11 @@ interface FormErrors {
 export const SignUpScreen = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation<SignUpScreenNavigationProp>();
+  const route = useRoute<SignUpScreenRouteProp>();
   const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+  const role = route.params?.role || 'farmer';
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     mobileNumber: '',
@@ -152,12 +158,18 @@ export const SignUpScreen = () => {
       'email',
       'password',
       'confirmPassword',
-      'state',
-      'district',
-      'preferredLanguage',
-      'farmerType',
-      'landSize',
     ];
+    
+    // Add farmer-specific fields only for farmers
+    if (role === 'farmer') {
+      requiredFields.push(
+        'state',
+        'district',
+        'preferredLanguage',
+        'farmerType',
+        'landSize'
+      );
+    }
 
     requiredFields.forEach((field) => {
       const error = validateField(field, formData[field]);
@@ -184,21 +196,33 @@ export const SignUpScreen = () => {
         await updateCurrentAuthProfile({ displayName: formData.fullName.trim() });
       }
 
-      // Save profile to Firestore
-      await saveCurrentUserProfile({
+      // Save profile to Firestore with role
+      const profileData: any = {
         fullName: formData.fullName,
         mobileNumber: formData.mobileNumber,
         email: formData.email,
-        state: formData.state,
-        district: formData.district,
-        preferredLanguage: formData.preferredLanguage,
-        farmerType: formData.farmerType,
-        landSize: formData.landSize,
+        role: role, // Save the role
         notificationsEnabled: true,
         profilePhoto: null,
-      });
+      };
 
-      navigation.navigate('Dashboard');
+      // Add farmer-specific fields only for farmers
+      if (role === 'farmer') {
+        profileData.state = formData.state;
+        profileData.district = formData.district;
+        profileData.preferredLanguage = formData.preferredLanguage;
+        profileData.farmerType = formData.farmerType;
+        profileData.landSize = formData.landSize;
+      }
+
+      await saveCurrentUserProfile(profileData);
+
+      // Navigate based on role
+      if (role === 'buyer') {
+        navigation.navigate('BuyerDashboard');
+      } else {
+        navigation.navigate('Dashboard');
+      }
     } catch (error) {
       console.error('Signup error:', error);
       Alert.alert(tr('signUp.title', 'Sign Up'), tr('signUp.errors.default', 'Sign up failed.'));
@@ -227,7 +251,16 @@ export const SignUpScreen = () => {
         Alert.alert(tr('signUp.title', 'Sign Up'), result.message);
         return;
       }
-      navigation.navigate('Dashboard');
+      
+      // Save role to profile for Google sign-ups
+      await saveCurrentUserProfile({ role });
+      
+      // Navigate based on role
+      if (role === 'buyer') {
+        navigation.navigate('BuyerDashboard');
+      } else {
+        navigation.navigate('Dashboard');
+      }
     } catch (error) {
       console.error('Google sign-up error:', error);
       Alert.alert(tr('signUp.title', 'Sign Up'), tr('signUp.googleError', 'Google sign-up failed.'));
@@ -243,12 +276,19 @@ export const SignUpScreen = () => {
       'email',
       'password',
       'confirmPassword',
-      'state',
-      'district',
-      'preferredLanguage',
-      'farmerType',
-      'landSize',
     ];
+    
+    // Add farmer-specific fields only for farmers
+    if (role === 'farmer') {
+      requiredFields.push(
+        'state',
+        'district',
+        'preferredLanguage',
+        'farmerType',
+        'landSize'
+      );
+    }
+    
     return (
       requiredFields.every((field) => formData[field as keyof FormData]) &&
       Object.keys(errors).every((key) => !errors[key])
@@ -350,24 +390,28 @@ export const SignUpScreen = () => {
                 width: 50,
                 height: 50,
                 borderRadius: 25,
-                backgroundColor: '#16A34A',
+                backgroundColor: role === 'farmer' ? '#16A34A' : '#10B981',
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginRight: 12,
-                shadowColor: '#16A34A',
+                shadowColor: role === 'farmer' ? '#16A34A' : '#10B981',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.3,
                 shadowRadius: 8,
                 elevation: 6,
               }}>
-                <Sprout size={26} color="white" strokeWidth={2.5} />
+                {role === 'farmer' ? (
+                  <Sprout size={26} color="white" strokeWidth={2.5} />
+                ) : (
+                  <ShoppingBasket size={26} color="white" strokeWidth={2.5} />
+                )}
               </View>
               <View style={{ flex: 1 }}>
                 <Text 
                   className="text-gray-900 font-extrabold" 
                   style={{ fontSize: 30, lineHeight: 36, letterSpacing: -0.5 }}
                 >
-                  {tr('signUp.title', 'Create Account')}
+                  {tr('signUp.title', role === 'farmer' ? 'Farmer Sign Up' : 'Buyer Sign Up')}
                 </Text>
               </View>
             </View>
@@ -445,15 +489,18 @@ export const SignUpScreen = () => {
             />
           </View>
 
-          {/* Personal Information Section */}
-          <Text 
-            className="text-gray-800 font-bold" 
-            style={{ fontSize: 16, marginBottom: 12, marginTop: 16, letterSpacing: 0.3 }}
-          >
-            {tr('signUp.personalInfo', 'Personal Information')}
-          </Text>
+          {/* Farmer-Specific Fields */}
+          {role === 'farmer' && (
+            <>
+              {/* Personal Information Section */}
+              <Text 
+                className="text-gray-800 font-bold" 
+                style={{ fontSize: 16, marginBottom: 12, marginTop: 16, letterSpacing: 0.3 }}
+              >
+                {tr('signUp.personalInfo', 'Personal Information')}
+              </Text>
 
-          <Dropdown
+              <Dropdown
             label={tr('signUp.state', 'State')}
             placeholder={tr('signUp.statePlaceholder', 'Select your state')}
             value={
@@ -600,6 +647,8 @@ export const SignUpScreen = () => {
             suffix={tr('signUp.acres', 'acres')}
             error={errors.landSize}
           />
+            </>
+          )}
         </View>
 
         {/* Submit Button */}
@@ -642,7 +691,7 @@ export const SignUpScreen = () => {
           <Text className="text-gray-600 text-base text-center">
             {tr('signUp.alreadyHaveAccount', 'Already have an account?')}{' '}
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+          <TouchableOpacity onPress={() => navigation.navigate('SignIn', { role })}>
             <Text className="text-primary font-semibold text-base">
               {tr('signUp.signIn', 'Sign In')}
             </Text>

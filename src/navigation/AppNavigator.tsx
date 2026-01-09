@@ -4,10 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 // Screens
 import { RoleSelectionScreen } from '../screens/RoleSelectionScreen';
+import { RoleChoiceScreen } from '../screens/RoleChoiceScreen';
 import { SignUpScreen } from '../screens/SignUpScreen';
 import { SignInScreen } from '../screens/SignInScreen';
-import { BuyerSignInScreen } from '../screens/BuyerSignInScreen';
-import { BuyerSignUpScreen } from '../screens/BuyerSignUpScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { BuyerDashboardScreen } from '../screens/BuyerDashboardScreen';
 import { CropPredictionScreen } from '../screens/CropPredictionScreen';
@@ -31,12 +30,11 @@ import {
 ======================= */
 export type RootStackParamList = {
   RoleSelection: undefined;
+  RoleChoice: undefined; // New screen for choosing Farmer or Buyer after Sign Up
 
   // Auth
-  SignIn: undefined;
-  SignUp: undefined;
-  BuyerSignIn: undefined;
-  BuyerSignUp: undefined;
+  SignIn: { role?: 'farmer' | 'buyer' };
+  SignUp: { role: 'farmer' | 'buyer' };
 
   // Dashboards
   Dashboard: undefined;
@@ -84,12 +82,11 @@ export const AppNavigator = () => {
       >
         {/* Role Selection */}
         <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+        <Stack.Screen name="RoleChoice" component={RoleChoiceScreen} />
 
         {/* Auth */}
         <Stack.Screen name="SignIn" component={SignInScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="BuyerSignIn" component={BuyerSignInScreen} />
-        <Stack.Screen name="BuyerSignUp" component={BuyerSignUpScreen} />
 
         {/* Dashboards */}
         <Stack.Screen name="Dashboard" component={DashboardScreen} />

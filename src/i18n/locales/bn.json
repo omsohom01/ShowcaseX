@@ -115,6 +115,17 @@
       "update3Region": "হরিয়ানা"
     }
   },
+  "buyerDrawer": {
+    "title": "ক্রেতা মেনু",
+    "subtitle": "বৈশিষ্ট্যগুলিতে নেভিগেট করুন",
+    "viewAllCrops": "সমস্ত ফসল দেখুন",
+    "viewAllCropsSubtitle": "কৃষকদের থেকে উপলব্ধ ফসল ব্রাউজ করুন",
+    "contactFarmer": "কৃষকের সাথে যোগাযোগ",
+    "contactFarmerSubtitle": "সরাসরি কৃষকদের সাথে সংযোগ করুন",
+    "profile": "আমার প্রোফাইল",
+    "profileSubtitle": "আপনার অ্যাকাউন্ট সেটিংস পরিচালনা করুন",
+    "version": "সংস্করণ"
+  },
   "viewAllCrops": {
     "title": "সমস্ত উপলব্ধ ফসল",
     "subtitle": "কৃষকদের সাথে ব্রাউজ করুন এবং সংযোগ করুন",
