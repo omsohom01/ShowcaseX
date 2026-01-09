@@ -302,6 +302,10 @@
       "error": "Unable to load weather",
       "locationError": "Location access denied",
       "retry": "Retry",
+      "am": "AM",
+      "pm": "PM",
+      "now": "Now",
+      "feelsLike": "Feels like",
       "conditions": {
         "clear": "Clear Sky",
         "partlyCloudy": "Partly Cloudy",

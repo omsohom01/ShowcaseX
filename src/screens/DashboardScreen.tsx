@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { HandHeart, Sun, Droplets, Wind, Wheat, Ruler, Heart, MapPin, Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, Sprout, Tractor, Leaf } from 'lucide-react-native';
+import { HandHeart, Sun, Droplets, Wind, Wheat, Ruler, Heart, MapPin, Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, Sprout, Tractor, Leaf, Moon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -124,40 +124,78 @@ export const DashboardScreen = () => {
   };
 
   // Get weather icon component based on weather code
-  const getWeatherIconComponent = (weatherCode: number, size: number = 56, color: string = '#FFA500') => {
-    const iconType = getWeatherIcon(weatherCode);
+  // Check if it's nighttime (6 PM to 6 AM)
+  const isNightTime = (date: Date = new Date()) => {
+    const hours = date.getHours();
+    return hours >= 18 || hours < 6;
+  };
 
+  // Get weather icon component based on weather code and time of day
+  const getWeatherIconComponent = (weatherCode: number, timeString?: string, size: number = 56) => {
+    const iconType = getWeatherIcon(weatherCode);
+    const checkTime = timeString ? new Date(timeString) : new Date();
+    const isNight = isNightTime(checkTime);
+
+    // For clear weather, show moon at night, sun during day
+    if (iconType === 'clear') {
+      return isNight 
+        ? <Moon size={size} color="#60A5FA" strokeWidth={2.5} />
+        : <Sun size={size} color="#FBBF24" strokeWidth={2.5} />;
+    }
+
+    // For partly cloudy/cloudy at night, show moon with cloud
+    if ((iconType === 'partly-cloudy' || iconType === 'cloudy') && isNight) {
+      return (
+        <View style={{ position: 'relative', width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+          <Cloud size={size} color="#93C5FD" strokeWidth={2} style={{ position: 'absolute' }} />
+          <Moon size={size * 0.5} color="#60A5FA" strokeWidth={2} style={{ position: 'absolute', top: size * 0.15, left: size * 0.1 }} />
+        </View>
+      );
+    }
+
+    // Other weather conditions
     switch (iconType) {
-      case 'clear':
-        return <Sun size={size} color={color} strokeWidth={2} />;
       case 'partly-cloudy':
-        return <Cloud size={size} color="#94A3B8" strokeWidth={2} />;
+        return (
+          <View style={{ position: 'relative', width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+            <Cloud size={size} color="#93C5FD" strokeWidth={2} style={{ position: 'absolute' }} />
+            <Sun size={size * 0.5} color="#FBBF24" strokeWidth={2} style={{ position: 'absolute', top: size * 0.15, right: size * 0.1 }} />
+          </View>
+        );
       case 'cloudy':
-        return <Cloud size={size} color="#64748B" strokeWidth={2} />;
+        return <Cloud size={size} color="#93C5FD" strokeWidth={2} />;
       case 'fog':
-        return <CloudFog size={size} color="#9CA3AF" strokeWidth={2} />;
+        return <CloudFog size={size} color="#64748B" strokeWidth={2} />;
       case 'drizzle':
         return <CloudDrizzle size={size} color="#60A5FA" strokeWidth={2} />;
       case 'rain':
         return <CloudRain size={size} color="#3B82F6" strokeWidth={2} />;
       case 'heavy-rain':
-        return <CloudRain size={size} color="#1E40AF" strokeWidth={2} />;
+        return <CloudRain size={size} color="#2563EB" strokeWidth={2} />;
       case 'snow':
-        return <CloudSnow size={size} color="#93C5FD" strokeWidth={2} />;
+        return <CloudSnow size={size} color="#BFDBFE" strokeWidth={2} />;
       case 'thunderstorm':
-        return <CloudLightning size={size} color="#7C3AED" strokeWidth={2} />;
+        return <CloudLightning size={size} color="#6366F1" strokeWidth={2} />;
       default:
-        return <Sun size={size} color={color} strokeWidth={2} />;
+        return isNight 
+          ? <Moon size={size} color="#E0E7FF" strokeWidth={2.5} />
+          : <Sun size={size} color="#FCD34D" strokeWidth={2.5} />;
     }
   };
 
-  // Format time for hourly forecast (e.g., "14:00" -> "2 PM")
-  const formatTime = (timeString: string) => {
+  // Format time for hourly forecast (e.g., "14:00" -> "2 PM" or "Now")
+  const formatTime = (timeString: string, index: number) => {
+    if (index === 0) {
+      return tr('dashboard.weather.now', 'Now');
+    }
     const date = new Date(timeString);
     const hours = date.getHours();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const isPM = hours >= 12;
     const displayHours = hours % 12 || 12;
-    return `${displayHours} ${ampm}`;
+    const ampmText = isPM 
+      ? tr('dashboard.weather.pm', 'PM') 
+      : tr('dashboard.weather.am', 'AM');
+    return `${localizeNumber(displayHours, i18n.language)} ${ampmText.toLowerCase()}`;
   };
 
   // Translated farming updates
@@ -450,229 +488,218 @@ export const DashboardScreen = () => {
           ) : (
             <Animated.View style={{ transform: [{ scale: weatherCardScale }] }}>
               <LinearGradient
-                colors={['#FFFFFF', '#E0F2FE', '#DBEAFE']}
+                colors={['#F0F9FF', '#E0F2FE', '#DBEAFE']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{
-                  borderRadius: 24,
-                padding: 24,
-                borderWidth: 2,
-                borderColor: '#BAE6FD',
-                shadowColor: '#0EA5E9',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.15,
-                shadowRadius: 20,
-                elevation: 6,
-              }}
-            >
-              {/* Current Weather with Village Sky Theme */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <LinearGradient
-                  colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{
-                    borderRadius: 40,
-                    width: 65,
-                    height: 65,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    shadowColor: '#F59E0B',
-                    shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 8,
-                    elevation: 4,
-                  }}
-                >
-                  {getWeatherIconComponent(weatherData.current.weatherCode, 34, '#F59E0B')}
-                </LinearGradient>
-                <View style={{ marginLeft: 14, flex: 1 }}>
-                  <Text 
-                    style={{ 
-                      fontSize: 36, 
-                      fontWeight: '900', 
-                      color: '#111827',
-                      letterSpacing: -1.2,
-                      lineHeight: 40,
+                  borderRadius: 20,
+                  padding: 16,
+                  borderWidth: 1,
+                  borderColor: '#BAE6FD',
+                  shadowColor: '#0EA5E9',
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+              >
+                {/* Main Weather Icon and Condition */}
+                <View style={{ alignItems: 'center', marginBottom: 14 }}>
+                  <LinearGradient
+                    colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      borderRadius: 35,
+                      width: 70,
+                      height: 70,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 10,
+                      shadowColor: '#F59E0B',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.15,
+                      shadowRadius: 6,
+                      elevation: 3,
                     }}
                   >
-                    {localizeNumber(weatherData.current.temperature, i18n.language)}°
-                  </Text>
-                  <Text 
-                    style={{ 
-                      fontSize: 13, 
-                      fontWeight: '600', 
-                      color: '#374151',
-                      marginTop: 2,
-                      lineHeight: 16,
-                    }}
-                  >
+                    {getWeatherIconComponent(weatherData.current.weatherCode, undefined, 38)}
+                  </LinearGradient>
+                  <Text style={{
+                    fontSize: 14,
+                    fontWeight: '700',
+                    color: '#0F172A',
+                    textAlign: 'center',
+                    marginBottom: 4,
+                  }}>
                     {tr(`dashboard.weather.conditions.${getWeatherConditionKey(weatherData.current.weatherCode)}`, 'Partly Cloudy')}
                   </Text>
-                </View>
-              </View>
-
-                {/* Current Weather Details */}
-              <View style={{ 
-                flexDirection: 'row', 
-                justifyContent: 'space-around',
-                paddingTop: 12,
-                paddingBottom: 12,
-                borderTopWidth: 2,
-                borderTopColor: 'rgba(255, 255, 255, 0.5)',
-                marginBottom: 12,
-              }}>
-                <View style={{ alignItems: 'center', flex: 1 }}>
-                  <View style={{
-                    backgroundColor: '#DBEAFE',
-                    borderRadius: 35,
-                    width: 48,
-                    height: 48,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 8,
-                    shadowColor: '#3B82F6',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}>
-                    <Droplets size={22} color="#3B82F6" strokeWidth={2.5} />
-                  </View>
-                  <Text 
-                    style={{ 
-                      color: '#6B7280', 
-                      fontSize: 11, 
-                      fontWeight: '600',
-                      marginBottom: 3,
-                      textAlign: 'center',
-                    }}
-                  >
-                    {tr('dashboard.weather.precipitation', 'Precipitation')}
-                  </Text>
-                  <Text 
-                    style={{ 
-                      color: '#111827', 
-                      fontSize: 16, 
-                      fontWeight: '800',
-                      letterSpacing: -0.3,
-                    }}
-                  >
-                    {localizeNumber(weatherData.current.precipitation, i18n.language)} mm
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center', flex: 1 }}>
-                  <View style={{
-                    backgroundColor: '#D1FAE5',
-                    borderRadius: 35,
-                    width: 48,
-                    height: 48,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 8,
-                    shadowColor: '#10B981',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}>
-                    <Wind size={22} color="#10B981" strokeWidth={2.5} />
-                  </View>
-                  <Text 
-                    style={{ 
-                      color: '#6B7280', 
-                      fontSize: 11, 
-                      fontWeight: '600',
-                      marginBottom: 3,
-                      textAlign: 'center',
-                    }}
-                  >
-                    {tr('dashboard.weather.humidity', 'Humidity')}
-                  </Text>
-                  <Text 
-                    style={{ 
-                      color: '#111827', 
-                      fontSize: 16, 
-                      fontWeight: '800',
-                      letterSpacing: -0.3,
-                    }}
-                  >
-                    {localizeNumber(weatherData.current.humidity, i18n.language)}%
-                  </Text>
-                </View>
-              </View>
-
-                {/* Hourly Forecast */}
-              <View style={{ 
-                paddingTop: 12, 
-                borderTopWidth: 2, 
-                borderTopColor: 'rgba(255, 255, 255, 0.5)' 
-              }}>
-                <Text 
-                  style={{ 
-                    color: '#111827', 
-                    fontSize: 15, 
+                  <Text style={{
+                    fontSize: 32,
                     fontWeight: '800',
-                    marginBottom: 10,
-                    letterSpacing: -0.2,
-                  }}
-                >
-                  {tr('dashboard.weather.hourlyForecast', 'Hourly Forecast')}
-                </Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingRight: 16 }}
-                >
-                  {weatherData.hourly.map((hour, index) => (
-                    <View
-                      key={index}
+                    color: '#1E293B',
+                    letterSpacing: -1,
+                  }}>
+                    {localizeNumber(Math.round(weatherData.current.temperature), i18n.language)}°
+                  </Text>
+                  <Text style={{
+                    fontSize: 11,
+                    fontWeight: '600',
+                    color: '#64748B',
+                    marginTop: 2,
+                  }}>
+                    {tr('dashboard.weather.feelsLike', 'Feels like')} {localizeNumber(Math.round(weatherData.current.temperature - 2), i18n.language)}°
+                  </Text>
+                </View>
+
+                {/* Weather Info Circles */}
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-around',
+                  marginBottom: 14,
+                }}>
+                  {/* Precipitation */}
+                  <View style={{ alignItems: 'center' }}>
+                    <LinearGradient
+                      colors={['#DBEAFE', '#BFDBFE']}
                       style={{
-                        marginRight: 12,
-                        minWidth: 85,
-                        backgroundColor: 'rgba(255, 255, 255, 0.6)',
-                        borderRadius: 16,
-                        padding: 12,
-                        borderWidth: 1,
-                        borderColor: 'rgba(255, 255, 255, 0.8)',
+                        width: 52,
+                        height: 52,
+                        borderRadius: 26,
                         alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 6,
+                        shadowColor: '#3B82F6',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.12,
+                        shadowRadius: 4,
+                        elevation: 2,
                       }}
                     >
-                      <Text 
+                      <Droplets size={22} color="#2563EB" strokeWidth={2.5} />
+                    </LinearGradient>
+                    <Text style={{
+                      fontSize: 10,
+                      fontWeight: '600',
+                      color: '#64748B',
+                      marginBottom: 2,
+                    }}>
+                      {tr('dashboard.weather.precipitation', 'Precipitation')}
+                    </Text>
+                    <Text style={{
+                      fontSize: 13,
+                      fontWeight: '800',
+                      color: '#0F172A',
+                    }}>
+                      {localizeNumber(weatherData.current.precipitation, i18n.language)} mm
+                    </Text>
+                  </View>
+
+                  {/* Humidity */}
+                  <View style={{ alignItems: 'center' }}>
+                    <LinearGradient
+                      colors={['#D1FAE5', '#A7F3D0']}
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 26,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 6,
+                        shadowColor: '#10B981',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.12,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }}
+                    >
+                      <Wind size={22} color="#059669" strokeWidth={2.5} />
+                    </LinearGradient>
+                    <Text style={{
+                      fontSize: 10,
+                      fontWeight: '600',
+                      color: '#64748B',
+                      marginBottom: 2,
+                    }}>
+                      {tr('dashboard.weather.humidity', 'Humidity')}
+                    </Text>
+                    <Text style={{
+                      fontSize: 13,
+                      fontWeight: '800',
+                      color: '#0F172A',
+                    }}>
+                      {localizeNumber(weatherData.current.humidity, i18n.language)}%
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Hourly Forecast */}
+                <View>
+                  <Text style={{
+                    fontSize: 13,
+                    fontWeight: '800',
+                    color: '#0F172A',
+                    marginBottom: 10,
+                    letterSpacing: -0.2,
+                  }}>
+                    {tr('dashboard.weather.hourlyForecast', 'Hourly Forecast')}
+                  </Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingRight: 10 }}
+                  >
+                    {weatherData.hourly.slice(0, 12).map((hour, index) => (
+                      <LinearGradient
+                        key={index}
+                        colors={['#FFFFFF', '#F8FAFC']}
                         style={{
-                          color: '#374151',
-                          fontSize: 12,
-                          fontWeight: '700',
-                          marginBottom: 8,
+                          marginRight: 8,
+                          minWidth: 62,
+                          backgroundColor: '#FFFFFF',
+                          borderRadius: 14,
+                          padding: 10,
+                          alignItems: 'center',
+                          borderWidth: 1,
+                          borderColor: '#E2E8F0',
+                          shadowColor: '#64748B',
+                          shadowOffset: { width: 0, height: 1 },
+                          shadowOpacity: 0.05,
+                          shadowRadius: 3,
+                          elevation: 2,
                         }}
                       >
-                        {formatTime(hour.time)}
-                      </Text>
-                      {getWeatherIconComponent(hour.weatherCode, 32, '#F59E0B')}
-                      <Text 
-                        style={{
-                          color: '#111827',
-                          fontSize: 20,
+                        <Text style={{
+                          color: '#475569',
+                          fontSize: 11,
+                          fontWeight: '600',
+                          marginBottom: 8,
+                        }}>
+                          {formatTime(hour.time, index)}
+                        </Text>
+                        {getWeatherIconComponent(hour.weatherCode, hour.time, 28)}
+                        <Text style={{
+                          color: '#0F172A',
+                          fontSize: 16,
                           fontWeight: '800',
                           marginTop: 8,
-                        }}
-                      >
-                        {localizeNumber(hour.temperature, i18n.language)}°
-                      </Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                        <Droplets size={10} color="#3B82F6" strokeWidth={2} />
-                        <Text 
-                          style={{
-                            color: '#6B7280',
-                            fontSize: 12,
-                            marginLeft: 4,
-                          }}
-                        >
-                          {localizeNumber(hour.precipitation, i18n.language)}mm
+                          marginBottom: 5,
+                        }}>
+                          {localizeNumber(Math.round(hour.temperature), i18n.language)}°
                         </Text>
-                      </View>
-                    </View>
-                  ))}
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Droplets size={9} color="#3B82F6" strokeWidth={2} />
+                          <Text style={{
+                            color: '#64748B',
+                            fontSize: 10,
+                            marginLeft: 2,
+                            fontWeight: '600',
+                          }}>
+                            {localizeNumber(hour.precipitation, i18n.language)}mm
+                          </Text>
+                        </View>
+                      </LinearGradient>
+                    ))}
                   </ScrollView>
                 </View>
               </LinearGradient>
