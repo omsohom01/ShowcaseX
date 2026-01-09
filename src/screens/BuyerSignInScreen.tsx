@@ -24,7 +24,7 @@ type BuyerSignInNavigationProp = NativeStackNavigationProp<
 >;
 
 interface FormData {
-  mobileNumber: string;
+  email: string;
   password: string;
 }
 
@@ -38,7 +38,7 @@ export const BuyerSignInScreen = () => {
   const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    mobileNumber: '',
+    email: '',
     password: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -66,11 +66,11 @@ export const BuyerSignInScreen = () => {
 
   const validateField = (name: keyof FormData, value: string): string => {
     switch (name) {
-      case 'mobileNumber':
+      case 'email':
         return !value.trim()
           ? tr('buyerSignIn.errors.required', 'Required')
-          : !/^\d{10}$/.test(value)
-            ? tr('buyerSignIn.errors.invalidMobile', 'Enter a valid 10-digit mobile number')
+          : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+            ? tr('buyerSignIn.errors.invalidEmail', 'Enter a valid email address')
             : '';
       case 'password':
         return !value ? tr('buyerSignIn.errors.required', 'Required') : '';
@@ -80,10 +80,6 @@ export const BuyerSignInScreen = () => {
   };
 
   const handleFieldChange = (name: keyof FormData, value: string) => {
-    // For mobile number, only allow digits
-    if (name === 'mobileNumber') {
-      value = value.replace(/[^0-9]/g, '');
-    }
     setFormData((prev) => ({ ...prev, [name]: value }));
     const error = validateField(name, value);
     setErrors((prev) => ({ ...prev, [name]: error }));
@@ -91,7 +87,7 @@ export const BuyerSignInScreen = () => {
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    const requiredFields: (keyof FormData)[] = ['mobileNumber', 'password'];
+    const requiredFields: (keyof FormData)[] = ['email', 'password'];
 
     requiredFields.forEach((field) => {
       const error = validateField(field, formData[field]);
@@ -107,9 +103,8 @@ export const BuyerSignInScreen = () => {
 
     setIsLoading(true);
     try {
-      // Using mobile number as email format for Firebase auth
-      const email = `${formData.mobileNumber}@buyer.krishaksarthi.app`;
-      const result = await signIn(email, formData.password);
+      // Using email directly for Firebase auth
+      const result = await signIn(formData.email, formData.password);
 
       if (!result.success) {
         const title = tr('buyerSignIn.title', 'Buyer Sign In');
@@ -148,9 +143,9 @@ export const BuyerSignInScreen = () => {
 
   const isFormValid = () => {
     return (
-      formData.mobileNumber &&
+      formData.email &&
       formData.password &&
-      !errors.mobileNumber &&
+      !errors.email &&
       !errors.password
     );
   };
@@ -221,7 +216,14 @@ export const BuyerSignInScreen = () => {
             }}
             numberOfLines={1}
           >
-            {tr('buyerSignIn.back', 'ফিরে যান')}
+            {(() => {
+              try {
+                const translated = t('common.back');
+                return translated === 'common.back' ? 'Back' : translated;
+              } catch {
+                return 'Back';
+              }
+            })()}
           </Text>
         </TouchableOpacity>
 
@@ -271,13 +273,13 @@ export const BuyerSignInScreen = () => {
         }}>
           <View style={{ gap: 8 }}>
             <CustomInput
-              label={tr('buyerSignIn.mobileNumber', 'Mobile Number')}
-              placeholder={tr('buyerSignIn.mobileNumberPlaceholder', '9876543210')}
-              value={formData.mobileNumber}
-              onChangeText={(value) => handleFieldChange('mobileNumber', value)}
-              keyboardType="phone-pad"
-              maxLength={10}
-              error={errors.mobileNumber}
+              label={tr('buyerSignIn.email', 'Email')}
+              placeholder={tr('buyerSignIn.emailPlaceholder', 'your@email.com')}
+              value={formData.email}
+              onChangeText={(value) => handleFieldChange('email', value)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
             />
 
             <PasswordInput

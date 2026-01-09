@@ -16,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Sprout, ArrowLeft } from 'lucide-react-native';
 import { CustomInput, PasswordInput } from '../components/CustomInput';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { signIn } from '../services/auth';
+import { signIn, signInWithGoogle } from '../services/auth';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -241,7 +241,14 @@ export const SignInScreen = () => {
             }}
             numberOfLines={1}
           >
-            {tr('signIn.back', 'ফিরে যান')}
+            {(() => {
+              try {
+                const translated = t('common.back');
+                return translated === 'common.back' ? 'Back' : translated;
+              } catch {
+                return 'Back';
+              }
+            })()}
           </Text>
         </TouchableOpacity>
 

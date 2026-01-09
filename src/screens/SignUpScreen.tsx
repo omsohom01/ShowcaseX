@@ -331,7 +331,14 @@ export const SignUpScreen = () => {
             }}
             numberOfLines={1}
           >
-            {tr('signUp.back', 'ফিরে যান')}
+            {(() => {
+              try {
+                const translated = t('common.back');
+                return translated === 'common.back' ? 'Back' : translated;
+              } catch {
+                return 'Back';
+              }
+            })()}
           </Text>
         </TouchableOpacity>
 

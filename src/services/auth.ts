@@ -56,6 +56,9 @@ export interface UserProfileData {
   landSize?: string;
   notificationsEnabled?: boolean;
   profilePhoto?: string | null;
+  userType?: 'farmer' | 'buyer';
+  companyName?: string;
+  businessType?: string;
   updatedAt?: unknown;
   createdAt?: unknown;
 }
