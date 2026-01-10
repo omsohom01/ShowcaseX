@@ -275,11 +275,8 @@ export const DashboardScreen = () => {
     }
   };
 
-  // Format time for hourly forecast (e.g., "14:00" -> "2 PM" or "Now")
-  const formatTime = (timeString: string, index: number) => {
-    if (index === 0) {
-      return tr('dashboard.weather.now', 'Now');
-    }
+  // Format time for hourly forecast (e.g., "14:00" -> "2 PM", "00:00" -> "12 am")
+  const formatTime = (timeString: string) => {
     const date = new Date(timeString);
     const hours = date.getHours();
     const isPM = hours >= 12;
@@ -288,6 +285,21 @@ export const DashboardScreen = () => {
       ? tr('dashboard.weather.pm', 'PM')
       : tr('dashboard.weather.am', 'AM');
     return `${localizeNumber(displayHours, i18n.language)} ${ampmText.toLowerCase()}`;
+  };
+
+  // Get time period label based on hour of day
+  const getTimePeriod = (hour: number): string => {
+    if (hour >= 0 && hour <= 4) {
+      return tr('dashboard.weather.night', 'night');
+    } else if (hour >= 5 && hour <= 11) {
+      return tr('dashboard.weather.morning', 'morning');
+    } else if (hour >= 12 && hour <= 15) {
+      return tr('dashboard.weather.noon', 'noon');
+    } else if (hour >= 16 && hour <= 18) {
+      return tr('dashboard.weather.evening', 'evening');
+    } else {
+      return tr('dashboard.weather.night', 'night');
+    }
   };
 
   // News will now come from Perplexity API instead of hardcoded data
@@ -304,8 +316,22 @@ export const DashboardScreen = () => {
 
   return (
     <View className="flex-1" style={{ backgroundColor: '#FFFFFF' }}>
+      {/* Wallpaper Background Decoration */}
+      <View
+        style={{
+          position: 'absolute',
+          top: -30,
+          right: -30,
+          width: 200,
+          height: 200,
+          borderRadius: 100,
+          backgroundColor: '#FEF3C7',
+          opacity: 0.5,
+          zIndex: 0,
+        }}
+      />
 
-      {/* Simple Navbar */}
+      {/* Navbar with Title and Subtitle */}
       <View
         style={{
           backgroundColor: '#FFFFFF',
@@ -317,13 +343,38 @@ export const DashboardScreen = () => {
           justifyContent: 'space-between',
           borderBottomWidth: 1,
           borderBottomColor: '#F3F4F6',
+          zIndex: 1,
         }}
       >
-        <Image
-          source={require('../../public/KrishakSarthiLogoPNG.png')}
-          style={{ width: 48, height: 48 }}
-          resizeMode="contain"
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <Image
+            source={require('../../public/KrishakSarthiLogoPNG.png')}
+            style={{ width: 48, height: 48, marginRight: 12 }}
+            resizeMode="contain"
+          />
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: '800',
+                color: '#111827',
+                letterSpacing: -0.5,
+              }}
+            >
+              {tr('dashboard.title', 'কৃষকসার্থী')}
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '500',
+                color: '#6B7280',
+                marginTop: 2,
+              }}
+            >
+              {tr('dashboard.subtitle', 'আপনার স্মার্ট কৃষি সহায়ক')}
+            </Text>
+          </View>
+        </View>
 
         <TouchableOpacity
           onPress={() => setIsDrawerVisible(true)}
@@ -585,57 +636,71 @@ export const DashboardScreen = () => {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingRight: 10 }}
                   >
-                    {weatherData.hourly.slice(0, 12).map((hour, index) => (
-                      <LinearGradient
-                        key={index}
-                        colors={['#FFFFFF', '#F8FAFC']}
-                        style={{
-                          marginRight: 8,
-                          minWidth: 62,
-                          backgroundColor: '#FFFFFF',
-                          borderRadius: 14,
-                          padding: 10,
-                          alignItems: 'center',
-                          borderWidth: 1,
-                          borderColor: '#E2E8F0',
-                          shadowColor: '#64748B',
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.05,
-                          shadowRadius: 3,
-                          elevation: 2,
-                        }}
-                      >
-                        <Text style={{
-                          color: '#475569',
-                          fontSize: 11,
-                          fontWeight: '600',
-                          marginBottom: 8,
-                        }}>
-                          {formatTime(hour.time, index)}
-                        </Text>
-                        {getWeatherIconComponent(hour.weatherCode, hour.time, 28)}
-                        <Text style={{
-                          color: '#0F172A',
-                          fontSize: 16,
-                          fontWeight: '800',
-                          marginTop: 8,
-                          marginBottom: 5,
-                        }}>
-                          {localizeNumber(Math.round(hour.temperature), i18n.language)}°
-                        </Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Droplets size={9} color="#3B82F6" strokeWidth={2} />
+                    {weatherData.hourly.slice(0, 24).map((hour, index) => {
+                      const hourDate = new Date(hour.time);
+                      const hourOfDay = hourDate.getHours();
+                      const timePeriod = getTimePeriod(hourOfDay);
+                      return (
+                        <LinearGradient
+                          key={index}
+                          colors={['#FFFFFF', '#F8FAFC']}
+                          style={{
+                            marginRight: 8,
+                            minWidth: 70,
+                            backgroundColor: '#FFFFFF',
+                            borderRadius: 14,
+                            padding: 10,
+                            alignItems: 'center',
+                            borderWidth: 1,
+                            borderColor: '#E2E8F0',
+                            shadowColor: '#64748B',
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.05,
+                            shadowRadius: 3,
+                            elevation: 2,
+                          }}
+                        >
                           <Text style={{
-                            color: '#64748B',
+                            color: '#475569',
                             fontSize: 10,
-                            marginLeft: 2,
                             fontWeight: '600',
+                            marginBottom: 2,
                           }}>
-                            {localizeNumber(hour.precipitation, i18n.language)}mm
+                            {formatTime(hour.time)}
                           </Text>
-                        </View>
-                      </LinearGradient>
-                    ))}
+                          <Text style={{
+                            color: '#9CA3AF',
+                            fontSize: 8,
+                            fontWeight: '500',
+                            marginBottom: 6,
+                            textTransform: 'capitalize',
+                          }}>
+                            {timePeriod}
+                          </Text>
+                          {getWeatherIconComponent(hour.weatherCode, hour.time, 28)}
+                          <Text style={{
+                            color: '#0F172A',
+                            fontSize: 16,
+                            fontWeight: '800',
+                            marginTop: 8,
+                            marginBottom: 5,
+                          }}>
+                            {localizeNumber(Math.round(hour.temperature), i18n.language)}°
+                          </Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Droplets size={9} color="#3B82F6" strokeWidth={2} />
+                            <Text style={{
+                              color: '#64748B',
+                              fontSize: 10,
+                              marginLeft: 2,
+                              fontWeight: '600',
+                            }}>
+                              {localizeNumber(hour.precipitation, i18n.language)}mm
+                            </Text>
+                          </View>
+                        </LinearGradient>
+                      );
+                    })}
                   </ScrollView>
                 </View>
               </LinearGradient>

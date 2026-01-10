@@ -10,6 +10,24 @@
     "buyerDescription": "Connect with farmers and purchase agricultural products",
     "footerNote": "Choose the role that best describes you"
   },
+  "landing": {
+    "signIn": "Sign In",
+    "signInDescription": "Already have an account? Sign in here",
+    "signUp": "Sign Up",
+    "signUpDescription": "Create a new account to get started",
+    "footerNote": "Welcome to KrishakSarthi"
+  },
+  "roleChoice": {
+    "title": "Choose Your Role",
+    "subtitle": "Select how you want to use KrishakSarthi",
+    "farmer": "Farmer",
+    "farmerDescription": "Access farming tools, predictions, and resources",
+    "buyer": "Buyer",
+    "buyerDescription": "Connect with farmers and purchase agricultural products"
+  },
+  "common": {
+    "back": "Back"
+  },
   "documentAnalyzer": {
     "title": "Document Analyzer",
     "subtitle": "Analyze farming documents"
@@ -295,8 +313,9 @@
     }
   },
   "dashboard": {
-    "greeting": "Hello Farmer!",
+    "title": "KrishaKSarthi",
     "subtitle": "Your Smart Farming Assistant",
+    "greeting": "Hello Farmer!",
     "predictCrop": "Crop Prediction",
     "predictSubtitle": "Get yield predictions",
     "analyzeDocument": "Document Analyzer",
@@ -316,6 +335,11 @@
       "am": "AM",
       "pm": "PM",
       "now": "Now",
+      "morning": "morning",
+      "noon": "noon",
+      "afternoon": "afternoon",
+      "evening": "evening",
+      "night": "night",
       "feelsLike": "Feels like",
       "conditions": {
         "clear": "Clear Sky",
