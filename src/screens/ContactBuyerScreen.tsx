@@ -46,7 +46,9 @@ import {
   rejectMarketDeal,
   MarketDeal,
 } from '../services/products';
+import { validateProductUpload } from '../services/gemini';
 import { INDIA_LOCATIONS } from '../constants/locations';
+
 
 type ContactBuyerNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -276,6 +278,15 @@ export const ContactBuyerScreen = () => {
       return;
     }
 
+    // Check if image is provided
+    if (!productImage) {
+      Alert.alert(
+        tr('contactBuyer.error', 'Error'),
+        'Please upload a product image for validation'
+      );
+      return;
+    }
+
     const user = auth.currentUser;
     if (!user) {
       Alert.alert(
@@ -288,13 +299,89 @@ export const ContactBuyerScreen = () => {
     try {
       setUploading(true);
 
-      // Get user data - you might want to fetch this from user profile
+      // Step 1: Validate product with AI
+      console.log('Validating product with AI...', { productName, hasImage: !!productImage });
+      
+      let validationResult;
+      try {
+        validationResult = await validateProductUpload({
+          imageUri: productImage,
+          productName: productName,
+        });
+        
+        console.log('Validation result:', validationResult);
+      } catch (validationError: any) {
+        console.error('Product validation error:', validationError);
+        Alert.alert(
+          tr('contactBuyer.error', 'Error'),
+          'Failed to validate product. Please check your internet connection and try again.'
+        );
+        setUploading(false);
+        return;
+      }
+
+      // Step 2: Check if validation passed
+      if (!validationResult.isValid) {
+        Alert.alert(
+          'Upload Blocked',
+          `${validationResult.reason}\n\nPlease upload a valid food/agricultural product with a proper name.`,
+          [{ text: 'OK' }]
+        );
+        setUploading(false);
+        return;
+      }
+
+      // Step 3: Show AI correction if name was changed
+      const correctedName = validationResult.validatedName;
+      if (correctedName.toLowerCase() !== productName.toLowerCase()) {
+        // Ask user to confirm the corrected name
+        Alert.alert(
+          'Product Name Corrected',
+          `AI detected your product as: "${correctedName}"\n\nOriginal name: "${productName}"\nCategory: ${validationResult.category || 'N/A'}\n\nProceed with the corrected name?`,
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => {
+                setUploading(false);
+              },
+            },
+            {
+              text: 'Use Corrected Name',
+              onPress: async () => {
+                await uploadWithValidatedName(correctedName, farmerLocation, user);
+              },
+            },
+          ]
+        );
+      } else {
+        // Name is already correct, proceed with upload
+        await uploadWithValidatedName(correctedName, farmerLocation, user);
+      }
+    } catch (error: any) {
+      console.error('Error in upload process:', error);
+      Alert.alert(
+        tr('contactBuyer.error', 'Error'),
+        error?.message || 'An unexpected error occurred. Please try again.'
+      );
+      setUploading(false);
+    }
+  };
+
+  // Helper function to handle the actual upload after validation
+  const uploadWithValidatedName = async (
+    validatedName: string,
+    farmerLocation: string,
+    user: any
+  ) => {
+    try {
+      // Get user data
       const farmerName = user.displayName || 'Farmer';
       const farmerPhone = user.phoneNumber || '+91 0000000000';
 
-      console.log('Starting product upload...', { 
+      console.log('Starting product upload with validated name...', { 
         farmerId: user.uid, 
-        productName,
+        validatedName,
         hasImage: !!productImage 
       });
 
@@ -304,7 +391,7 @@ export const ContactBuyerScreen = () => {
         farmerPhone,
         farmerLocation,
         {
-          name: productName,
+          name: validatedName, // Use AI-validated name
           image: productImage || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400',
           rate: parseFloat(productRate),
           quantity: parseFloat(productQuantity),
@@ -316,7 +403,7 @@ export const ContactBuyerScreen = () => {
 
       Alert.alert(
         tr('contactBuyer.success', 'Success'),
-        tr('contactBuyer.productUploaded', 'Product uploaded successfully!')
+        `${validatedName} uploaded successfully!`
       );
 
       // Reload products
@@ -331,6 +418,7 @@ export const ContactBuyerScreen = () => {
       setSelectedUnit('kg');
       setSelectedFarmerLocation('');
       setCustomFarmerLocation('');
+      setUploading(false);
     } catch (error: any) {
       console.error('Error uploading product - FULL ERROR:', error);
       
@@ -352,7 +440,6 @@ export const ContactBuyerScreen = () => {
         tr('contactBuyer.error', 'Error'),
         errorMessage
       );
-    } finally {
       setUploading(false);
     }
   };

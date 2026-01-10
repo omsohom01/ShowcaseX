@@ -92,6 +92,26 @@ const DOCUMENT_ANALYSIS_FAMILIES: ModelFamily[] = [
   },
 ];
 
+// Product validation model families (image analysis)
+const PRODUCT_VALIDATION_FAMILIES: ModelFamily[] = [
+  {
+    name: 'gemini-3-flash',
+    models: ['gemini-3-flash-preview'],
+  },
+  {
+    name: 'gemini-2.5-flash',
+    models: [
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-preview-09-2025',
+      'gemini-2.5-flash-image',
+    ],
+  },
+  {
+    name: 'gemini-2.5-flash-lite',
+    models: ['gemini-2.5-flash-lite'],
+  },
+];
+
 // Chat conversation model families
 const CHAT_FAMILIES: ModelFamily[] = [
   {
@@ -587,6 +607,20 @@ export interface CropDiseaseResult {
   warningMessage?: string;
 }
 
+// ============ PRODUCT VALIDATION INTERFACES ============
+
+export interface ProductValidationInput {
+  imageUri: string;
+  productName: string;
+}
+
+export interface ProductValidationResult {
+  isValid: boolean;
+  validatedName: string; // Corrected product name in singular English form
+  reason: string; // Explanation of validation decision
+  category?: string; // Food category (vegetables, fruits, grains, etc.)
+}
+
 /**
  * Get crop prediction from Gemini AI
  * @param input - Crop prediction input data
@@ -964,6 +998,163 @@ Respond in ${languageName}. Return JSON only.`;
   } catch (parseError) {
     console.error('Error parsing Gemini disease detection response:', parseError);
     throw new Error('Failed to analyze the crop image. Please try again with a clearer photo.');
+  }
+};
+
+// ============ PRODUCT VALIDATION VIA GEMINI VISION ============
+
+/**
+ * Validate farmer product upload (image + name) using Gemini Vision AI
+ * Checks if image is food and corrects product name to singular English form
+ * @param input - Product validation input (image URI and product name)
+ * @returns Validation result with corrected product name or rejection
+ */
+export const validateProductUpload = async (
+  input: ProductValidationInput
+): Promise<ProductValidationResult> => {
+  const apiKeys = getApiKeys();
+  if (apiKeys.length === 0) {
+    throw new Error('Missing Gemini API key. Set GEMINI_API_KEY_1, GEMINI_API_KEY_2, GEMINI_API_KEY_3 in .env file.');
+  }
+
+  // Convert image to base64
+  const imageBase64 = await fileToBase64(input.imageUri);
+  const mimeType = getDocumentMimeType(input.imageUri);
+
+  // Build detailed prompt for product validation
+  const prompt = `You are an AI assistant helping farmers sell their agricultural products safely. Your job is to validate product uploads.
+
+FARMER'S INPUT:
+- Product Name/Text: "${input.productName}"
+- Product Image: [Provided]
+
+YOUR TASK:
+1. IMAGE VALIDATION:
+   - Analyze the image to determine if it shows any food item, agricultural produce, or farm product
+   - Valid items: vegetables, fruits, grains, pulses, spices, dairy products, eggs, meat, fish, processed foods, etc.
+   - INVALID items: people, animals (unless for sale like livestock), buildings, vehicles, random objects, non-food items, inappropriate content
+
+2. TEXT VALIDATION:
+   - The farmer may write the product name in ANY language (English, Hindi, Bengali, regional languages, etc.)
+   - The farmer may misspell or use informal names (e.g., "pututu" for "potato", "aalu" for "potato", "tamatar" for "tomato")
+   - Analyze if the text refers to ANY food or agricultural product
+   - Consider: common misspellings, transliterations, regional names, colloquial terms
+   - REJECT if text is completely random, nonsensical, or offensive
+
+3. CROSS-VALIDATION:
+   - Check if the image and text match or are both food-related
+   - If image shows food but text is random: REJECT (safety check)
+   - If image is non-food but text mentions food: REJECT (safety check)
+   - If BOTH are food-related (even if different items): VALIDATE and use the product shown in the IMAGE
+
+4. NAME CORRECTION:
+   - Convert the product name to proper English
+   - Use SINGULAR form only (e.g., "potato" not "potatoes", "tomato" not "tomatoes")
+   - Use standard/common name (e.g., "eggplant" or "brinjal", "okra" or "lady finger")
+   - Capitalize only the first letter (e.g., "Potato", "Tomato", "Red onion")
+
+RESPONSE FORMAT - Return ONLY valid JSON (no markdown, no code blocks):
+{
+  "isValid": true/false,
+  "validatedName": "Corrected product name in singular English form with first letter capitalized (e.g., 'Potato', 'Tomato')",
+  "reason": "Brief explanation of decision in English",
+  "category": "Category like 'Vegetable', 'Fruit', 'Grain', 'Pulse', 'Spice', 'Dairy', 'Other' (only if valid)"
+}
+
+VALIDATION EXAMPLES:
+✓ VALID: Image=potato, Text="pututu" → isValid=true, validatedName="Potato"
+✓ VALID: Image=tomato, Text="टमाटर" (Hindi) → isValid=true, validatedName="Tomato"
+✓ VALID: Image=rice, Text="chawal" → isValid=true, validatedName="Rice"
+✓ VALID: Image=wheat, Text="wheat grains" → isValid=true, validatedName="Wheat"
+✗ INVALID: Image=person, Text="potato" → isValid=false, reason="Image does not show food"
+✗ INVALID: Image=potato, Text="asdfgh" → isValid=false, reason="Product name is not recognizable as food"
+✗ INVALID: Image=car, Text="car" → isValid=false, reason="Not a food or agricultural product"
+
+CRITICAL RULES:
+- Be lenient with misspellings and language variations for genuine food items
+- Be strict with non-food images regardless of text
+- Always provide validatedName in singular English form if valid
+- Prioritize safety: if uncertain, REJECT the upload
+
+Return ONLY the JSON object, nothing else.`;
+
+  const requestBody = {
+    systemInstruction: {
+      parts: [{
+        text: 'You are a product validation AI for agricultural marketplaces. Return JSON only.'
+      }],
+    },
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: imageBase64,
+            },
+          },
+          { text: prompt },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1, // Low temperature for consistent validation
+      topP: 0.8,
+      topK: 20,
+      maxOutputTokens: 1024,
+    },
+  };
+
+  const json = await callWithRotation({
+    apiKeys,
+    modelFamilies: PRODUCT_VALIDATION_FAMILIES,
+    requestBody,
+    endpoint: 'generateContent',
+  });
+
+  const contentText = json?.candidates?.[0]?.content?.parts
+    ?.map((p: { text?: string }) => p.text)
+    .filter(Boolean)
+    .join('')
+    ?.trim();
+
+  if (!contentText) {
+    throw new Error('No response received from Gemini');
+  }
+
+  try {
+    // Extract JSON from response (handle markdown code blocks if present)
+    const jsonMatch = contentText.match(/\{[\s\S]*\}/);
+    const raw = jsonMatch ? jsonMatch[0] : contentText;
+    const parsed = JSON.parse(raw);
+
+    // Validate response structure
+    const isValid = parsed?.isValid === true;
+    const validatedName = typeof parsed?.validatedName === 'string' 
+      ? parsed.validatedName.trim() 
+      : input.productName;
+    const reason = typeof parsed?.reason === 'string'
+      ? parsed.reason.trim()
+      : (isValid ? 'Product validated successfully' : 'Product validation failed');
+    const category = typeof parsed?.category === 'string' ? parsed.category.trim() : undefined;
+
+    return {
+      isValid,
+      validatedName,
+      reason,
+      category,
+    };
+  } catch (parseError) {
+    console.error('Error parsing Gemini product validation response:', parseError);
+    console.error('Raw response:', contentText);
+    
+    // If parsing fails, reject for safety
+    return {
+      isValid: false,
+      validatedName: input.productName,
+      reason: 'Unable to validate product. Please try again with a clear image and proper product name.',
+    };
   }
 };
 
