@@ -115,6 +115,25 @@
       "update3Region": "হরিয়ানা"
     }
   },
+        "news": {
+          "title": "কৃষি সংবাদ",
+          "refresh": "রিফ্রেশ",
+          "loading": "সর্বশেষ সংবাদ লোড হচ্ছে...",
+          "empty": "কোনও সংবাদ পাওয়া যায়নি",
+          "retry": "আবার চেষ্টা করুন",
+          "readMore": "আরও পড়ুন",
+          "fullArticle": "সম্পূর্ণ নিবন্ধ",
+          "source": "সূত্র",
+          "summary": "সারাংশ",
+          "footer": "সর্বশেষ কৃষি সংবাদ দিয়ে আপডেট থাকুন",
+          "categories": {
+            "agriculture": "কৃষি",
+            "weather": "আবহাওয়া",
+            "market": "বাজার",
+            "policy": "নীতি",
+            "technology": "প্রযুক্তি"
+          }
+        },
   "buyerDrawer": {
     "title": "ক্রেতা মেনু",
     "subtitle": "বৈশিষ্ট্যগুলিতে নেভিগেট করুন",
@@ -353,6 +372,25 @@
       "update4Title": "গমের বাজার মূল্য বৃদ্ধি",
       "update4Description": "উচ্চ চাহিদার কারণে গমের দাম 15% বৃদ্ধি পেয়েছে। গম চাষীদের জন্য সুসংবাদ।",
       "update4Region": "হরিয়ানা"
+    },
+    "news": {
+      "title": "কৃষি সংবাদ",
+      "refresh": "রিফ্রেশ",
+      "loading": "সর্বশেষ সংবাদ লোড হচ্ছে...",
+      "empty": "কোনও সংবাদ পাওয়া যায়নি",
+      "retry": "আবার চেষ্টা করুন",
+      "readMore": "আরও পড়ুন",
+      "fullArticle": "সম্পূর্ণ নিবন্ধ",
+      "source": "সূত্র",
+      "summary": "সারাংশ",
+      "footer": "সর্বশেষ কৃষি সংবাদ দিয়ে আপডেট থাকুন",
+      "categories": {
+        "agriculture": "কৃষি",
+        "weather": "আবহাওয়া",
+        "market": "বাজার",
+        "policy": "নীতি",
+        "technology": "প্রযুক্তি"
+      }
     },
     "weatherData": {
       "partlyCloudy": "আংশিক মেঘলা",
@@ -791,6 +829,7 @@
     "tripura": "ত্রিপুরা",
     "uttarPradesh": "উত্তরপ্রদেশ",
     "uttarakhand": "উত্তরাখণ্ড",
-    "westBengal": "পশ্চিমবঙ্গ"
+    "westBengal": "পশ্চিমবঙ্গ",
+    "india": "ভারত"
   }
 }

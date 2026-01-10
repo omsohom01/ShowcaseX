@@ -354,6 +354,25 @@
       "update4Description": "Wheat prices increase by 15% due to high demand. Good news for wheat farmers.",
       "update4Region": "Haryana"
     },
+    "news": {
+      "title": "Agricultural News",
+      "refresh": "Refresh",
+      "loading": "Loading latest news...",
+      "empty": "No news available",
+      "retry": "Retry",
+      "readMore": "Read More",
+      "fullArticle": "Full Article",
+      "source": "Source",
+      "summary": "Summary",
+      "footer": "Stay informed with the latest agricultural news",
+      "categories": {
+        "agriculture": "Agriculture",
+        "weather": "Weather",
+        "market": "Market",
+        "policy": "Policy",
+        "technology": "Technology"
+      }
+    },
     "weatherData": {
       "partlyCloudy": "Partly Cloudy",
       "yes": "Yes",
@@ -766,6 +785,7 @@
     "tripura": "Tripura",
     "uttarPradesh": "Uttar Pradesh",
     "uttarakhand": "Uttarakhand",
-    "westBengal": "West Bengal"
+    "westBengal": "West Bengal",
+    "india": "India"
   }
 }

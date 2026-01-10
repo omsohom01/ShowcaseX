@@ -36,6 +36,33 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+      // Products uploaded by farmers
+      // - Any authenticated user can read (buyers need to browse/search)
+      // - Only the owning farmer can create/update/delete their own products
+      match /products/{productId} {
+         allow read: if request.auth != null;
+         allow create: if request.auth != null
+            && request.resource.data.farmerId == request.auth.uid;
+         allow update, delete: if request.auth != null
+            && resource.data.farmerId == request.auth.uid;
+      }
+
+      // Farmers hired by buyers
+      // - Only the buyer who owns the record can read/write it
+      match /hiredFarmers/{hireId} {
+         allow read: if request.auth != null && resource.data.buyerId == request.auth.uid;
+         allow create: if request.auth != null && request.resource.data.buyerId == request.auth.uid;
+         allow update, delete: if request.auth != null && resource.data.buyerId == request.auth.uid;
+      }
+
+         // Market deals (negotiation + request-to-buy)
+         // DEV-FRIENDLY RULES (recommended for this demo):
+         // - Any authenticated user can create/read/update/delete deals
+         // If you want stricter security later, lock this down to only buyerId/farmerId.
+         match /marketDeals/{dealId} {
+            allow read, write: if request.auth != null;
+         }
     
     // Deny all other access
     match /{document=**} {
@@ -51,6 +78,35 @@ service cloud.firestore {
 - ✅ All other access is denied
 
 3. Click **Publish**
+
+### 4. Configure Firebase Storage (Required for Product Images)
+1. In Firebase Console, go to **Storage**
+2. If not created, click **Get started**
+3. Go to **Rules** tab
+4. Replace the rules with this:
+
+```
+rules_version = '2';
+service firebase.storage {
+   match /b/{bucket}/o {
+      // Product images are stored under: products/{farmerId}/{filename}
+      match /products/{farmerId}/{allPaths=**} {
+         allow read: if true;
+         allow write: if request.auth != null && request.auth.uid == farmerId;
+      }
+
+      // Deny everything else by default
+      match /{allPaths=**} {
+         allow read, write: if false;
+      }
+   }
+}
+```
+
+5. Click **Publish**
+
+### 5. Double-check your `.env` values
+Ensure you have `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` set (usually `<project-id>.appspot.com`).
 
 ## 📱 How OTP Authentication Works
 
@@ -147,7 +203,8 @@ service cloud.firestore {
 ### "Missing or insufficient permissions" in Firestore
 - ✅ FIXED: App now follows proper auth flow
 - Firestore is accessed ONLY after OTP authentication
-- Make sure security rules are published
+- Make sure security rules are published (including `/marketDeals` for negotiation/request-to-buy)
+- If it still happens, verify you're editing rules for the same Firebase project as `EXPO_PUBLIC_FIREBASE_PROJECT_ID`, and check Firebase App Check enforcement.
 
 ### "Failed to send OTP" (Web)
 - Verify Phone authentication is enabled in Firebase Console

@@ -34,7 +34,7 @@ export type RootStackParamList = {
   RoleChoice: undefined; // New screen for choosing Farmer or Buyer after Sign Up
 
   // Auth
-  SignIn: { role?: 'farmer' | 'buyer' };
+  SignIn: { role?: 'farmer' | 'buyer' } | undefined;
   SignUp: { role: 'farmer' | 'buyer' };
 
   // Dashboards

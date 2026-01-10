@@ -354,6 +354,25 @@
       "update4Description": "उच्च मांग के कारण गेहूं की कीमतों में 15% की वृद्धि। गेहूं किसानों के लिए अच्छी खबर।",
       "update4Region": "हरियाणा"
     },
+    "news": {
+      "title": "कृषि समाचार",
+      "refresh": "रीफ़्रेश",
+      "loading": "ताज़ा समाचार लोड हो रहे हैं...",
+      "empty": "कोई समाचार उपलब्ध नहीं",
+      "retry": "फिर से प्रयास करें",
+      "readMore": "और पढ़ें",
+      "fullArticle": "पूरा लेख",
+      "source": "स्रोत",
+      "summary": "सारांश",
+      "footer": "ताज़ा कृषि समाचारों से अपडेट रहें",
+      "categories": {
+        "agriculture": "कृषि",
+        "weather": "मौसम",
+        "market": "बाज़ार",
+        "policy": "नीति",
+        "technology": "प्रौद्योगिकी"
+      }
+    },
     "weatherData": {
       "partlyCloudy": "आंशिक बादल",
       "yes": "हां",
@@ -792,6 +811,7 @@
     "tripura": "त्रिपुरा",
     "uttarPradesh": "उत्तर प्रदेश",
     "uttarakhand": "उत्तराखंड",
-    "westBengal": "पश्चिम बंगाल"
+    "westBengal": "पश्चिम बंगाल",
+    "india": "भारत"
   }
 }

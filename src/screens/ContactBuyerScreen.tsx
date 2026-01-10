@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Image,
   Modal,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,11 +28,25 @@ import {
   Camera,
   IndianRupee,
   Package,
+  Trash2,
+  ChevronDown,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { auth } from '../config/firebase';
+import {
+  addProduct,
+  getFarmerProducts,
+  FarmerProduct as FirebaseProduct,
+  deleteProductWithImage,
+  getFarmerMarketDeals,
+  acceptMarketDeal,
+  rejectMarketDeal,
+  MarketDeal,
+} from '../services/products';
+import { INDIA_LOCATIONS } from '../constants/locations';
 
 type ContactBuyerNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -61,42 +76,85 @@ export const ContactBuyerScreen = () => {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation<ContactBuyerNavigationProp>();
   
-  // Hardcoded: 2 buyers have contacted this farmer
-  const [notifications] = useState(2);
+  const [notifications, setNotifications] = useState(0);
+  const [marketDeals, setMarketDeals] = useState<MarketDeal[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [productName, setProductName] = useState('');
   const [productRate, setProductRate] = useState('');
   const [productQuantity, setProductQuantity] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('kg');
   const [productImage, setProductImage] = useState('');
+  const [selectedFarmerLocation, setSelectedFarmerLocation] = useState('');
+  const [customFarmerLocation, setCustomFarmerLocation] = useState('');
+  const [showFarmerLocationModal, setShowFarmerLocationModal] = useState(false);
+  const [showCustomFarmerLocationModal, setShowCustomFarmerLocationModal] = useState(false);
+  const [uploadedProducts, setUploadedProducts] = useState<FarmerProduct[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Hardcoded uploaded products by farmer
-  const [uploadedProducts, setUploadedProducts] = useState<FarmerProduct[]>([
-    {
-      id: '1',
-      name: 'Fresh Tomatoes',
-      image: 'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=400',
-      rate: 40,
-      quantity: 500,
-      unit: 'kg',
-    },
-    {
-      id: '2',
-      name: 'Organic Potatoes',
-      image: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400',
-      rate: 25,
-      quantity: 1000,
-      unit: 'kg',
-    },
-    {
-      id: '3',
-      name: 'Green Chillies',
-      image: 'https://images.unsplash.com/photo-1583926975738-d5e770d7e9d9?w=400',
-      rate: 80,
-      quantity: 200,
-      unit: 'kg',
-    },
-  ]);
+  // Fetch products + deal notifications after auth is ready
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged(() => {
+      loadProducts();
+      loadMarketDeals();
+    });
+    return unsub;
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const user = auth.currentUser;
+      if (!user) {
+        // User not authenticated yet - just show empty state, no error
+        setUploadedProducts([]);
+        return;
+      }
+
+      const products = await getFarmerProducts(user.uid);
+      const formattedProducts: FarmerProduct[] = products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        image: p.image,
+        rate: p.rate,
+        quantity: p.quantity,
+        unit: p.unit,
+      }));
+      setUploadedProducts(formattedProducts);
+    } catch (error: any) {
+      console.error('Error loading products:', error);
+      // Only show error if it's not a "no products" scenario
+      if (error?.message && !error.message.includes('permissions')) {
+        Alert.alert(
+          tr('contactBuyer.error', 'Error'),
+          'Failed to load products. Please try again.'
+        );
+      }
+      // Set empty array on error so UI shows "no products" state
+      setUploadedProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMarketDeals = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        setMarketDeals([]);
+        setNotifications(0);
+        return;
+      }
+
+      const deals = await getFarmerMarketDeals(user.uid);
+      setMarketDeals(deals);
+      const pending = deals.filter((d) => d.status === 'pending');
+      setNotifications(pending.length);
+    } catch {
+      setMarketDeals([]);
+      setNotifications(0);
+    }
+  };
 
   const tr = (key: string, fallback: string) => {
     try {
@@ -186,11 +244,17 @@ export const ContactBuyerScreen = () => {
     }
 
     // Pick image
+    // expo-image-picker is mid-transition from MediaTypeOptions -> MediaType.
+    // Use runtime detection so it works across versions.
+    const mediaTypes =
+      (ImagePicker as any).MediaType?.Images ??
+      (ImagePicker as any).MediaTypeOptions?.Images;
+
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: mediaTypes as any,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.8,
+      quality: 0.4,
     });
 
     if (!result.canceled && result.assets[0]) {
@@ -198,42 +262,141 @@ export const ContactBuyerScreen = () => {
     }
   };
 
-  const handleUploadProduct = () => {
-    if (!productName || !productRate || !productQuantity) {
+  const handleUploadProduct = async () => {
+    const farmerLocation =
+      selectedFarmerLocation === 'Other'
+        ? customFarmerLocation.trim()
+        : selectedFarmerLocation.trim();
+
+    if (!productName || !productRate || !productQuantity || !farmerLocation) {
       Alert.alert(
         tr('contactBuyer.error', 'Error'),
-        tr('contactBuyer.fillAllFields', 'Please fill all fields')
+        'Please fill all fields (including location)'
       );
       return;
     }
-    
-    // Create new product
-    const newProduct: FarmerProduct = {
-      id: Date.now().toString(),
-      name: productName,
-      image: productImage || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400', // Default vegetable image
-      rate: parseFloat(productRate),
-      quantity: parseFloat(productQuantity),
-      unit: selectedUnit,
-    };
-    
-    // Add to products list
-    setUploadedProducts([newProduct, ...uploadedProducts]);
-    
-    // Here you would upload to backend
-    Alert.alert(
-      tr('contactBuyer.success', 'Success'),
-      tr('contactBuyer.productUploaded', 'Product uploaded successfully!')
-    );
-    
-    // Reset form
-    setShowUploadModal(false);
-    setProductName('');
-    setProductRate('');
-    setProductQuantity('');
-    setProductImage('');
-    setSelectedUnit('kg');
+
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert(
+        tr('contactBuyer.error', 'Error'),
+        'Please sign in to upload products'
+      );
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // Get user data - you might want to fetch this from user profile
+      const farmerName = user.displayName || 'Farmer';
+      const farmerPhone = user.phoneNumber || '+91 0000000000';
+
+      console.log('Starting product upload...', { 
+        farmerId: user.uid, 
+        productName,
+        hasImage: !!productImage 
+      });
+
+      await addProduct(
+        user.uid,
+        farmerName,
+        farmerPhone,
+        farmerLocation,
+        {
+          name: productName,
+          image: productImage || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400',
+          rate: parseFloat(productRate),
+          quantity: parseFloat(productQuantity),
+          unit: selectedUnit,
+        }
+      );
+
+      console.log('Product upload successful!');
+
+      Alert.alert(
+        tr('contactBuyer.success', 'Success'),
+        tr('contactBuyer.productUploaded', 'Product uploaded successfully!')
+      );
+
+      // Reload products
+      await loadProducts();
+
+      // Reset form
+      setShowUploadModal(false);
+      setProductName('');
+      setProductRate('');
+      setProductQuantity('');
+      setProductImage('');
+      setSelectedUnit('kg');
+      setSelectedFarmerLocation('');
+      setCustomFarmerLocation('');
+    } catch (error: any) {
+      console.error('Error uploading product - FULL ERROR:', error);
+      
+      let errorMessage = 'Failed to upload product. ';
+      
+      if (error?.message?.includes('Storage rules')) {
+        errorMessage += 'Please update Firebase Storage rules. See FIREBASE_RULES_SETUP.md';
+      } else if (error?.message?.includes('Firestore rules')) {
+        errorMessage += 'Please update Firestore rules. See FIREBASE_RULES_SETUP.md';
+      } else if (error?.message?.includes('permission')) {
+        errorMessage += 'Permission denied. Update Firebase rules in Console.';
+      } else if (error?.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Please check console for details.';
+      }
+      
+      Alert.alert(
+        tr('contactBuyer.error', 'Error'),
+        errorMessage
+      );
+    } finally {
+      setUploading(false);
+    }
   };
+
+  const handleDeleteProduct = async (product: FarmerProduct) => {
+    Alert.alert('Delete Product', `Delete "${product.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteProductWithImage(product.id, product.image);
+            await loadProducts();
+          } catch (e: any) {
+            Alert.alert('Error', e?.message || 'Failed to delete product');
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleAcceptMarketDeal = async (deal: MarketDeal) => {
+    try {
+      await acceptMarketDeal(deal);
+      await loadProducts();
+      await loadMarketDeals();
+      Alert.alert('Success', 'Offer accepted. Buyer has been notified.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to accept offer');
+    }
+  };
+
+  const handleRejectMarketDeal = async (deal: MarketDeal) => {
+    try {
+      await rejectMarketDeal(deal.id);
+      await loadMarketDeals();
+      Alert.alert('Updated', 'Offer rejected. Buyer has been notified.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to reject offer');
+    }
+  };
+
+  const pendingDeals = marketDeals.filter((d) => d.status === 'pending');
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: '#FFFFFF' }}>
@@ -388,100 +551,266 @@ export const ContactBuyerScreen = () => {
           </View>
 
           {/* Product Cards */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 24 }}
-          >
-            {uploadedProducts.map((product) => (
-              <LinearGradient
-                key={product.id}
-                colors={['#FFFFFF', '#F9FAFB']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{
-                  width: 220,
-                  marginRight: 16,
-                  borderRadius: 20,
-                  overflow: 'hidden',
-                  borderWidth: 1,
-                  borderColor: '#E5E7EB',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 12,
-                  elevation: 4,
-                }}
-              >
-                <Image
-                  source={{ uri: product.image }}
-                  style={{ width: '100%', height: 140 }}
-                  resizeMode="cover"
-                />
-                <View style={{ padding: 14 }}>
-                  <Text style={{
-                    color: '#111827',
-                    fontSize: 17,
-                    fontWeight: '700',
-                    marginBottom: 10,
-                  }}>
-                    {product.name}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <LinearGradient
-                        colors={['#10B981', '#059669']}
-                        style={{
-                          borderRadius: 8,
-                          paddingHorizontal: 10,
-                          paddingVertical: 6,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <IndianRupee size={14} color="#fff" strokeWidth={2.5} />
-                        <Text style={{
-                          color: '#fff',
-                          fontSize: 16,
-                          fontWeight: '800',
-                          marginLeft: 2,
-                        }}>
-                          {product.rate}
-                        </Text>
-                        <Text style={{
-                          color: 'rgba(255, 255, 255, 0.9)',
-                          fontSize: 12,
-                          fontWeight: '600',
-                          marginLeft: 2,
-                        }}>
-                          /{product.unit}
-                        </Text>
-                      </LinearGradient>
-                    </View>
-                    <View style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      backgroundColor: '#F3F4F6',
-                      borderRadius: 8,
-                      paddingHorizontal: 8,
-                      paddingVertical: 6,
+          {loading ? (
+            <View style={{ 
+              height: 200, 
+              justifyContent: 'center', 
+              alignItems: 'center' 
+            }}>
+              <ActivityIndicator size="large" color="#10B981" />
+              <Text style={{ 
+                color: '#6B7280', 
+                marginTop: 12,
+                fontSize: 14,
+                fontWeight: '500',
+              }}>
+                Loading products...
+              </Text>
+            </View>
+          ) : uploadedProducts.length === 0 ? (
+            <View style={{ 
+              height: 200, 
+              justifyContent: 'center', 
+              alignItems: 'center',
+              backgroundColor: '#F9FAFB',
+              borderRadius: 20,
+              borderWidth: 2,
+              borderColor: '#E5E7EB',
+              borderStyle: 'dashed',
+            }}>
+              <Package size={48} color="#9CA3AF" strokeWidth={1.5} />
+              <Text style={{ 
+                color: '#6B7280', 
+                marginTop: 12,
+                fontSize: 16,
+                fontWeight: '600',
+              }}>
+                No products uploaded yet
+              </Text>
+              <Text style={{ 
+                color: '#9CA3AF', 
+                marginTop: 4,
+                fontSize: 14,
+              }}>
+                Tap the Upload button to add your first product
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginBottom: 24 }}
+            >
+              {uploadedProducts.map((product) => (
+                <LinearGradient
+                  key={product.id}
+                  colors={['#FFFFFF', '#F9FAFB']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    width: 220,
+                    marginRight: 16,
+                    borderRadius: 20,
+                    overflow: 'hidden',
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 12,
+                    elevation: 4,
+                  }}
+                >
+                  <View style={{ position: 'relative' }}>
+                    <Image
+                      source={{ uri: product.image }}
+                      style={{ width: '100%', height: 140 }}
+                      resizeMode="cover"
+                    />
+                    <TouchableOpacity
+                      onPress={() => handleDeleteProduct(product)}
+                      activeOpacity={0.85}
+                      style={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 10,
+                        backgroundColor: 'rgba(0,0,0,0.55)',
+                        borderRadius: 16,
+                        padding: 8,
+                      }}
+                    >
+                      <Trash2 size={16} color="#fff" strokeWidth={2.5} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={{ padding: 14 }}>
+                    <Text style={{
+                      color: '#111827',
+                      fontSize: 17,
+                      fontWeight: '700',
+                      marginBottom: 10,
                     }}>
-                      <Package size={14} color="#6B7280" strokeWidth={2.5} />
-                      <Text style={{
-                        color: '#374151',
-                        fontSize: 13,
-                        fontWeight: '700',
-                        marginLeft: 4,
+                      {product.name}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <LinearGradient
+                          colors={['#10B981', '#059669']}
+                          style={{
+                            borderRadius: 8,
+                            paddingHorizontal: 10,
+                            paddingVertical: 6,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <IndianRupee size={14} color="#fff" strokeWidth={2.5} />
+                          <Text style={{
+                            color: '#fff',
+                            fontSize: 16,
+                            fontWeight: '800',
+                            marginLeft: 2,
+                          }}>
+                            {product.rate}
+                          </Text>
+                          <Text style={{
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            fontSize: 12,
+                            fontWeight: '600',
+                            marginLeft: 2,
+                          }}>
+                            /{product.unit}
+                          </Text>
+                        </LinearGradient>
+                      </View>
+                      <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#F3F4F6',
+                        borderRadius: 8,
+                        paddingHorizontal: 8,
+                        paddingVertical: 6,
                       }}>
-                        {product.quantity} {product.unit}
-                      </Text>
+                        <Package size={14} color="#6B7280" strokeWidth={2.5} />
+                        <Text style={{
+                          color: '#374151',
+                          fontSize: 13,
+                          fontWeight: '700',
+                          marginLeft: 4,
+                        }}>
+                          {product.quantity} {product.unit}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </LinearGradient>
-            ))}
-          </ScrollView>
+                </LinearGradient>
+              ))}
+            </ScrollView>
+          )}
         </View>
+
+        {/* Incoming Requests / Negotiations (Market Deals) */}
+        {pendingDeals.length > 0 && (
+          <View style={{ paddingHorizontal: 24, marginTop: 8 }}>
+            <Text
+              style={{
+                color: '#111827',
+                fontSize: 22,
+                fontWeight: '800',
+                marginBottom: 14,
+                letterSpacing: -0.3,
+              }}
+            >
+              Incoming Requests ({pendingDeals.length})
+            </Text>
+
+            {pendingDeals.slice(0, 8).map((deal) => (
+              <View
+                key={deal.id}
+                style={{
+                  backgroundColor: '#F0FDF4',
+                  borderRadius: 18,
+                  padding: 16,
+                  marginBottom: 12,
+                  borderWidth: 1,
+                  borderColor: '#BBF7D0',
+                }}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: '#111827', fontSize: 16, fontWeight: '800' }}>
+                    {deal.kind === 'negotiation' ? 'Negotiation Offer' : 'Request to Buy'}
+                  </Text>
+                  <View
+                    style={{
+                      backgroundColor: deal.kind === 'negotiation' ? '#DBEAFE' : '#FEF3C7',
+                      borderRadius: 999,
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: deal.kind === 'negotiation' ? '#1D4ED8' : '#92400E',
+                        fontWeight: '800',
+                        fontSize: 12,
+                      }}
+                    >
+                      {deal.kind === 'negotiation' ? 'NEGOTIATION' : 'REQUEST'}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={{ color: '#111827', marginTop: 10, fontSize: 15, fontWeight: '800' }}>
+                  {deal.buyerName}
+                </Text>
+                <Text style={{ color: '#374151', marginTop: 4 }}>
+                  {deal.buyerPhone}
+                  {deal.buyerLocation ? ` • ${deal.buyerLocation}` : ''}
+                </Text>
+
+                <View style={{ marginTop: 10 }}>
+                  <Text style={{ color: '#111827', fontWeight: '800' }}>
+                    {deal.productName}
+                  </Text>
+                  <Text style={{ color: '#374151', marginTop: 4 }}>
+                    Quantity: {deal.offerQuantity} {deal.unit}
+                  </Text>
+                  <Text style={{ color: '#374151', marginTop: 4 }}>
+                    Price: ₹{deal.offerPrice}
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: 'row', marginTop: 14, justifyContent: 'flex-end' }}>
+                  <TouchableOpacity
+                    onPress={() => handleRejectMarketDeal(deal)}
+                    activeOpacity={0.85}
+                    style={{
+                      backgroundColor: '#DC2626',
+                      borderRadius: 12,
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      marginRight: 10,
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '800' }}>Reject</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleAcceptMarketDeal(deal)}
+                    activeOpacity={0.85}
+                    style={{
+                      backgroundColor: '#16A34A',
+                      borderRadius: 12,
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '800' }}>Accept</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Buyer Contact Cards */}
         <View style={{ paddingHorizontal: 24, marginTop: 8 }}>
@@ -773,24 +1102,59 @@ export const ContactBuyerScreen = () => {
                 onChangeText={setProductName}
               />
 
+              {/* Farmer Location */}
+              <Text className="text-gray-700 font-semibold mb-2">
+                {tr('contactBuyer.location', 'Location')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowFarmerLocationModal(true)}
+                activeOpacity={0.85}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  backgroundColor: '#F3F4F6',
+                  borderRadius: 12,
+                  padding: 14,
+                  borderWidth: 1,
+                  borderColor: '#E5E7EB',
+                  marginBottom: 14,
+                }}
+              >
+                <Text style={{
+                  color:
+                    (selectedFarmerLocation === 'Other' && customFarmerLocation) || selectedFarmerLocation
+                      ? '#111827'
+                      : '#9CA3AF',
+                  fontSize: 15,
+                  fontWeight: '600',
+                  flex: 1,
+                }}>
+                  {(selectedFarmerLocation === 'Other' && customFarmerLocation
+                    ? customFarmerLocation
+                    : selectedFarmerLocation) || 'Select farmer location'}
+                </Text>
+                <ChevronDown size={20} color="#6B7280" strokeWidth={2} />
+              </TouchableOpacity>
+
               {/* Rate */}
               <Text className="text-gray-700 font-semibold mb-2">
-                {tr('contactBuyer.ratePerUnit', 'Rate per Unit (₹)')}
+                {tr('contactBuyer.rate', 'Rate (₹ per unit)')}
               </Text>
               <TextInput
                 className="bg-gray-100 rounded-xl px-4 py-3 text-gray-900 text-base mb-4"
-                placeholder={tr('contactBuyer.enterRate', 'e.g., 40')}
+                placeholder={tr('contactBuyer.enterRate', 'e.g., 25')}
                 placeholderTextColor="#9CA3AF"
                 keyboardType="numeric"
                 value={productRate}
                 onChangeText={setProductRate}
               />
 
-              {/* Quantity */}
+              {/* Quantity + Unit */}
               <Text className="text-gray-700 font-semibold mb-2">
                 {tr('contactBuyer.quantity', 'Quantity')}
               </Text>
-              <View className="flex-row items-center mb-4">
+              <View className="flex-row items-end mb-4">
                 <TextInput
                   className="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-gray-900 text-base mr-2"
                   placeholder={tr('contactBuyer.enterQuantity', 'e.g., 500')}
@@ -836,13 +1200,131 @@ export const ContactBuyerScreen = () => {
                 onPress={handleUploadProduct}
                 className="bg-green-600 rounded-xl py-4 items-center flex-row justify-center mt-2"
                 activeOpacity={0.7}
+                disabled={uploading}
+                style={{ opacity: uploading ? 0.6 : 1 }}
               >
-                <Upload size={20} color="#fff" strokeWidth={2} />
-                <Text className="text-white text-lg font-bold ml-2">
-                  {tr('contactBuyer.uploadNow', 'Upload Product')}
-                </Text>
+                {uploading ? (
+                  <>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <Text className="text-white text-lg font-bold ml-2">Uploading...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={20} color="#fff" strokeWidth={2.5} />
+                    <Text className="text-white text-lg font-bold ml-2">
+                      {tr('contactBuyer.upload', 'Upload Product')}
+                    </Text>
+                  </>
+                )}
               </TouchableOpacity>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Farmer Location Picker Modal */}
+      <Modal
+        visible={showFarmerLocationModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowFarmerLocationModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl p-6" style={{ maxHeight: '70%' }}>
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-gray-900 text-xl font-bold">Select Location</Text>
+              <TouchableOpacity
+                onPress={() => setShowFarmerLocationModal(false)}
+                className="bg-gray-200 rounded-full w-10 h-10 items-center justify-center"
+              >
+                <X size={20} color="#374151" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {INDIA_LOCATIONS.map((location) => (
+                <TouchableOpacity
+                  key={location}
+                  onPress={() => {
+                    setSelectedFarmerLocation(location);
+                    setShowFarmerLocationModal(false);
+                    if (location === 'Other') {
+                      setShowCustomFarmerLocationModal(true);
+                    }
+                  }}
+                  style={{
+                    paddingVertical: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#F3F4F6',
+                  }}
+                >
+                  <Text
+                    className={`text-base ${
+                      selectedFarmerLocation === location
+                        ? 'text-green-600 font-bold'
+                        : 'text-gray-900 font-medium'
+                    }`}
+                  >
+                    {location === 'Other' ? 'Other (type anything)' : location}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Custom Farmer Location Input Modal */}
+      <Modal
+        visible={showCustomFarmerLocationModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowCustomFarmerLocationModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center px-6">
+          <View className="bg-white rounded-2xl p-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-gray-900 text-xl font-bold">Enter Location</Text>
+              <TouchableOpacity
+                onPress={() => setShowCustomFarmerLocationModal(false)}
+                className="bg-gray-200 rounded-full w-10 h-10 items-center justify-center"
+              >
+                <X size={20} color="#374151" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              value={customFarmerLocation}
+              onChangeText={setCustomFarmerLocation}
+              placeholder="Type any location"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                backgroundColor: '#F3F4F6',
+                borderRadius: 12,
+                padding: 14,
+                fontSize: 15,
+                color: '#111827',
+                borderWidth: 1,
+                borderColor: '#E5E7EB',
+              }}
+            />
+
+            <TouchableOpacity
+              onPress={() => setShowCustomFarmerLocationModal(false)}
+              activeOpacity={0.85}
+              style={{ marginTop: 16 }}
+            >
+              <LinearGradient
+                colors={['#10B981', '#059669']}
+                style={{
+                  borderRadius: 14,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>Save</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
