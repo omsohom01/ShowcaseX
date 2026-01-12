@@ -478,7 +478,7 @@ export const CropDiseaseDetectionScreen = () => {
                       marginTop: 4,
                       textAlign: 'center',
                     }}>
-                      Use Camera
+                      {t('disease.useCamera', 'Use Camera')}
                     </Text>
                   </View>
                 </TouchableOpacity>

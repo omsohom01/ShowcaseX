@@ -10,7 +10,7 @@ import {
     StyleSheet,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, ShoppingCart, Package, X, ChevronRight } from 'lucide-react-native';
+import { User, Menu, Wheat, Users, X, ChevronRight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 interface BuyerSideDrawerProps {
@@ -194,7 +194,7 @@ export const BuyerSideDrawer: React.FC<BuyerSideDrawerProps> = ({
                                                     borderRadius: 12,
                                                     padding: 8,
                                                 }}>
-                                                    <ShoppingCart size={20} color="#FFFFFF" strokeWidth={2.5} />
+                                                    <Menu size={20} color="#FFFFFF" strokeWidth={2.5} />
                                                 </View>
                                                 <View style={{ flex: 1, paddingRight: 30 }}>
                                                     <Text style={{
@@ -258,7 +258,7 @@ export const BuyerSideDrawer: React.FC<BuyerSideDrawerProps> = ({
                                                         justifyContent: 'center',
                                                     }}
                                                 >
-                                                    <Package size={20} color="#FFFFFF" strokeWidth={2.5} />
+                                                    <Wheat size={20} color="#FFFFFF" strokeWidth={2.5} />
                                                 </LinearGradient>
                                                 <View style={{ flex: 1, marginLeft: 10 }}>
                                                     <Text style={{
@@ -319,7 +319,7 @@ export const BuyerSideDrawer: React.FC<BuyerSideDrawerProps> = ({
                                                         justifyContent: 'center',
                                                     }}
                                                 >
-                                                    <ShoppingCart size={20} color="#FFFFFF" strokeWidth={2.5} />
+                                                    <Users size={20} color="#FFFFFF" strokeWidth={2.5} />
                                                 </LinearGradient>
                                                 <View style={{ flex: 1, marginLeft: 10 }}>
                                                     <Text style={{

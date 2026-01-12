@@ -47,6 +47,7 @@ import {
 } from '../services/products';
 import { CROP_TYPES } from '../constants/locations';
 import { distanceKmBetweenLocations } from '../utils/locationDistance';
+import { localizeNumber } from '../utils/numberLocalization';
 
 type ContactFarmerNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -460,8 +461,62 @@ export const ContactFarmerScreen = () => {
   const toSingularCropLabel = (raw: string) => {
     const s = String(raw || '').trim();
     if (!s) return s;
-    if (s.toLowerCase() === 'other') return s;
-    // Lightweight singularization for UI labels.
+    
+    // Map crop names to translation keys
+    const cropKeyMap: Record<string, string> = {
+      'rice': 'rice',
+      'wheat': 'wheat',
+      'maize': 'maize',
+      'pulses': 'pulses',
+      'sugarcane': 'sugarcane',
+      'cotton': 'cotton',
+      'jute': 'jute',
+      'tea': 'tea',
+      'coffee': 'coffee',
+      'rubber': 'rubber',
+      'tomatoes': 'tomatoes',
+      'potatoes': 'potatoes',
+      'onions': 'onions',
+      'cauliflower': 'cauliflower',
+      'cabbage': 'cabbage',
+      'brinjal': 'brinjal',
+      'okra': 'okra',
+      'peas': 'peas',
+      'beans': 'beans',
+      'carrots': 'carrots',
+      'radish': 'radish',
+      'cucumbers': 'cucumbers',
+      'pumpkin': 'pumpkin',
+      'bottle gourd': 'bottleGourd',
+      'bitter gourd': 'bitterGourd',
+      'ridge gourd': 'ridgeGourd',
+      'chillies': 'chillies',
+      'capsicum': 'capsicum',
+      'spinach': 'spinach',
+      'coriander': 'coriander',
+      'mint': 'mint',
+      'fenugreek': 'fenugreek',
+      'mangoes': 'mangoes',
+      'bananas': 'bananas',
+      'grapes': 'grapes',
+      'oranges': 'oranges',
+      'apples': 'apples',
+      'guava': 'guava',
+      'papaya': 'papaya',
+      'pomegranate': 'pomegranate',
+      'watermelon': 'watermelon',
+      'muskmelon': 'muskmelon',
+      'other': 'other'
+    };
+    
+    const lowerS = s.toLowerCase();
+    const key = cropKeyMap[lowerS];
+    
+    if (key) {
+      return tr(`cropTypes.${key}`, s);
+    }
+    
+    // Fallback: lightweight singularization for UI labels
     if (s.endsWith('ies')) return s.slice(0, -3) + 'y';
     if (s.endsWith('ses')) return s.slice(0, -2);
     if (s.endsWith('s') && !s.endsWith('ss')) return s.slice(0, -1);
@@ -761,7 +816,7 @@ export const ContactFarmerScreen = () => {
                 fontWeight: '800',
                 letterSpacing: -0.3,
               }}>
-                {tr('contactFarmer.availableFarmers', 'Available Farmers')} ({allSearchResults.length})
+                {tr('contactFarmer.availableFarmers', 'Available Farmers')} ({localizeNumber(allSearchResults.length, i18n.language)})
               </Text>
 
               {canRefreshFarmers && (
@@ -772,7 +827,7 @@ export const ContactFarmerScreen = () => {
                   >
                     <RefreshCcw size={16} color="#fff" strokeWidth={2.5} />
                     <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800', marginLeft: 8 }}>
-                      Refresh
+                      {tr('contactFarmer.refresh', 'Refresh')}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -976,7 +1031,7 @@ export const ContactFarmerScreen = () => {
                               justifyContent: 'center',
                             }}
                           >
-                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900' }}>Negotiation</Text>
+                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900' }}>{tr('contactFarmer.negotiation', 'Negotiation')}</Text>
                           </LinearGradient>
                         </TouchableOpacity>
 
@@ -996,7 +1051,7 @@ export const ContactFarmerScreen = () => {
                               justifyContent: 'center',
                             }}
                           >
-                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900' }}>Request to Buy</Text>
+                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900' }}>{tr('contactFarmer.requestToBuy', 'Request to Buy')}</Text>
                           </LinearGradient>
                         </TouchableOpacity>
                       </View>
@@ -1020,7 +1075,7 @@ export const ContactFarmerScreen = () => {
                             }}
                           >
                             <Phone size={18} color="#fff" strokeWidth={2.5} />
-                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 10 }}>Call</Text>
+                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 10 }}>{tr('contactFarmer.call', 'Call')}</Text>
                           </LinearGradient>
                         </TouchableOpacity>
 
@@ -1042,7 +1097,7 @@ export const ContactFarmerScreen = () => {
                             }}
                           >
                             <MessageCircle size={18} color="#fff" strokeWidth={2.5} />
-                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 10 }}>Chat</Text>
+                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 10 }}>{tr('contactFarmer.chat', 'Chat')}</Text>
                           </LinearGradient>
                         </TouchableOpacity>
                       </View>
@@ -1346,7 +1401,7 @@ export const ContactFarmerScreen = () => {
               marginBottom: 14,
               letterSpacing: -0.3,
             }}>
-              Accepted Deals ({acceptedDeals.length})
+              {tr('contactFarmer.acceptedDeals', 'Accepted Deals')} ({acceptedDeals.length})
             </Text>
 
             <FlatList
@@ -1378,15 +1433,15 @@ export const ContactFarmerScreen = () => {
                       {deal.productName}
                     </Text>
                     <Text style={{ color: '#374151', marginTop: 8, fontWeight: '700' }}>
-                      Farmer: {deal.farmerName} • {deal.farmerPhone}
+                      {tr('contactFarmer.farmer', 'Farmer')}: {deal.farmerName} • {deal.farmerPhone}
                       {deal.farmerLocation ? ` • ${deal.farmerLocation}` : ''}
                     </Text>
                     <Text style={{ color: '#374151', marginTop: 6, fontWeight: '700' }}>
-                      Buyer: {deal.buyerName} • {deal.buyerPhone}
+                      {tr('contactFarmer.buyer', 'Buyer')}: {deal.buyerName} • {deal.buyerPhone}
                       {deal.buyerLocation ? ` • ${deal.buyerLocation}` : ''}
                     </Text>
                     <Text style={{ color: '#374151', marginTop: 6 }}>
-                      Qty: {deal.offerQuantity} {deal.unit} • Price: ₹{deal.offerPrice}
+                      {tr('contactFarmer.qty', 'Qty')}: {deal.offerQuantity} {deal.unit} • {tr('contactFarmer.price', 'Price')}: ₹{deal.offerPrice}
                     </Text>
 
                     <View style={{ flexDirection: 'row', marginTop: 14 }}>
@@ -1407,7 +1462,7 @@ export const ContactFarmerScreen = () => {
                         >
                           <Phone size={18} color="#fff" strokeWidth={2.5} />
                           <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 8 }}>
-                            Call
+                            {tr('contactFarmer.call', 'Call')}
                           </Text>
                         </LinearGradient>
                       </TouchableOpacity>
@@ -1429,7 +1484,7 @@ export const ContactFarmerScreen = () => {
                         >
                           <MessageCircle size={18} color="#fff" strokeWidth={2.5} />
                           <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 8 }}>
-                            Chat
+                            {tr('contactFarmer.chat', 'Chat')}
                           </Text>
                         </LinearGradient>
                       </TouchableOpacity>
@@ -1602,7 +1657,7 @@ export const ContactFarmerScreen = () => {
           <View className="bg-white rounded-t-3xl p-6" style={{ maxHeight: '80%' }}>
             <View className="flex-row items-center justify-between mb-6">
               <Text className="text-gray-900 text-2xl font-bold">
-                Select Crop Type
+                {tr('cropTypes.selectCropType', 'Select Crop Type')}
               </Text>
               <TouchableOpacity
                 onPress={() => setShowCropModal(false)}
@@ -1633,7 +1688,7 @@ export const ContactFarmerScreen = () => {
                       ? 'text-blue-600 font-bold'
                       : 'text-gray-900 font-medium'
                   }`}>
-                    {crop === 'Other' ? 'Other (type anything)' : toSingularCropLabel(crop)}
+                    {crop === 'Other' ? tr('cropTypes.other', 'Other') + ' (' + tr('contactFarmer.typeAnything', 'type anything') + ')' : toSingularCropLabel(crop)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -1708,7 +1763,7 @@ export const ContactFarmerScreen = () => {
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white rounded-t-3xl p-6" style={{ maxHeight: '80%' }}>
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-gray-900 text-2xl font-bold">Negotiation</Text>
+              <Text className="text-gray-900 text-2xl font-bold">{tr('contactFarmer.negotiation', 'Negotiation')}</Text>
               <TouchableOpacity
                 onPress={() => setShowNegotiationModal(false)}
                 className="bg-gray-200 rounded-full w-10 h-10 items-center justify-center"
@@ -1718,17 +1773,17 @@ export const ContactFarmerScreen = () => {
             </View>
 
             <Text style={{ color: '#374151', fontSize: 14, fontWeight: '700', marginBottom: 10 }}>
-              Farmer: {negFarmer?.farmerName || '-'} • Product: {negProduct?.name || '-'}
+              {tr('contactFarmer.farmer', 'Farmer')}: {negFarmer?.farmerName || '-'} • {tr('contactFarmer.product', 'Product')}: {negProduct?.name || '-'}
             </Text>
 
             <Text style={{ color: '#374151', fontSize: 13, fontWeight: '700', marginBottom: 8 }}>
-              Quantity
+              {tr('contactFarmer.quantity', 'Quantity')}
             </Text>
             <TextInput
               value={negQuantity}
               onChangeText={setNegQuantity}
               keyboardType="numeric"
-              placeholder="Enter quantity"
+              placeholder={tr('contactFarmer.enterQuantity', 'Enter quantity')}
               placeholderTextColor="#9CA3AF"
               style={{
                 backgroundColor: '#F3F4F6',
@@ -1743,13 +1798,13 @@ export const ContactFarmerScreen = () => {
             />
 
             <Text style={{ color: '#374151', fontSize: 13, fontWeight: '700', marginBottom: 8 }}>
-              Price (₹ per unit)
+              {tr('contactFarmer.pricePerUnit', 'Price (₹ per unit)')}
             </Text>
             <TextInput
               value={negPrice}
               onChangeText={setNegPrice}
               keyboardType="numeric"
-              placeholder="Enter price"
+              placeholder={tr('contactFarmer.enterPrice', 'Enter price')}
               placeholderTextColor="#9CA3AF"
               style={{
                 backgroundColor: '#F3F4F6',
@@ -1768,7 +1823,7 @@ export const ContactFarmerScreen = () => {
                 colors={['#F59E0B', '#D97706']}
                 style={{ borderRadius: 14, paddingVertical: 14, alignItems: 'center' }}
               >
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '900' }}>Send Offer</Text>
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '900' }}>{tr('contactFarmer.sendOffer', 'Send Offer')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>

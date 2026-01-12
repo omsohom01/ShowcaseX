@@ -560,9 +560,10 @@ export const DocumentAnalyzerScreen = () => {
                       shadowOpacity: 0.15,
                       shadowRadius: 12,
                       elevation: 6,
+                      minHeight: 180,
                     }}
                   >
-                    <View style={{ alignItems: 'center' }}>
+                    <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
                       <LinearGradient
                         colors={['#22C55E', '#16A34A']}
                         style={{
@@ -581,22 +582,25 @@ export const DocumentAnalyzerScreen = () => {
                       >
                         <Upload size={34} color="#FFFFFF" strokeWidth={2.5} />
                       </LinearGradient>
-                      <Text style={{
-                        color: '#111827',
-                        fontSize: 14,
-                        fontWeight: '700',
-                        textAlign: 'center',
-                      }}>
-                        {t('analyzer.uploadLabel')}
-                      </Text>
-                      <Text style={{
-                        color: '#64748B',
-                        fontSize: 11,
-                        marginTop: 4,
-                        textAlign: 'center',
-                      }}>
-                        JPG, PNG
-                      </Text>
+                      <View style={{ height: 56, justifyContent: 'center' }}>
+                        <Text style={{
+                          color: '#111827',
+                          fontSize: 14,
+                          fontWeight: '700',
+                          textAlign: 'center',
+                          paddingHorizontal: 4,
+                        }}>
+                          {t('analyzer.uploadLabel')}
+                        </Text>
+                        <Text style={{
+                          color: '#64748B',
+                          fontSize: 11,
+                          marginTop: 4,
+                          textAlign: 'center',
+                        }}>
+                          PDF, JPG, PNG
+                        </Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 </Animated.View>
@@ -621,9 +625,10 @@ export const DocumentAnalyzerScreen = () => {
                       shadowOpacity: 0.15,
                       shadowRadius: 12,
                       elevation: 6,
+                      minHeight: 180,
                     }}
                   >
-                    <View style={{ alignItems: 'center' }}>
+                    <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
                       <LinearGradient
                         colors={['#10B981', '#059669']}
                         style={{
@@ -642,22 +647,25 @@ export const DocumentAnalyzerScreen = () => {
                       >
                         <Camera size={34} color="#FFFFFF" strokeWidth={2.5} />
                       </LinearGradient>
-                      <Text style={{
-                        color: '#111827',
-                        fontSize: 14,
-                        fontWeight: '700',
-                        textAlign: 'center',
-                      }}>
-                        Take Photo
-                      </Text>
-                      <Text style={{
-                        color: '#64748B',
-                        fontSize: 11,
-                        marginTop: 4,
-                        textAlign: 'center',
-                      }}>
-                        Use Camera
-                      </Text>
+                      <View style={{ height: 56, justifyContent: 'center' }}>
+                        <Text style={{
+                          color: '#111827',
+                          fontSize: 14,
+                          fontWeight: '700',
+                          textAlign: 'center',
+                          paddingHorizontal: 4,
+                        }}>
+                          {t('disease.takePhoto', 'Take Photo')}
+                        </Text>
+                        <Text style={{
+                          color: '#64748B',
+                          fontSize: 11,
+                          marginTop: 4,
+                          textAlign: 'center',
+                        }}>
+                          {t('disease.useCamera', 'Use Camera')}
+                        </Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 </Animated.View>
@@ -730,7 +738,7 @@ export const DocumentAnalyzerScreen = () => {
               {/* Supported Formats */}
               <View className="flex-row items-center justify-center mb-2">
                 <Text className="text-gray-500 text-sm">
-                  {t('analyzer.supportedFormats')}: JPG, PNG (Images only)
+                  {t('analyzer.supportedFormats')}: PDF, JPG, PNG
                 </Text>
               </View>
 

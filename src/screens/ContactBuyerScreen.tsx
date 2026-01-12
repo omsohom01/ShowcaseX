@@ -805,7 +805,7 @@ export const ContactBuyerScreen = () => {
                 fontSize: 14,
                 fontWeight: '500',
               }}>
-                Loading products...
+                {tr('contactBuyer.loadingProducts', 'Loading products...')}
               </Text>
             </View>
           ) : uploadedProducts.length === 0 ? (
@@ -826,14 +826,14 @@ export const ContactBuyerScreen = () => {
                 fontSize: 16,
                 fontWeight: '600',
               }}>
-                No products uploaded yet
+                {tr('contactBuyer.noProducts', 'No products uploaded yet')}
               </Text>
               <Text style={{ 
                 color: '#9CA3AF', 
                 marginTop: 4,
                 fontSize: 14,
               }}>
-                Tap the Upload button to add your first product
+                {tr('contactBuyer.noProductsDescription', 'Tap the Upload button to add your first product')}
               </Text>
             </View>
           ) : (
@@ -960,7 +960,7 @@ export const ContactBuyerScreen = () => {
               marginBottom: 14,
               letterSpacing: -0.3,
             }}>
-              Accepted Deals ({acceptedDeals.length})
+              {tr('contactBuyer.acceptedDeals', 'Accepted Deals')} ({acceptedDeals.length})
             </Text>
 
             <FlatList
@@ -994,11 +994,11 @@ export const ContactBuyerScreen = () => {
                       {deal.productName}
                     </Text>
                     <Text style={{ color: '#374151', marginTop: 8, fontWeight: '700' }}>
-                      Buyer: {deal.buyerName} • {deal.buyerPhone}
+                      {tr('contactBuyer.buyer', 'Buyer')}: {deal.buyerName} • {deal.buyerPhone}
                       {deal.buyerLocation ? ` • ${deal.buyerLocation}` : ''}
                     </Text>
                     <Text style={{ color: '#374151', marginTop: 6 }}>
-                      {deal.kind === 'negotiation' ? 'Negotiation' : 'Request to Buy'} • Qty: {deal.offerQuantity} {deal.unit} • Price: ₹{deal.offerPrice}
+                      {deal.kind === 'negotiation' ? tr('contactBuyer.negotiation', 'Negotiation') : tr('contactBuyer.requestToBuy', 'Request to Buy')} • {tr('contactBuyer.qty', 'Qty')}: {deal.offerQuantity} {deal.unit} • {tr('contactBuyer.price', 'Price')}: ₹{deal.offerPrice}
                     </Text>
 
                     <View style={{ flexDirection: 'row', marginTop: 14 }}>
@@ -1019,7 +1019,7 @@ export const ContactBuyerScreen = () => {
                         >
                           <Phone size={18} color="#fff" strokeWidth={2.5} />
                           <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 8 }}>
-                            Call
+                            {tr('contactBuyer.call', 'Call')}
                           </Text>
                         </LinearGradient>
                       </TouchableOpacity>
@@ -1041,7 +1041,7 @@ export const ContactBuyerScreen = () => {
                         >
                           <MessageCircle size={18} color="#fff" strokeWidth={2.5} />
                           <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 8 }}>
-                            Chat
+                            {tr('contactBuyer.chat', 'Chat')}
                           </Text>
                         </LinearGradient>
                       </TouchableOpacity>

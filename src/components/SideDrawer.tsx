@@ -10,7 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, Sprout, FileText, Leaf, MessageCircle, ShoppingCart, X, ChevronRight } from 'lucide-react-native';
+import { User, Wheat, FileText, ScanLine, Bot, Users, X, ChevronRight, Menu } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 interface SideDrawerProps {
@@ -221,7 +221,7 @@ export const SideDrawer: React.FC<SideDrawerProps> = ({
                         borderRadius: 12,
                         padding: 8,
                       }}>
-                        <Sprout size={20} color="#FFFFFF" strokeWidth={2.5} />
+                        <Menu size={20} color="#FFFFFF" strokeWidth={2.5} />
                       </View>
                       <View style={{ flex: 1, paddingRight: 30 }}>
                         <Text style={{
@@ -346,7 +346,7 @@ export const SideDrawer: React.FC<SideDrawerProps> = ({
                         justifyContent: 'center',
                       }}
                     >
-                      <Sprout size={20} color="#FFFFFF" strokeWidth={2.5} />
+                      <Wheat size={20} color="#FFFFFF" strokeWidth={2.5} />
                     </LinearGradient>
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={{
@@ -468,7 +468,7 @@ export const SideDrawer: React.FC<SideDrawerProps> = ({
                         justifyContent: 'center',
                       }}
                     >
-                      <Leaf size={20} color="#FFFFFF" strokeWidth={2.5} />
+                      <ScanLine size={20} color="#FFFFFF" strokeWidth={2.5} />
                     </LinearGradient>
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={{
@@ -529,7 +529,7 @@ export const SideDrawer: React.FC<SideDrawerProps> = ({
                         justifyContent: 'center',
                       }}
                     >
-                      <ShoppingCart size={20} color="#FFFFFF" strokeWidth={2.5} />
+                      <Users size={20} color="#FFFFFF" strokeWidth={2.5} />
                     </LinearGradient>
                     {notificationCount > 0 && (
                       <View style={{
@@ -612,7 +612,7 @@ export const SideDrawer: React.FC<SideDrawerProps> = ({
                         justifyContent: 'center',
                       }}
                     >
-                      <MessageCircle size={20} color="#FFFFFF" strokeWidth={2.5} />
+                      <Bot size={20} color="#FFFFFF" strokeWidth={2.5} />
                     </LinearGradient>
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={{
