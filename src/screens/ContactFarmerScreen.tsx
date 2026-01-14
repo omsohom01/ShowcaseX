@@ -584,6 +584,21 @@ export const ContactFarmerScreen = () => {
       );
   }, [buyerDeals]);
 
+  const locationRequestDeals = useMemo(() => {
+    const user = auth.currentUser;
+    if (!user) return [] as MarketDeal[];
+    return [...buyerDeals]
+      .filter((d: any) =>
+        d.status === 'accepted' &&
+        d.buyerId === user.uid &&
+        d.farmerId &&
+        d.locationRequestBy?.[d.farmerId]
+      )
+      .sort((a: any, b: any) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0));
+  }, [buyerDeals]);
+
+  const notificationCount = unreadBuyerUpdates.length + locationRequestDeals.length;
+
   // Buyer-side: show ALL accepted deals here (negotiation + requestToBuy).
   // Previously this was limited to requestToBuy which hid accepted negotiations.
   const acceptedDeals = useMemo(() => {
@@ -710,7 +725,7 @@ export const ContactFarmerScreen = () => {
                 <Bell size={26} color="#fff" strokeWidth={2.5} />
               </View>
 
-              {unreadBuyerUpdates.length > 0 && (
+              {notificationCount > 0 && (
                 <View
                   style={{
                     position: 'absolute',
@@ -727,7 +742,7 @@ export const ContactFarmerScreen = () => {
                   }}
                 >
                   <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>
-                    {unreadBuyerUpdates.length}
+                    {notificationCount}
                   </Text>
                 </View>
               )}
@@ -1600,7 +1615,7 @@ export const ContactFarmerScreen = () => {
                       >
                         <MapPin size={18} color="#fff" strokeWidth={2.5} />
                         <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 8 }}>
-                          {tr('contactFarmer.seeLocation', 'See Location')}
+                          {tr('contactFarmer.location', 'Location')}
                         </Text>
                       </LinearGradient>
                     </TouchableOpacity>
@@ -1679,14 +1694,67 @@ export const ContactFarmerScreen = () => {
             )}
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              {buyerDealUpdatesSorted.length === 0 ? (
+              {locationRequestDeals.length === 0 && buyerDealUpdatesSorted.length === 0 ? (
                 <View style={{ paddingVertical: 24 }}>
                   <Text style={{ color: '#6B7280', fontSize: 15, fontWeight: '600' }}>
                     {tr('contactFarmer.noNotificationsYet', 'No notifications yet.')}
                   </Text>
                 </View>
               ) : (
-                buyerDealUpdatesSorted.map((deal) => (
+                <>
+                  {locationRequestDeals.length > 0 && (
+                    <View style={{ marginBottom: 12 }}>
+                      <Text style={{ color: '#111827', fontSize: 15, fontWeight: '900', marginBottom: 8 }}>
+                        {tr('contactFarmer.locationRequestsTitle', 'Location requests')}
+                      </Text>
+                      {locationRequestDeals.map((deal) => (
+                        <View
+                          key={`locreq-${deal.id}`}
+                          style={{
+                            backgroundColor: '#EFF6FF',
+                            borderRadius: 18,
+                            padding: 16,
+                            marginBottom: 10,
+                            borderWidth: 1,
+                            borderColor: '#BFDBFE',
+                          }}
+                        >
+                          <Text style={{ color: '#111827', fontSize: 15, fontWeight: '900' }}>
+                            {deal.productName}
+                          </Text>
+                          <Text style={{ color: '#374151', marginTop: 8 }}>
+                            {tr('contactFarmer.locationRequestMsg', 'Farmer requested your location. Please share it.')}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => {
+                              setShowBuyerNotificationsModal(false);
+                              navigation.navigate('LiveLocation', {
+                                dealId: deal.id,
+                                buyerId: (deal as any).buyerId,
+                                buyerName: (deal as any).buyerName,
+                                farmerId: (deal as any).farmerId,
+                                farmerName: (deal as any).farmerName,
+                                viewerType: 'buyer',
+                              });
+                            }}
+                            activeOpacity={0.85}
+                            style={{ marginTop: 12 }}
+                          >
+                            <LinearGradient
+                              colors={['#2563EB', '#1D4ED8']}
+                              style={{ borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}
+                            >
+                              <Text style={{ color: '#fff', fontSize: 13, fontWeight: '900' }}>
+                                {tr('contactFarmer.openLocation', 'Open location')}
+                              </Text>
+                            </LinearGradient>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {buyerDealUpdatesSorted.map((deal) => (
                   <View
                     key={deal.id}
                     style={{
@@ -1754,7 +1822,8 @@ export const ContactFarmerScreen = () => {
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
-                ))
+                  ))}
+                </>
               )}
             </ScrollView>
           </View>

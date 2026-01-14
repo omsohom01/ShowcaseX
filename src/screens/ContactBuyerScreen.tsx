@@ -224,7 +224,13 @@ export const ContactBuyerScreen = () => {
       const deals = await getFarmerMarketDeals(user.uid);
       setMarketDeals(deals);
       const pendingUnseen = deals.filter((d) => d.status === 'pending' && d.farmerSeen !== true);
-      setNotifications(pendingUnseen.length);
+      const locationReqCount = deals.filter((d: any) =>
+        d.status === 'accepted' &&
+        d.farmerId === user.uid &&
+        d.buyerId &&
+        d.locationRequestBy?.[d.buyerId]
+      ).length;
+      setNotifications(pendingUnseen.length + locationReqCount);
     } catch {
       setMarketDeals([]);
       setNotifications(0);
@@ -233,8 +239,17 @@ export const ContactBuyerScreen = () => {
 
   // Keep badge count derived from deals so it stays correct after reload.
   useEffect(() => {
+    const user = auth.currentUser;
     const pendingUnseen = marketDeals.filter((d) => d.status === 'pending' && d.farmerSeen !== true);
-    setNotifications(pendingUnseen.length);
+    const locationReqCount = user
+      ? marketDeals.filter((d: any) =>
+          d.status === 'accepted' &&
+          d.farmerId === user.uid &&
+          d.buyerId &&
+          d.locationRequestBy?.[d.buyerId]
+        ).length
+      : 0;
+    setNotifications(pendingUnseen.length + locationReqCount);
   }, [marketDeals]);
 
   const dismissFarmerNotification = async (dealId: string) => {
@@ -633,6 +648,19 @@ export const ContactBuyerScreen = () => {
     return [...marketDeals]
       .filter((d) => d.status === 'pending' && d.farmerSeen !== true)
       .sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0));
+  }, [marketDeals]);
+
+  const locationRequestDeals = useMemo(() => {
+    const user = auth.currentUser;
+    if (!user) return [] as MarketDeal[];
+    return [...marketDeals]
+      .filter((d: any) =>
+        d.status === 'accepted' &&
+        d.farmerId === user.uid &&
+        d.buyerId &&
+        d.locationRequestBy?.[d.buyerId]
+      )
+      .sort((a: any, b: any) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0));
   }, [marketDeals]);
   const acceptedDeals = useMemo(
     () => marketDeals.filter((d) => d.status === 'accepted'),
@@ -1151,7 +1179,7 @@ export const ContactBuyerScreen = () => {
                       >
                         <MapPin size={18} color="#fff" strokeWidth={2.5} />
                         <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 8 }}>
-                          {tr('contactBuyer.seeLocation', 'See Location')}
+                          {tr('contactBuyer.location', 'Location')}
                         </Text>
                       </LinearGradient>
                     </TouchableOpacity>
@@ -1458,14 +1486,67 @@ export const ContactBuyerScreen = () => {
             )}
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              {farmerNotificationDeals.length === 0 ? (
+              {locationRequestDeals.length === 0 && farmerNotificationDeals.length === 0 ? (
                 <View style={{ paddingVertical: 24 }}>
                   <Text style={{ color: '#6B7280', fontSize: 15, fontWeight: '600' }}>
                     {tr('contactBuyer.noNotificationsYet', 'No notifications yet.')}
                   </Text>
                 </View>
               ) : (
-                farmerNotificationDeals.map((deal) => (
+                <>
+                  {locationRequestDeals.length > 0 && (
+                    <View style={{ marginBottom: 12 }}>
+                      <Text style={{ color: '#111827', fontSize: 15, fontWeight: '900', marginBottom: 8 }}>
+                        {tr('contactBuyer.locationRequestsTitle', 'Location requests')}
+                      </Text>
+                      {locationRequestDeals.map((deal) => (
+                        <View
+                          key={`locreq-${deal.id}`}
+                          style={{
+                            backgroundColor: '#EFF6FF',
+                            borderRadius: 18,
+                            padding: 16,
+                            marginBottom: 10,
+                            borderWidth: 1,
+                            borderColor: '#BFDBFE',
+                          }}
+                        >
+                          <Text style={{ color: '#111827', fontSize: 15, fontWeight: '900' }}>
+                            {deal.productName}
+                          </Text>
+                          <Text style={{ color: '#374151', marginTop: 8 }}>
+                            {tr('contactBuyer.locationRequestMsg', 'Buyer requested your location. Please share it.')}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => {
+                              setShowNotificationsModal(false);
+                              navigation.navigate('LiveLocation', {
+                                dealId: deal.id,
+                                buyerId: (deal as any).buyerId,
+                                buyerName: (deal as any).buyerName,
+                                farmerId: (deal as any).farmerId,
+                                farmerName: (deal as any).farmerName,
+                                viewerType: 'farmer',
+                              });
+                            }}
+                            activeOpacity={0.85}
+                            style={{ marginTop: 12 }}
+                          >
+                            <LinearGradient
+                              colors={['#2563EB', '#1D4ED8']}
+                              style={{ borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}
+                            >
+                              <Text style={{ color: '#fff', fontSize: 13, fontWeight: '900' }}>
+                                {tr('contactBuyer.openLocation', 'Open location')}
+                              </Text>
+                            </LinearGradient>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {farmerNotificationDeals.map((deal) => (
                   <View
                     key={deal.id}
                     style={{
@@ -1610,7 +1691,8 @@ export const ContactBuyerScreen = () => {
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
-                ))
+                  ))}
+                </>
               )}
             </ScrollView>
           </View>

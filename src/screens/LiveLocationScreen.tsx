@@ -14,11 +14,12 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { auth } from '../config/firebase';
+import { detectCurrentLocation } from '../services/location';
 import {
-  detectCurrentLocation,
-  subscribeToUserLastKnownLocation,
-  updateMyLastKnownLocation,
-} from '../services/location';
+  getOtherPartySharedLocationOnce,
+  requestOtherPartyLocation,
+  shareDealLocationOnce,
+} from '../services/dealLocation';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'LiveLocation'>;
 type Rt = RouteProp<RootStackParamList, 'LiveLocation'>;
@@ -46,11 +47,7 @@ export const LiveLocationScreen = () => {
   };
 
   const [loading, setLoading] = useState(true);
-  const [otherLocation, setOtherLocation] = useState<{ lat: number; lng: number; updatedAt?: Date } | null>(null);
-
-  const otherUid = useMemo(() => {
-    return viewerType === 'buyer' ? farmerId : buyerId;
-  }, [viewerType, buyerId, farmerId]);
+  const [working, setWorking] = useState(false);
 
   const otherName = useMemo(() => {
     return viewerType === 'buyer' ? (farmerName || tr('liveLocation.farmer', 'Farmer')) : (buyerName || tr('liveLocation.buyer', 'Buyer'));
@@ -65,34 +62,71 @@ export const LiveLocationScreen = () => {
     }
 
     setLoading(false);
-    // Best-effort: update *your own* last known location so both users can see each other.
-    // This does NOT gate viewing the other user's location.
-    (async () => {
-      try {
-        const res = await detectCurrentLocation();
-        if (!res.ok) return;
-        await updateMyLastKnownLocation({
-          lat: res.location.coords.latitude,
-          lng: res.location.coords.longitude,
-        });
-      } catch (e) {
-        // Silent fail: viewing should still work.
-        console.warn('LiveLocationScreen own-location update failed:', e);
-      }
-    })();
   }, [dealId, buyerId, farmerId]);
 
-  useEffect(() => {
-    const unsub = subscribeToUserLastKnownLocation(otherUid, setOtherLocation);
-    return unsub;
-  }, [otherUid]);
-
-  const openInMaps = () => {
-    if (!otherLocation) return;
-    const url = `https://www.google.com/maps?q=${otherLocation.lat},${otherLocation.lng}`;
+  const openInMaps = (lat: number, lng: number) => {
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
     Linking.openURL(url).catch(() => {
       Alert.alert(tr('liveLocation.error', 'Error'), tr('liveLocation.openMapsFailed', 'Unable to open maps.'));
     });
+  };
+
+  const onShare = async () => {
+    if (working) return;
+    setWorking(true);
+    try {
+      const res = await detectCurrentLocation();
+      if (!res.ok) {
+        Alert.alert(tr('liveLocation.error', 'Error'), tr('liveLocation.permissionMsg', 'Please allow location permission.'));
+        return;
+      }
+
+      const shareRes = await shareDealLocationOnce({
+        dealId,
+        lat: res.location.coords.latitude,
+        lng: res.location.coords.longitude,
+      });
+      if (!shareRes.success) {
+        Alert.alert(tr('liveLocation.error', 'Error'), shareRes.message);
+        return;
+      }
+
+      Alert.alert(
+        tr('liveLocation.sharedTitle', 'Location Shared'),
+        tr('liveLocation.sharedBody', 'Your location has been shared for this deal.')
+      );
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const onSee = async () => {
+    if (working) return;
+    setWorking(true);
+    try {
+      const res = await getOtherPartySharedLocationOnce({ dealId });
+      if (res.success) {
+        openInMaps(res.location.lat, res.location.lng);
+        return;
+      }
+
+      if (res.needsRequest) {
+        const req = await requestOtherPartyLocation({ dealId });
+        if (req.success) {
+          Alert.alert(
+            tr('liveLocation.requestSentTitle', 'Request Sent'),
+            tr('liveLocation.requestSentBody', 'We notified the other user to share their location.')
+          );
+        } else {
+          Alert.alert(tr('liveLocation.error', 'Error'), req.message);
+        }
+        return;
+      }
+
+      Alert.alert(tr('liveLocation.error', 'Error'), res.message);
+    } finally {
+      setWorking(false);
+    }
   };
 
   return (
@@ -103,7 +137,7 @@ export const LiveLocationScreen = () => {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }} numberOfLines={1}>
-            {tr('liveLocation.title', 'Live Location')}
+            {tr('liveLocation.title', 'Location')}
           </Text>
           <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }} numberOfLines={1}>
             {tr('liveLocation.viewing', 'Viewing')}: {otherName}
@@ -121,40 +155,34 @@ export const LiveLocationScreen = () => {
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
               <MapPin size={18} color="#128C7E" strokeWidth={2.5} />
               <Text style={{ marginLeft: 8, fontSize: 15, fontWeight: '800', color: '#111827' }}>
-                {tr('liveLocation.otherLastKnownLocation', 'Other user location')}
+                {tr('liveLocation.actionsTitle', 'Location options')}
               </Text>
             </View>
 
-            {otherLocation ? (
-              <>
-                <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700' }}>
-                  Lat: {otherLocation.lat.toFixed(6)}
-                </Text>
-                <Text style={{ color: '#111827', fontSize: 14, fontWeight: '700', marginTop: 6 }}>
-                  Lng: {otherLocation.lng.toFixed(6)}
-                </Text>
-                <Text style={{ color: '#6B7280', fontSize: 12, marginTop: 10 }}>
-                  {tr('liveLocation.lastUpdated', 'Last updated')}: {otherLocation.updatedAt ? otherLocation.updatedAt.toLocaleTimeString() : tr('liveLocation.unknown', 'Unknown')}
-                </Text>
-
-                <TouchableOpacity
-                  onPress={openInMaps}
-                  activeOpacity={0.85}
-                  style={{ marginTop: 14, backgroundColor: '#128C7E', borderRadius: 14, paddingVertical: 12, alignItems: 'center' }}
-                >
-                  <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>
-                    {tr('liveLocation.openInMaps', 'Open in Maps')}
-                  </Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <Text style={{ color: '#6B7280', fontSize: 13 }}>
-                {tr('liveLocation.noLocationYet', 'No location available yet.')}
+            <TouchableOpacity
+              onPress={onShare}
+              disabled={working}
+              activeOpacity={0.85}
+              style={{ marginTop: 12, backgroundColor: '#059669', borderRadius: 14, paddingVertical: 12, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>
+                {tr('liveLocation.shareLocation', 'Share Location')}
               </Text>
-            )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onSee}
+              disabled={working}
+              activeOpacity={0.85}
+              style={{ marginTop: 10, backgroundColor: '#128C7E', borderRadius: 14, paddingVertical: 12, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>
+                {tr('liveLocation.seeLocation', 'See Location')}
+              </Text>
+            </TouchableOpacity>
 
             <Text style={{ color: '#6B7280', fontSize: 12, marginTop: 14 }}>
-              {tr('liveLocation.note', 'This shows the last known location saved in profile.')}
+              {tr('liveLocation.note', 'Share sends coordinates once. See opens the other user\'s shared coordinates in Maps.')}
             </Text>
           </View>
         )}
