@@ -221,6 +221,7 @@
     "price": "Price",
     "call": "Call",
     "chat": "Chat",
+    "seeLocation": "See Location",
     "sms": "Send SMS",
     "email": "Email",
     "error": "Error",
@@ -290,6 +291,7 @@
     "price": "Price",
     "call": "Call",
     "chat": "Chat",
+    "seeLocation": "See Location",
     "sms": "Send SMS",
     "email": "Email",
     "error": "Error",
@@ -952,5 +954,20 @@
     "watermelon": "Watermelon",
     "muskmelon": "Muskmelon",
     "other": "Other"
+  },
+  "liveLocation": {
+    "title": "Live Location",
+    "viewing": "Viewing",
+    "buyer": "Buyer",
+    "farmer": "Farmer",
+    "otherLastKnownLocation": "Other user location",
+    "noLocationYet": "No location saved yet. Ask the other user to open the app once and allow location.",
+    "openInMaps": "Open in Maps",
+    "lastUpdated": "Last updated",
+    "unknown": "Unknown",
+    "note": "This shows the last known location saved in profile.",
+    "error": "Error",
+    "notSignedIn": "Please sign in again.",
+    "openMapsFailed": "Unable to open maps."
   }
 }

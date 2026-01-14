@@ -35,7 +35,11 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { auth } from '../config/firebase';
-import { detectCurrentLocation } from '../services/location';
+import {
+  detectCurrentLocation,
+  tryUpdateMyLastKnownLocationNoPrompt,
+} from '../services/location';
+import { fetchCurrentUserProfile } from '../services/auth';
 import {
   searchProducts,
   groupProductsByFarmer,
@@ -48,6 +52,7 @@ import {
 import { CROP_TYPES } from '../constants/locations';
 import { distanceKmBetweenLocations } from '../utils/locationDistance';
 import { localizeNumber } from '../utils/numberLocalization';
+import { subscribeToChatUnreadCount } from '../services/chat';
 
 type ContactFarmerNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -111,6 +116,8 @@ export const ContactFarmerScreen = () => {
   const [negProduct, setNegProduct] = useState<FarmerListing['products'][number] | null>(null);
   const [negQuantity, setNegQuantity] = useState('');
   const [negPrice, setNegPrice] = useState('');
+  const [unreadByDealId, setUnreadByDealId] = useState<Record<string, number>>({});
+  const lastLocationUpdateMsRef = useRef(0);
 
   useEffect(() => {
     loadBuyerLocation();
@@ -353,6 +360,12 @@ export const ContactFarmerScreen = () => {
     }
 
     try {
+      // Fetch buyer's actual phone number from Firestore
+      const profileRes = await fetchCurrentUserProfile();
+      const buyerPhone = profileRes.success 
+        ? (profileRes.profile?.mobileNumber || profileRes.profile?.phoneNumber || user.phoneNumber || '+91 0000000000')
+        : (user.phoneNumber || '+91 0000000000');
+
       await createMarketDeal({
         kind: 'negotiation',
         farmerId: negFarmer.farmerId,
@@ -361,7 +374,7 @@ export const ContactFarmerScreen = () => {
         farmerLocation: negFarmer.location,
         buyerId: user.uid,
         buyerName: user.displayName || 'Buyer',
-        buyerPhone: user.phoneNumber || '+91 0000000000',
+        buyerPhone: buyerPhone,
         buyerLocation: buyerLocation.trim(),
         productId: negProduct.id,
         productName: negProduct.name,
@@ -392,6 +405,12 @@ export const ContactFarmerScreen = () => {
     }
 
     try {
+      // Fetch buyer's actual phone number from Firestore
+      const profileRes = await fetchCurrentUserProfile();
+      const buyerPhone = profileRes.success 
+        ? (profileRes.profile?.mobileNumber || profileRes.profile?.phoneNumber || user.phoneNumber || '+91 0000000000')
+        : (user.phoneNumber || '+91 0000000000');
+
       await createMarketDeal({
         kind: 'requestToBuy',
         farmerId: farmer.farmerId,
@@ -400,7 +419,7 @@ export const ContactFarmerScreen = () => {
         farmerLocation: farmer.location,
         buyerId: user.uid,
         buyerName: user.displayName || 'Buyer',
-        buyerPhone: user.phoneNumber || '+91 0000000000',
+        buyerPhone: buyerPhone,
         buyerLocation: buyerLocation.trim(),
         productId: product.id,
         productName: product.name,
@@ -570,6 +589,37 @@ export const ContactFarmerScreen = () => {
   const acceptedDeals = useMemo(() => {
     return buyerDeals.filter((d) => d.status === 'accepted');
   }, [buyerDeals]);
+
+  // Best-effort: keep your profile's last known location fresh (no permission prompts).
+  useEffect(() => {
+    const now = Date.now();
+    if (now - lastLocationUpdateMsRef.current < 5 * 60 * 1000) return;
+    lastLocationUpdateMsRef.current = now;
+    tryUpdateMyLastKnownLocationNoPrompt();
+  }, [acceptedDeals.length]);
+
+  // Unread badge counts for chat button (messages from the other user).
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) {
+      setUnreadByDealId({});
+      return;
+    }
+
+    const visible = acceptedDeals.slice(0, 10);
+    const unsubs = visible.map((deal) =>
+      subscribeToChatUnreadCount(`deal_${deal.id}`, user.uid, (count) => {
+        setUnreadByDealId((prev) => {
+          if (prev[deal.id] === count) return prev;
+          return { ...prev, [deal.id]: count };
+        });
+      })
+    );
+
+    return () => {
+      unsubs.forEach((u) => u());
+    };
+  }, [acceptedDeals]);
 
   useEffect(() => {
     setAcceptedDealsIndex(0);
@@ -1401,7 +1451,7 @@ export const ContactFarmerScreen = () => {
               marginBottom: 14,
               letterSpacing: -0.3,
             }}>
-              {tr('contactFarmer.acceptedDeals', 'Accepted Deals')} ({acceptedDeals.length})
+              {tr('contactFarmer.acceptedDeals', 'Accepted Deals')} ({localizeNumber(acceptedDeals.length, i18n.language)})
             </Text>
 
             <FlatList
@@ -1433,20 +1483,20 @@ export const ContactFarmerScreen = () => {
                       {deal.productName}
                     </Text>
                     <Text style={{ color: '#374151', marginTop: 8, fontWeight: '700' }}>
-                      {tr('contactFarmer.farmer', 'Farmer')}: {deal.farmerName} • {deal.farmerPhone}
+                      {tr('contactFarmer.farmer', 'Farmer')}: {deal.farmerName} • {localizeNumber(deal.farmerPhone, i18n.language)}
                       {deal.farmerLocation ? ` • ${deal.farmerLocation}` : ''}
                     </Text>
                     <Text style={{ color: '#374151', marginTop: 6, fontWeight: '700' }}>
-                      {tr('contactFarmer.buyer', 'Buyer')}: {deal.buyerName} • {deal.buyerPhone}
+                      {tr('contactFarmer.buyer', 'Buyer')}: {deal.buyerName} • {localizeNumber(deal.buyerPhone, i18n.language)}
                       {deal.buyerLocation ? ` • ${deal.buyerLocation}` : ''}
                     </Text>
                     <Text style={{ color: '#374151', marginTop: 6 }}>
-                      {tr('contactFarmer.qty', 'Qty')}: {deal.offerQuantity} {deal.unit} • {tr('contactFarmer.price', 'Price')}: ₹{deal.offerPrice}
+                      {tr('contactFarmer.qty', 'Qty')}: {localizeNumber(deal.offerQuantity, i18n.language)} {deal.unit} • {tr('contactFarmer.price', 'Price')}: ₹{localizeNumber(deal.offerPrice, i18n.language)}
                     </Text>
 
                     <View style={{ flexDirection: 'row', marginTop: 14 }}>
                       <TouchableOpacity
-                        onPress={() => handlePhoneCall(deal.farmerPhone)}
+                        onPress={() => handlePhoneCall(deal.buyerPhone)}
                         activeOpacity={0.85}
                         style={{ flex: 1, marginRight: 10 }}
                       >
@@ -1468,9 +1518,20 @@ export const ContactFarmerScreen = () => {
                       </TouchableOpacity>
 
                       <TouchableOpacity
-                        onPress={() => handleChat(deal.farmerName, deal.farmerPhone)}
+                        onPress={() =>
+                          navigation.navigate('Chat', {
+                            userType: 'buyer',
+                            contactName: deal.farmerName,
+                            contactPhone: deal.farmerPhone,
+                            dealId: deal.id,
+                            buyerId: deal.buyerId,
+                            buyerName: deal.buyerName,
+                            farmerId: deal.farmerId,
+                            farmerName: deal.farmerName,
+                          })
+                        }
                         activeOpacity={0.85}
-                        style={{ flex: 1 }}
+                        style={{ flex: 1, position: 'relative' }}
                       >
                         <LinearGradient
                           colors={['#3B82F6', '#2563EB']}
@@ -1487,8 +1548,62 @@ export const ContactFarmerScreen = () => {
                             {tr('contactFarmer.chat', 'Chat')}
                           </Text>
                         </LinearGradient>
+
+                        {Number(unreadByDealId?.[deal.id] ?? 0) > 0 && (
+                          <View
+                            style={{
+                              position: 'absolute',
+                              top: -6,
+                              right: -6,
+                              backgroundColor: '#FFFFFF',
+                              borderWidth: 2,
+                              borderColor: '#128C7E',
+                              borderRadius: 999,
+                              minWidth: 22,
+                              height: 22,
+                              paddingHorizontal: 6,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Text style={{ color: '#128C7E', fontWeight: '900', fontSize: 12 }}>
+                              {unreadByDealId[deal.id] > 99 ? '99+' : String(unreadByDealId[deal.id])}
+                            </Text>
+                          </View>
+                        )}
                       </TouchableOpacity>
                     </View>
+
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate('LiveLocation', {
+                          dealId: deal.id,
+                          buyerId: deal.buyerId,
+                          buyerName: deal.buyerName || '',
+                          farmerId: deal.farmerId,
+                          farmerName: deal.farmerName || '',
+                          viewerType: 'buyer',
+                        })
+                      }
+                      activeOpacity={0.85}
+                      style={{ marginTop: 10 }}
+                    >
+                      <LinearGradient
+                        colors={['#10B981', '#059669']}
+                        style={{
+                          borderRadius: 14,
+                          paddingVertical: 12,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <MapPin size={18} color="#fff" strokeWidth={2.5} />
+                        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', marginLeft: 8 }}>
+                          {tr('contactFarmer.seeLocation', 'See Location')}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
                   </View>
                 </View>
               )}

@@ -8,16 +8,24 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useRoute } from '@react-navigation/native';
-import { Sprout, ShoppingBasket, ArrowLeft } from 'lucide-react-native';
-import { CustomInput, PasswordInput } from '../components/CustomInput';
+import { Sprout, ShoppingBasket, ArrowLeft, Phone } from 'lucide-react-native';
+import { CustomInput } from '../components/CustomInput';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { signIn, signInWithGoogle, fetchCurrentUserProfile } from '../services/auth';
+import { 
+  sendPhoneOTP, 
+  fetchCurrentUserProfile, 
+  signInWithPhone,
+  signIn
+} from '../services/auth';
+import { formatPhoneNumber, testAPIConnection } from '../services/twilio';
+import { localizeNumber, delocalizeNumber } from '../utils/numberLocalization';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -26,9 +34,13 @@ type SignInScreenNavigationProp = NativeStackNavigationProp<
 
 type SignInScreenRouteProp = RouteProp<RootStackParamList, 'SignIn'>;
 
+type AuthMethod = 'phone' | 'email';
+
 interface FormData {
+  phoneNumber: string;
   email: string;
   password: string;
+  otp: string;
 }
 
 interface FormErrors {
@@ -41,10 +53,15 @@ export const SignInScreen = () => {
   const route = useRoute<SignInScreenRouteProp>();
   const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
-  const role = route.params?.role; // Can be undefined
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0);
+  const [authMethod, setAuthMethod] = useState<AuthMethod>('phone');
+  const role = route.params?.role;
   const [formData, setFormData] = useState<FormData>({
+    phoneNumber: '',
     email: '',
     password: '',
+    otp: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -61,6 +78,14 @@ export const SignInScreen = () => {
     loadSavedLanguage();
   }, []);
 
+  // OTP timer countdown
+  useEffect(() => {
+    if (otpTimer > 0) {
+      const timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpTimer]);
+
   const tr = (key: string, fallback: string) => {
     try {
       return i18n.exists(key) ? (t(key) as string) : fallback;
@@ -71,14 +96,34 @@ export const SignInScreen = () => {
 
   const validateField = (name: keyof FormData, value: string): string => {
     switch (name) {
-      case 'email':
+      case 'phoneNumber':
+        if (authMethod !== 'phone') return '';
         return !value.trim()
           ? tr('signIn.errors.required', 'Required')
-          : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-            ? tr('signIn.errors.invalidEmail', 'Enter a valid email address')
+          : !/^[6-9]\d{9}$/.test(value)
+            ? tr('signIn.errors.invalidMobile', 'Enter a valid 10-digit mobile number')
+            : '';
+      case 'email':
+        if (authMethod !== 'email') return '';
+        return !value.trim()
+          ? tr('signIn.errors.required', 'Required')
+          : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+            ? tr('signIn.errors.invalidEmail', 'Enter a valid email')
             : '';
       case 'password':
-        return !value ? tr('signIn.errors.required', 'Required') : '';
+        if (authMethod !== 'email') return '';
+        return !value
+          ? tr('signIn.errors.required', 'Required')
+          : value.length < 6
+            ? tr('signIn.errors.passwordTooShort', 'Password must be at least 6 characters')
+            : '';
+      case 'otp':
+        if (authMethod !== 'phone') return '';
+        return !value
+          ? tr('signIn.errors.required', 'Required')
+          : !/^\d{6}$/.test(value)
+            ? tr('signIn.errors.invalidOTP', 'OTP must be 6 digits')
+            : '';
       default:
         return '';
     }
@@ -90,9 +135,69 @@ export const SignInScreen = () => {
     setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
+  const handleSendOTP = async () => {
+    // Validate phone number first
+    const phoneError = validateField('phoneNumber', formData.phoneNumber);
+    if (phoneError) {
+      setErrors((prev) => ({ ...prev, phoneNumber: phoneError }));
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Test API connection first
+      console.log('Testing API connection before sending OTP...');
+      const connectionTest = await testAPIConnection();
+      if (!connectionTest.success) {
+        Alert.alert(
+          tr('signIn.title', 'Sign In'),
+          `Unable to connect to server: ${connectionTest.message}\n\nPlease check your internet connection and try again.`
+        );
+        setIsLoading(false);
+        return;
+      }
+      console.log('API connection successful:', connectionTest.message);
+      
+      const formattedPhone = formatPhoneNumber(formData.phoneNumber, '+91');
+      
+      // Send OTP via backend - this will call the Twilio API
+      console.log('Sending OTP to:', formattedPhone);
+      const result = await sendPhoneOTP(formattedPhone);
+
+      if (!result.success) {
+        Alert.alert(
+          tr('signIn.title', 'Sign In'), 
+          result.message + '\n\nIf the problem persists, please check your internet connection.'
+        );
+        return;
+      }
+
+      setOtpSent(true);
+      setOtpTimer(60); // 60 seconds resend timer
+      Alert.alert(
+        tr('signIn.otpSent', 'OTP Sent'),
+        tr('signIn.otpSentMessage', 'A 6-digit OTP has been sent to your phone number.')
+      );
+    } catch (error) {
+      console.error('Send OTP error:', error);
+      Alert.alert(
+        tr('signIn.title', 'Sign In'),
+        tr('signIn.errors.otpSendFailed', 'Failed to send OTP. Please check your internet connection and try again.')
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    const requiredFields: (keyof FormData)[] = ['email', 'password'];
+    let requiredFields: (keyof FormData)[] = [];
+    
+    if (authMethod === 'phone') {
+      requiredFields = ['phoneNumber', 'otp'];
+    } else {
+      requiredFields = ['email', 'password'];
+    }
 
     requiredFields.forEach((field) => {
       const error = validateField(field, formData[field]);
@@ -105,43 +210,46 @@ export const SignInScreen = () => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    
+    // Check OTP requirement for phone auth
+    if (authMethod === 'phone' && !otpSent) {
+      Alert.alert(
+        tr('signIn.title', 'Sign In'),
+        tr('signIn.errors.sendOTPFirst', 'Please send OTP first')
+      );
+      return;
+    }
 
     setIsLoading(true);
     try {
-      // Using email directly for Firebase auth
-      const result = await signIn(formData.email, formData.password);
-
+      let result;
+      
+      // Sign in based on selected method
+      if (authMethod === 'phone') {
+        const formattedPhone = formatPhoneNumber(formData.phoneNumber, '+91');
+        result = await signInWithPhone(formattedPhone, formData.otp);
+      } else {
+        // Email sign in
+        result = await signIn(formData.email.trim(), formData.password);
+      }
+      
       if (!result.success) {
-        const title = tr('signIn.title', role === 'farmer' ? 'Farmer Sign In' : role === 'buyer' ? 'Buyer Sign In' : 'Sign In');
-
-        if (result.errorCode === 'auth/user-not-found') {
-          Alert.alert(
-            title,
-            tr('signIn.errors.noAccount', "No account found. Don't have an account? Sign Up."),
-            [
-              { text: tr('signIn.cancel', 'Cancel'), style: 'cancel' },
-              {
-                text: tr('signIn.signUp', 'Sign Up'),
-                onPress: () => navigation.navigate('RoleChoice'),
-              },
-            ]
-          );
-          return;
-        }
-
-        Alert.alert(title, result.message);
+        Alert.alert(
+          tr('signIn.title', 'Sign In'),
+          result.message
+        );
         return;
       }
 
-      // Fetch user profile to determine actual role
+      // Fetch user profile to determine role
       const profileResult = await fetchCurrentUserProfile();
-      let userRole = role; // Default to selected role if provided
+      let userRole = role || 'farmer';
       
       if (profileResult.success && profileResult.profile) {
-        userRole = profileResult.profile.role || profileResult.profile.userType;
+        userRole = profileResult.profile.role || profileResult.profile.userType || 'farmer';
       }
 
-      // Navigate to appropriate dashboard
+      // Navigate based on role
       if (userRole === 'buyer') {
         navigation.navigate('BuyerDashboard');
       } else {
@@ -150,60 +258,31 @@ export const SignInScreen = () => {
     } catch (error) {
       console.error('Sign in error:', error);
       Alert.alert(
-        tr('signIn.title', role === 'farmer' ? 'Farmer Sign In' : role === 'buyer' ? 'Buyer Sign In' : 'Sign In'),
-        tr('signIn.errors.default', 'Sign in failed.')
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    if (isLoading) return;
-
-    // This project intentionally supports Google sign-in only on web.
-    // Native Google sign-in requires OAuth client IDs (Android/iOS) which we are not using.
-    if (Platform.OS !== 'web') {
-      Alert.alert(
         tr('signIn.title', 'Sign In'),
-        'Google sign-in is available on web only. Please sign in with email/password on mobile.'
+        tr('signIn.errors.default', 'Sign in failed. Please try again.')
       );
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const result = await signInWithGoogle();
-      if (!result.success) {
-        Alert.alert(tr('signIn.title', 'Sign In'), result.message);
-        return;
-      }
-      
-      // For Google sign-in, check profile or use selected role
-      const profileResult = await fetchCurrentUserProfile();
-      let userRole = role;
-      
-      if (profileResult.success && profileResult.profile) {
-        userRole = profileResult.profile.role || profileResult.profile.userType;
-      }
-
-      if (userRole === 'buyer') {
-        navigation.navigate('BuyerDashboard');
-      } else {
-        navigation.navigate('Dashboard');
-      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const isFormValid = () => {
-    return (
-      formData.email &&
-      formData.password &&
-      !errors.email &&
-      !errors.password
-    );
+    if (authMethod === 'phone') {
+      return (
+        formData.phoneNumber &&
+        formData.otp &&
+        !errors.phoneNumber &&
+        !errors.otp &&
+        otpSent
+      );
+    } else {
+      return (
+        formData.email &&
+        formData.password &&
+        !errors.email &&
+        !errors.password
+      );
+    }
   };
 
   return (
@@ -263,23 +342,9 @@ export const SignInScreen = () => {
           <ArrowLeft size={20} color="#16A34A" strokeWidth={2.5} />
           <Text 
             className="text-green-600 font-semibold" 
-            style={{ 
-              fontSize: 15, 
-              lineHeight: 20, 
-              letterSpacing: 0.3,
-              flexShrink: 0,
-              minWidth: 70,
-            }}
-            numberOfLines={1}
+            style={{ fontSize: 15, lineHeight: 20, letterSpacing: 0.3 }}
           >
-            {(() => {
-              try {
-                const translated = t('common.back');
-                return translated === 'common.back' ? 'Back' : translated;
-              } catch {
-                return 'Back';
-              }
-            })()}
+            {tr('common.back', 'Back')}
           </Text>
         </TouchableOpacity>
 
@@ -291,116 +356,254 @@ export const SignInScreen = () => {
                 width: 50,
                 height: 50,
                 borderRadius: 25,
-                backgroundColor: role === 'buyer' ? '#10B981' : '#16A34A',
+                backgroundColor: role === 'farmer' ? '#16A34A' : role === 'buyer' ? '#10B981' : '#059669',
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginRight: 12,
-                shadowColor: role === 'buyer' ? '#10B981' : '#16A34A',
+                shadowColor: role === 'farmer' ? '#16A34A' : '#10B981',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.3,
                 shadowRadius: 8,
                 elevation: 6,
               }}>
-                {role === 'buyer' ? (
+                {role === 'farmer' ? (
+                  <Sprout size={26} color="white" strokeWidth={2.5} />
+                ) : role === 'buyer' ? (
                   <ShoppingBasket size={26} color="white" strokeWidth={2.5} />
                 ) : (
-                  <Sprout size={26} color="white" strokeWidth={2.5} />
+                  <Phone size={26} color="white" strokeWidth={2.5} />
                 )}
               </View>
               <View style={{ flex: 1 }}>
                 <Text 
                   className="text-gray-900 font-extrabold" 
-                  style={{ fontSize: 32, lineHeight: 38, letterSpacing: -0.5 }}
+                  style={{ fontSize: 30, lineHeight: 36, letterSpacing: -0.5 }}
                 >
                   {tr('signIn.title', role === 'farmer' ? 'Farmer Sign In' : role === 'buyer' ? 'Buyer Sign In' : 'Sign In')}
                 </Text>
               </View>
             </View>
+            <Text className="text-gray-600" style={{ fontSize: 14, marginTop: 4 }}>
+              {tr('signIn.phoneAuth', 'Sign in with your phone number or email')}
+            </Text>
           </View>
         </View>
 
-        {/* Login Form - Card Style */}
+        {/* Auth Method Toggle */}
         <View style={{
           backgroundColor: 'white',
           borderRadius: 20,
-          padding: 20,
-          marginBottom: 24,
+          padding: 6,
+          marginBottom: 16,
+          flexDirection: 'row',
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.05,
           shadowRadius: 12,
           elevation: 3,
         }}>
-          <View style={{ gap: 8 }}>
-            <CustomInput
-              label={tr('signIn.email', 'Email')}
-              placeholder={tr('signIn.emailPlaceholder', 'your@email.com')}
-              value={formData.email}
-              onChangeText={(value) => handleFieldChange('email', value)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={errors.email}
-            />
-
-            <PasswordInput
-              label={tr('signIn.password', 'Password')}
-              placeholder={tr('signIn.passwordPlaceholder', 'Enter your password')}
-              value={formData.password}
-              onChangeText={(value) => handleFieldChange('password', value)}
-              error={errors.password}
-            />
-          </View>
+          <TouchableOpacity
+            onPress={() => {
+              setAuthMethod('phone');
+              setFormData(prev => ({ ...prev, email: '', password: '' }));
+              setErrors({});
+            }}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              borderRadius: 16,
+              backgroundColor: authMethod === 'phone' ? '#16A34A' : 'transparent',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{
+              color: authMethod === 'phone' ? 'white' : '#6B7280',
+              fontWeight: '600',
+              fontSize: 15,
+            }}>
+              📱 {tr('signIn.phoneMethod', 'Phone')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setAuthMethod('email');
+              setFormData(prev => ({ ...prev, phoneNumber: '', otp: '' }));
+              setOtpSent(false);
+              setErrors({});
+            }}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              borderRadius: 16,
+              backgroundColor: authMethod === 'email' ? '#16A34A' : 'transparent',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{
+              color: authMethod === 'email' ? 'white' : '#6B7280',
+              fontWeight: '600',
+              fontSize: 15,
+            }}>
+              ✉️ {tr('signIn.emailMethod', 'Email')}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Submit Button - Capsule Design */}
+        {/* Sign In Form */}
+        <View style={{
+          backgroundColor: 'white',
+          borderRadius: 20,
+          padding: 24,
+          marginBottom: 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 12,
+          elevation: 3,
+        }}>
+          {/* Phone Auth Fields */}
+          {authMethod === 'phone' && (
+          <>
+          {/* Phone Number with Send OTP Button */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>
+              {tr('signIn.phoneNumber', 'Phone Number')}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#F9FAFB',
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  borderWidth: 1,
+                  borderColor: errors.phoneNumber ? '#EF4444' : '#E5E7EB',
+                }}>
+                  <Text style={{ fontSize: 16, color: '#6B7280', marginRight: 8 }}>+91</Text>
+                  <TextInput
+                    style={{ flex: 1, paddingVertical: 14, fontSize: 16, color: '#111827' }}
+                    placeholder={tr('signIn.phoneNumberPlaceholder', '9876543210')}
+                    value={localizeNumber(formData.phoneNumber, i18n.language)}
+                    onChangeText={(value) => {
+                      const delocalized = delocalizeNumber(value, i18n.language);
+                      handleFieldChange('phoneNumber', delocalized);
+                    }}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    editable={!otpSent}
+                  />
+                </View>
+                {errors.phoneNumber && (
+                  <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>
+                    {errors.phoneNumber}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={handleSendOTP}
+                disabled={isLoading || otpTimer > 0 || !formData.phoneNumber}
+                style={{
+                  backgroundColor: (isLoading || otpTimer > 0 || !formData.phoneNumber) ? '#D1D5DB' : '#16A34A',
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  minWidth: 100,
+                }}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>
+                    {otpTimer > 0 
+                      ? `${otpTimer}s` 
+                      : otpSent 
+                        ? tr('signIn.resendOTP', 'Resend')
+                        : tr('signIn.sendOTP', 'Send OTP')}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* OTP Input - Only show after OTP is sent */}
+          {otpSent && (
+            <View>
+              <CustomInput
+                label={tr('signIn.otp', 'Enter OTP')}
+                placeholder={tr('signIn.otpPlaceholder', 'Enter 6-digit OTP')}
+                value={formData.otp}
+                onChangeText={(value) => handleFieldChange('otp', value)}
+                keyboardType="number-pad"
+                maxLength={6}
+                error={errors.otp}
+              />
+              <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>
+                {tr('signIn.otpHelp', 'Enter the OTP sent to your phone')}
+              </Text>
+            </View>
+          )}
+          </>
+          )}
+
+          {/* Email Auth Fields */}
+          {authMethod === 'email' && (
+            <>
+              <CustomInput
+                label={tr('signIn.email', 'Email')}
+                placeholder={tr('signIn.emailPlaceholder', 'Enter your email')}
+                value={formData.email}
+                onChangeText={(value) => handleFieldChange('email', value)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                error={errors.email}
+              />
+              <CustomInput
+                label={tr('signIn.password', 'Password')}
+                placeholder={tr('signIn.passwordPlaceholder', 'Enter your password')}
+                value={formData.password}
+                onChangeText={(value) => handleFieldChange('password', value)}
+                secureTextEntry
+                error={errors.password}
+              />
+            </>
+          )}
+        </View>
+
+        {/* Sign In Button */}
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={!isFormValid() || isLoading}
-          className="mb-6"
-          style={{ 
-            paddingVertical: 16, 
-            paddingHorizontal: 24,
-            borderRadius: 50,
-            backgroundColor: !isFormValid() || isLoading ? '#E0E0E0' : '#16A34A',
-            shadowColor: !isFormValid() || isLoading ? '#999' : '#16A34A',
-            shadowOffset: { width: 0, height: 3 },
-            shadowOpacity: 0.25,
-            shadowRadius: 6,
-            elevation: 5,
+          style={{
+            backgroundColor: (!isFormValid() || isLoading) ? '#D1D5DB' : '#16A34A',
+            borderRadius: 12,
+            paddingVertical: 16,
+            marginBottom: 20,
+            shadowColor: '#16A34A',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: (!isFormValid() || isLoading) ? 0 : 0.3,
+            shadowRadius: 8,
+            elevation: (!isFormValid() || isLoading) ? 0 : 4,
           }}
         >
           {isLoading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text 
-              className="text-white text-center font-bold" 
-              style={{ fontSize: 17, lineHeight: 24, letterSpacing: 0.5 }}
-              numberOfLines={1}
-            >
+            <Text style={{ color: 'white', textAlign: 'center', fontSize: 18, fontWeight: '600' }}>
               {tr('signIn.signInButton', 'Sign In')}
             </Text>
           )}
         </TouchableOpacity>
 
-        {/* Sign Up Link - Modern Style */}
-        <View className="flex-row justify-center items-center flex-wrap" style={{ paddingVertical: 8 }}>
-          <Text className="text-gray-600 text-center" style={{ fontSize: 15, lineHeight: 22, marginRight: 4 }}>
-            {tr('signIn.noAccount', "Don't have an account?")}
+        {/* Sign Up Link */}
+        <View className="flex-row justify-center items-center flex-wrap">
+          <Text className="text-gray-600 text-base text-center">
+            {tr('signIn.noAccount', "Don't have an account?")}{' '}
           </Text>
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('RoleChoice')} 
-            style={{ 
-              paddingVertical: 6, 
-              paddingHorizontal: 12,
-              backgroundColor: '#E8F5E9',
-              borderRadius: 12,
-            }}
-          >
-            <Text 
-              className="text-green-600 font-bold" 
-              style={{ fontSize: 15, lineHeight: 20, letterSpacing: 0.3 }}
-              numberOfLines={1}
-            >
+          <TouchableOpacity onPress={() => navigation.navigate('RoleChoice')}>
+            <Text className="text-primary font-semibold text-base">
               {tr('signIn.signUp', 'Sign Up')}
             </Text>
           </TouchableOpacity>

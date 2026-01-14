@@ -8,25 +8,28 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Sprout, ShoppingBasket, ArrowLeft } from 'lucide-react-native';
+import { Sprout, ShoppingBasket, ArrowLeft, Phone } from 'lucide-react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
-import { CustomInput, PasswordInput } from '../components/CustomInput';
+import { CustomInput } from '../components/CustomInput';
 import { Dropdown } from '../components/Dropdown';
 import { INDIAN_STATES, FARMER_TYPES, LANGUAGES, INDIAN_DISTRICTS } from '../constants/data';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { localizeNumber, delocalizeNumber } from '../utils/numberLocalization';
 import {
+  signUpWithPhone,
   signUp,
   saveCurrentUserProfile,
   updateCurrentAuthProfile,
-  signInWithGoogle,
+  sendPhoneOTP,
 } from '../services/auth';
 import { detectCurrentLocation } from '../services/location';
+import { formatPhoneNumber, testAPIConnection } from '../services/twilio';
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -35,12 +38,14 @@ type SignUpScreenNavigationProp = NativeStackNavigationProp<
 
 type SignUpScreenRouteProp = RouteProp<RootStackParamList, 'SignUp'>;
 
+type AuthMethod = 'phone' | 'email';
+
 interface FormData {
   fullName: string;
-  mobileNumber: string;
+  phoneNumber: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  otp: string;
   state: string;
   district: string;
   preferredLanguage: string;
@@ -58,14 +63,16 @@ export const SignUpScreen = () => {
   const route = useRoute<SignUpScreenRouteProp>();
   const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
-  const [googleBusy, setGoogleBusy] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0);
+  const [authMethod, setAuthMethod] = useState<AuthMethod>('phone');
   const role = route.params?.role || 'farmer';
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
-    mobileNumber: '',
+    phoneNumber: '',
     email: '',
     password: '',
-    confirmPassword: '',
+    otp: '',
     state: '',
     district: '',
     preferredLanguage: i18n.language || 'en',
@@ -80,7 +87,6 @@ export const SignUpScreen = () => {
       try {
         const { loadLanguage } = await import('../i18n/i18n');
         await loadLanguage();
-        // Update preferredLanguage in form data to match current language
         setFormData(prev => ({ ...prev, preferredLanguage: i18n.language || 'en' }));
       } catch (error) {
         console.error('Error loading language:', error);
@@ -110,7 +116,6 @@ export const SignUpScreen = () => {
         return;
       }
 
-      // Prefer mapped values so dropdown shows correctly; otherwise keep existing.
       setFormData((prev) => ({
         ...prev,
         state: res.location.stateValue || prev.state,
@@ -118,9 +123,16 @@ export const SignUpScreen = () => {
       }));
     };
 
-    // Don’t block UI; best-effort.
     detect();
   }, []);
+
+  // OTP timer countdown
+  useEffect(() => {
+    if (otpTimer > 0) {
+      const timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpTimer]);
 
   const tr = (key: string, fallback: string) => {
     try {
@@ -134,29 +146,33 @@ export const SignUpScreen = () => {
     switch (name) {
       case 'fullName':
         return !value.trim() ? tr('signUp.errors.required', 'Required') : '';
-      case 'mobileNumber':
+      case 'phoneNumber':
+        // Phone is now required for both auth methods
         return !value.trim()
           ? tr('signUp.errors.required', 'Required')
-          : !/^\d{10}$/.test(value)
+          : !/^[6-9]\d{9}$/.test(value)
             ? tr('signUp.errors.invalidMobile', 'Enter a valid 10-digit mobile number')
             : '';
       case 'email':
+        if (authMethod === 'phone') return ''; // Email optional for phone auth
         return !value.trim()
           ? tr('signUp.errors.required', 'Required')
           : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
             ? tr('signUp.errors.invalidEmail', 'Enter a valid email address')
             : '';
       case 'password':
+        if (authMethod === 'phone') return ''; // Password not needed for phone auth
         return !value
           ? tr('signUp.errors.required', 'Required')
           : value.length < 6
-            ? tr('signUp.errors.passwordMinLength', 'Password must be at least 6 characters')
+            ? tr('signUp.errors.passwordTooShort', 'Password must be at least 6 characters')
             : '';
-      case 'confirmPassword':
+      case 'otp':
+        if (authMethod === 'email') return ''; // OTP not needed for email auth
         return !value
           ? tr('signUp.errors.required', 'Required')
-          : value !== formData.password
-            ? tr('signUp.errors.passwordMismatch', 'Passwords do not match')
+          : !/^\d{6}$/.test(value)
+            ? tr('signUp.errors.invalidOTP', 'OTP must be 6 digits')
             : '';
       case 'state':
       case 'district':
@@ -173,26 +189,69 @@ export const SignUpScreen = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     const error = validateField(name, value);
     setErrors((prev) => ({ ...prev, [name]: error }));
+  };
 
-    // Re-validate confirm password if password changes
-    if (name === 'password' && formData.confirmPassword) {
-      const confirmError = validateField(
-        'confirmPassword',
-        formData.confirmPassword
+  const handleSendOTP = async () => {
+    // Validate phone number first
+    const phoneError = validateField('phoneNumber', formData.phoneNumber);
+    if (phoneError) {
+      setErrors((prev) => ({ ...prev, phoneNumber: phoneError }));
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Test API connection first
+      console.log('Testing API connection before sending OTP...');
+      const connectionTest = await testAPIConnection();
+      if (!connectionTest.success) {
+        Alert.alert(
+          tr('signUp.title', 'Sign Up'),
+          `Unable to connect to server: ${connectionTest.message}\n\nPlease check your internet connection and try again.`
+        );
+        setIsLoading(false);
+        return;
+      }
+      console.log('API connection successful:', connectionTest.message);
+      
+      const formattedPhone = formatPhoneNumber(formData.phoneNumber, '+91');
+      const result = await sendPhoneOTP(formattedPhone);
+
+      if (!result.success) {
+        Alert.alert(
+          tr('signUp.title', 'Sign Up'), 
+          result.message + '\n\nIf the problem persists, please check your internet connection.'
+        );
+        return;
+      }
+
+      setOtpSent(true);
+      setOtpTimer(60); // 60 seconds resend timer
+      Alert.alert(
+        tr('signUp.otpSent', 'OTP Sent'),
+        tr('signUp.otpSentMessage', 'A 6-digit OTP has been sent to your phone number.')
       );
-      setErrors((prev) => ({ ...prev, confirmPassword: confirmError }));
+    } catch (error) {
+      console.error('Send OTP error:', error);
+      Alert.alert(
+        tr('signUp.title', 'Sign Up'),
+        tr('signUp.errors.otpSendFailed', 'Failed to send OTP. Please check your internet connection and try again.')
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    const requiredFields: (keyof FormData)[] = [
-      'fullName',
-      'mobileNumber',
-      'email',
-      'password',
-      'confirmPassword',
-    ];
+    let requiredFields: (keyof FormData)[] = ['fullName', 'phoneNumber'];
+    
+    // Add auth-specific required fields
+    if (authMethod === 'phone') {
+      requiredFields.push('otp');
+    } else {
+      requiredFields.push('email', 'password');
+    }
     
     // Add farmer-specific fields only for farmers
     if (role === 'farmer') {
@@ -216,10 +275,29 @@ export const SignUpScreen = () => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    
+    // Check OTP requirement for phone auth
+    if (authMethod === 'phone' && !otpSent) {
+      Alert.alert(
+        tr('signUp.title', 'Sign Up'),
+        tr('signUp.errors.sendOTPFirst', 'Please send OTP first')
+      );
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const result = await signUp(formData.email, formData.password);
+      let result;
+      
+      // Sign up based on selected method
+      if (authMethod === 'phone') {
+        const formattedPhone = formatPhoneNumber(formData.phoneNumber, '+91');
+        result = await signUpWithPhone(formattedPhone, formData.otp);
+      } else {
+        // Email sign up
+        result = await signUp(formData.email.trim(), formData.password);
+      }
+
       if (!result.success) {
         Alert.alert(tr('signUp.title', 'Sign Up'), result.message);
         return;
@@ -233,14 +311,24 @@ export const SignUpScreen = () => {
       // Save profile to Firestore with role
       const profileData: any = {
         fullName: formData.fullName,
-        mobileNumber: formData.mobileNumber,
-        email: formData.email,
-        role: role, // Save the role
+        role: role,
         notificationsEnabled: true,
         profilePhoto: null,
       };
 
-      // Persist detected/manual location for all roles (buyer + farmer)
+      // Add authentication method details
+      const formattedPhone = formatPhoneNumber(formData.phoneNumber, '+91');
+      profileData.phoneNumber = formattedPhone;
+      profileData.mobileNumber = formattedPhone;
+      
+      if (authMethod === 'phone') {
+        profileData.isPhoneVerified = true;
+      } else {
+        profileData.email = formData.email.trim();
+        profileData.isEmailVerified = true;
+      }
+
+      // Persist location for all roles
       if (formData.state) profileData.state = formData.state;
       if (formData.district) profileData.district = formData.district;
 
@@ -267,52 +355,15 @@ export const SignUpScreen = () => {
     }
   };
 
-  const handleGoogleSignUp = async () => {
-    if (googleBusy || isLoading) return;
-
-    // This project intentionally supports Google sign-up only on web.
-    // Native Google sign-in requires OAuth client IDs (Android/iOS) which we are not using.
-    if (Platform.OS !== 'web') {
-      Alert.alert(
-        tr('signUp.title', 'Sign Up'),
-        tr('signUp.googleNativeNotSupported', 'Google sign-up is available on web only. Please sign up with email/password on mobile.')
-      );
-      return;
-    }
-
-    setGoogleBusy(true);
-    try {
-      const result = await signInWithGoogle();
-      if (!result.success) {
-        Alert.alert(tr('signUp.title', 'Sign Up'), result.message);
-        return;
-      }
-      
-      // Save role to profile for Google sign-ups
-      await saveCurrentUserProfile({ role });
-      
-      // Navigate based on role
-      if (role === 'buyer') {
-        navigation.navigate('BuyerDashboard');
-      } else {
-        navigation.navigate('Dashboard');
-      }
-    } catch (error) {
-      console.error('Google sign-up error:', error);
-      Alert.alert(tr('signUp.title', 'Sign Up'), tr('signUp.googleError', 'Google sign-up failed.'));
-    } finally {
-      setGoogleBusy(false);
-    }
-  };
-
   const isFormValid = () => {
-    const requiredFields = [
-      'fullName',
-      'mobileNumber',
-      'email',
-      'password',
-      'confirmPassword',
-    ];
+    const requiredFields: (keyof FormData)[] = ['fullName', 'phoneNumber'];
+    
+    // Add auth-specific required fields
+    if (authMethod === 'phone') {
+      requiredFields.push('otp');
+    } else {
+      requiredFields.push('email', 'password');
+    }
     
     // Add farmer-specific fields only for farmers
     if (role === 'farmer') {
@@ -325,16 +376,23 @@ export const SignUpScreen = () => {
       );
     }
     
-    return (
-      requiredFields.every((field) => formData[field as keyof FormData]) &&
-      Object.keys(errors).every((key) => !errors[key])
-    );
+    // Check all required fields are filled and have no errors
+    const allFieldsFilled = requiredFields.every((field) => formData[field as keyof FormData]);
+    // Only check errors for required fields, not all fields in errors object
+    const noErrors = requiredFields.every((field) => !errors[field]);
+    
+    // For phone auth, also require OTP to be sent
+    if (authMethod === 'phone') {
+      return allFieldsFilled && noErrors && otpSent;
+    }
+    
+    // For email auth, just check fields and errors
+    return allFieldsFilled && noErrors;
   };
 
   // Change language when preferred language is selected
   useEffect(() => {
     if (formData.preferredLanguage) {
-      // Save language preference (which also changes the language)
       import('../i18n/i18n').then(({ saveLanguage }) => {
         saveLanguage(formData.preferredLanguage);
       });
@@ -375,7 +433,7 @@ export const SignUpScreen = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Back Button - Professional Capsule Design */}
+        {/* Back Button */}
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           className="mb-8"
@@ -398,27 +456,13 @@ export const SignUpScreen = () => {
           <ArrowLeft size={20} color="#16A34A" strokeWidth={2.5} />
           <Text 
             className="text-green-600 font-semibold" 
-            style={{ 
-              fontSize: 15, 
-              lineHeight: 20, 
-              letterSpacing: 0.3,
-              flexShrink: 0,
-              minWidth: 70,
-            }}
-            numberOfLines={1}
+            style={{ fontSize: 15, lineHeight: 20, letterSpacing: 0.3 }}
           >
-            {(() => {
-              try {
-                const translated = t('common.back');
-                return translated === 'common.back' ? 'Back' : translated;
-              } catch {
-                return 'Back';
-              }
-            })()}
+            {tr('common.back', 'Back')}
           </Text>
         </TouchableOpacity>
 
-        {/* Header - Innovative Design with Icon */}
+        {/* Header */}
         <View className="mb-10">
           <View style={{ marginBottom: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -451,7 +495,70 @@ export const SignUpScreen = () => {
                 </Text>
               </View>
             </View>
+            <Text className="text-gray-600" style={{ fontSize: 14, marginTop: 4 }}>
+              {tr('signUp.phoneAuth', 'Sign up with your phone number or email')}
+            </Text>
           </View>
+        </View>
+
+        {/* Auth Method Toggle */}
+        <View style={{
+          backgroundColor: 'white',
+          borderRadius: 20,
+          padding: 6,
+          marginBottom: 16,
+          flexDirection: 'row',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 12,
+          elevation: 3,
+        }}>
+          <TouchableOpacity
+            onPress={() => {
+              setAuthMethod('phone');
+              setFormData(prev => ({ ...prev, email: '', password: '' }));
+              setErrors({});
+            }}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              borderRadius: 16,
+              backgroundColor: authMethod === 'phone' ? '#16A34A' : 'transparent',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{
+              color: authMethod === 'phone' ? 'white' : '#6B7280',
+              fontWeight: '600',
+              fontSize: 15,
+            }}>
+              📱 {tr('signUp.phoneMethod', 'Phone')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setAuthMethod('email');
+              setFormData(prev => ({ ...prev, phoneNumber: '', otp: '' }));
+              setOtpSent(false);
+              setErrors({});
+            }}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              borderRadius: 16,
+              backgroundColor: authMethod === 'email' ? '#16A34A' : 'transparent',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{
+              color: authMethod === 'email' ? 'white' : '#6B7280',
+              fontWeight: '600',
+              fontSize: 15,
+            }}>
+              ✉️ {tr('signUp.emailMethod', 'Email')}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Form - Card Style */}
@@ -483,46 +590,152 @@ export const SignUpScreen = () => {
               error={errors.fullName}
             />
 
-            <CustomInput
-              label={tr('signUp.mobileNumber', 'Mobile Number')}
-              placeholder={localizeNumber(tr('signUp.mobileNumberPlaceholder', 'Enter 10-digit mobile number'), i18n.language)}
-              value={localizeNumber(formData.mobileNumber, i18n.language)}
-              onChangeText={(value) => {
-                const delocalized = delocalizeNumber(value, i18n.language);
-                handleFieldChange('mobileNumber', delocalized);
-              }}
-              keyboardType="phone-pad"
-              maxLength={10}
-              error={errors.mobileNumber}
-            />
+            {/* Phone Auth Fields */}
+            {authMethod === 'phone' && (
+              <>
+                {/* Phone Number with Send OTP Button */}
+                <View>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>
+                {tr('signUp.phoneNumber', 'Phone Number')} *
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#F9FAFB',
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    borderWidth: 1,
+                    borderColor: errors.phoneNumber ? '#EF4444' : '#E5E7EB',
+                  }}>
+                    <Text style={{ fontSize: 16, color: '#6B7280', marginRight: 8 }}>+91</Text>
+                    <TextInput
+                      style={{ flex: 1, paddingVertical: 14, fontSize: 16, color: '#111827' }}
+                      placeholder={tr('signUp.phoneNumberPlaceholder', '9876543210')}
+                      value={localizeNumber(formData.phoneNumber, i18n.language)}
+                      onChangeText={(value) => {
+                        const delocalized = delocalizeNumber(value, i18n.language);
+                        handleFieldChange('phoneNumber', delocalized);
+                      }}
+                      keyboardType="phone-pad"
+                      maxLength={10}
+                      editable={!otpSent}
+                    />
+                  </View>
+                  {errors.phoneNumber && (
+                    <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>
+                      {errors.phoneNumber}
+                    </Text>
+                  )}
+                </View>
+                <TouchableOpacity
+                  onPress={handleSendOTP}
+                  disabled={isLoading || otpTimer > 0 || !formData.phoneNumber}
+                  style={{
+                    backgroundColor: (isLoading || otpTimer > 0 || !formData.phoneNumber) ? '#D1D5DB' : '#16A34A',
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    borderRadius: 12,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    minWidth: 100,
+                  }}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="white" size="small" />
+                  ) : (
+                    <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>
+                      {otpTimer > 0 
+                        ? `${otpTimer}s` 
+                        : otpSent 
+                          ? tr('signUp.resendOTP', 'Resend')
+                          : tr('signUp.sendOTP', 'Send OTP')}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
 
-            <CustomInput
-              label={tr('signUp.email', 'Email')}
-              placeholder={tr('signUp.emailPlaceholder', 'Enter your email')}
-              value={formData.email}
-              onChangeText={(value) => handleFieldChange('email', value)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={errors.email}
-            />
+            {/* OTP Input - Only show after OTP is sent */}
+            {otpSent && (
+              <View>
+                <CustomInput
+                  label={tr('signUp.otp', 'Enter OTP')}
+                  placeholder={tr('signUp.otpPlaceholder', 'Enter 6-digit OTP')}
+                  value={formData.otp}
+                  onChangeText={(value) => handleFieldChange('otp', value)}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  error={errors.otp}
+                />
+                <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>
+                  {tr('signUp.otpHelp', 'Enter the OTP sent to your phone')}
+                </Text>
+              </View>
+            )}
+            </>
+            )}
 
-            <PasswordInput
-              label={tr('signUp.password', 'Password')}
-              placeholder={tr('signUp.passwordPlaceholder', 'Enter password (min 6 characters)')}
-              value={formData.password}
-              onChangeText={(value) => handleFieldChange('password', value)}
-              error={errors.password}
-            />
+            {/* Email Auth Fields */}
+            {authMethod === 'email' && (
+              <>
+                {/* Phone Number for Email Auth */}
+                <View>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>
+                    {tr('signUp.phoneNumber', 'Phone Number')} *
+                  </Text>
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#F9FAFB',
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    borderWidth: 1,
+                    borderColor: errors.phoneNumber ? '#EF4444' : '#E5E7EB',
+                  }}>
+                    <Text style={{ fontSize: 16, color: '#6B7280', marginRight: 8 }}>+91</Text>
+                    <TextInput
+                      style={{ flex: 1, paddingVertical: 14, fontSize: 16, color: '#111827' }}
+                      placeholder={tr('signUp.phoneNumberPlaceholder', '9876543210')}
+                      value={localizeNumber(formData.phoneNumber, i18n.language)}
+                      onChangeText={(value) => {
+                        const delocalized = delocalizeNumber(value, i18n.language);
+                        handleFieldChange('phoneNumber', delocalized);
+                      }}
+                      keyboardType="phone-pad"
+                      maxLength={10}
+                    />
+                  </View>
+                  {errors.phoneNumber && (
+                    <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>
+                      {errors.phoneNumber}
+                    </Text>
+                  )}
+                </View>
 
-            <PasswordInput
-              label={tr('signUp.confirmPassword', 'Confirm Password')}
-              placeholder={tr('signUp.confirmPasswordPlaceholder', 'Re-enter your password')}
-              value={formData.confirmPassword}
-              onChangeText={(value) =>
-                handleFieldChange('confirmPassword', value)
-              }
-              error={errors.confirmPassword}
-            />
+                <CustomInput
+                  label={tr('signUp.email', 'Email')}
+                  placeholder={tr('signUp.emailPlaceholder', 'Enter your email')}
+                  value={formData.email}
+                  onChangeText={(value) => handleFieldChange('email', value)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  error={errors.email}
+                />
+                <CustomInput
+                  label={tr('signUp.password', 'Password')}
+                  placeholder={tr('signUp.passwordPlaceholder', 'Enter your password')}
+                  value={formData.password}
+                  onChangeText={(value) => handleFieldChange('password', value)}
+                  secureTextEntry
+                  error={errors.password}
+                />
+                <Text style={{ fontSize: 12, color: '#6B7280', marginTop: -4 }}>
+                  {tr('signUp.passwordHelp', 'Minimum 6 characters')}
+                </Text>
+              </>
+            )}
           </View>
 
           {/* Farmer-Specific Fields */}
@@ -537,152 +750,152 @@ export const SignUpScreen = () => {
               </Text>
 
               <Dropdown
-            label={tr('signUp.state', 'State')}
-            placeholder={tr('signUp.statePlaceholder', 'Select your state')}
-            value={
-              INDIAN_STATES.find((s) => s.value === formData.state)
-                ? (() => {
-                    try {
-                      const state = INDIAN_STATES.find((s) => s.value === formData.state);
-                      return state ? t(state.labelKey) : '';
-                    } catch {
-                      return '';
-                    }
-                  })()
-                : ''
-            }
-            options={INDIAN_STATES.map((state) => {
-              try {
-                return t(state.labelKey);
-              } catch {
-                return state.value;
-              }
-            })}
-            onSelect={(value) => {
-              try {
-                const selectedState = INDIAN_STATES.find(
-                  (state) => {
-                    try {
-                      return t(state.labelKey) === value;
-                    } catch {
-                      return state.value === value;
-                    }
-                  }
-                );
-                if (selectedState) {
-                  handleFieldChange('state', selectedState.value);
+                label={tr('signUp.state', 'State')}
+                placeholder={tr('signUp.statePlaceholder', 'Select your state')}
+                value={
+                  INDIAN_STATES.find((s) => s.value === formData.state)
+                    ? (() => {
+                        try {
+                          const state = INDIAN_STATES.find((s) => s.value === formData.state);
+                          return state ? t(state.labelKey) : '';
+                        } catch {
+                          return '';
+                        }
+                      })()
+                    : ''
                 }
-              } catch (error) {
-                console.error('State selection error:', error);
-              }
-            }}
-            error={errors.state}
-          />
-
-          <Dropdown
-            label={tr('signUp.district', 'District')}
-            placeholder={tr('signUp.districtPlaceholder', 'Select your district')}
-            value={
-              INDIAN_DISTRICTS.find((d) => d.value === formData.district)
-                ? (() => {
-                    try {
-                      const district = INDIAN_DISTRICTS.find((d) => d.value === formData.district);
-                      return district ? t(district.labelKey) : '';
-                    } catch {
-                      return '';
-                    }
-                  })()
-                : ''
-            }
-            options={INDIAN_DISTRICTS.map((district) => {
-              try {
-                return t(district.labelKey);
-              } catch {
-                return district.value;
-              }
-            })}
-            onSelect={(value) => {
-              try {
-                const selectedDistrict = INDIAN_DISTRICTS.find(
-                  (district) => {
-                    try {
-                      return t(district.labelKey) === value;
-                    } catch {
-                      return district.value === value;
-                    }
+                options={INDIAN_STATES.map((state) => {
+                  try {
+                    return t(state.labelKey);
+                  } catch {
+                    return state.value;
                   }
-                );
-                if (selectedDistrict) {
-                  handleFieldChange('district', selectedDistrict.value);
-                }
-              } catch (error) {
-                console.error('District selection error:', error);
-              }
-            }}
-            error={errors.district}
-            disabled={!formData.state}
-          />
-
-          {/* Farming Information Section */}
-          <Text 
-            className="text-gray-800 font-bold" 
-            style={{ fontSize: 16, marginBottom: 12, marginTop: 16, letterSpacing: 0.3 }}
-          >
-            {tr('signUp.farmingInfo', 'Farming Information')}
-          </Text>
-
-          <Dropdown
-            label={tr('signUp.farmerType', 'Farmer Type')}
-            placeholder={tr('signUp.farmerTypePlaceholder', 'Select farmer type')}
-            value={
-              FARMER_TYPES.find((f) => f.value === formData.farmerType)
-                ? (() => {
-                    try {
-                      const type = FARMER_TYPES.find((f) => f.value === formData.farmerType);
-                      return type ? t(type.labelKey) : '';
-                    } catch {
-                      return '';
+                })}
+                onSelect={(value) => {
+                  try {
+                    const selectedState = INDIAN_STATES.find(
+                      (state) => {
+                        try {
+                          return t(state.labelKey) === value;
+                        } catch {
+                          return state.value === value;
+                        }
+                      }
+                    );
+                    if (selectedState) {
+                      handleFieldChange('state', selectedState.value);
                     }
-                  })()
-                : ''
-            }
-            options={FARMER_TYPES.map((type) => {
-              try {
-                return t(type.labelKey);
-              } catch {
-                return type.value;
-              }
-            })}
-            onSelect={(value) => {
-              try {
-                const selectedType = FARMER_TYPES.find(
-                  (type) => {
-                    try {
-                      return t(type.labelKey) === value;
-                    } catch {
-                      return type.value === value;
-                    }
+                  } catch (error) {
+                    console.error('State selection error:', error);
                   }
-                );
-                if (selectedType) {
-                  handleFieldChange('farmerType', selectedType.value);
-                }
-              } catch (error) {
-                console.error('Farmer type selection error:', error);
-              }
-            }}
-            error={errors.farmerType}
-          />
+                }}
+                error={errors.state}
+              />
 
-          <CustomInput
-            label={tr('signUp.landSize', 'Land Size')}
-            placeholder={tr('signUp.landSizePlaceholder', 'Enter land size')}
-            value={formData.landSize}
-            onChangeText={(value) => handleFieldChange('landSize', value)}
-            keyboardType="decimal-pad"
-            suffix={tr('signUp.acres', 'acres')}
-            error={errors.landSize}
-          />
+              <Dropdown
+                label={tr('signUp.district', 'District')}
+                placeholder={tr('signUp.districtPlaceholder', 'Select your district')}
+                value={
+                  INDIAN_DISTRICTS.find((d) => d.value === formData.district)
+                    ? (() => {
+                        try {
+                          const district = INDIAN_DISTRICTS.find((d) => d.value === formData.district);
+                          return district ? t(district.labelKey) : '';
+                        } catch {
+                          return '';
+                        }
+                      })()
+                    : ''
+                }
+                options={INDIAN_DISTRICTS.map((district) => {
+                  try {
+                    return t(district.labelKey);
+                  } catch {
+                    return district.value;
+                  }
+                })}
+                onSelect={(value) => {
+                  try {
+                    const selectedDistrict = INDIAN_DISTRICTS.find(
+                      (district) => {
+                        try {
+                          return t(district.labelKey) === value;
+                        } catch {
+                          return district.value === value;
+                        }
+                      }
+                    );
+                    if (selectedDistrict) {
+                      handleFieldChange('district', selectedDistrict.value);
+                    }
+                  } catch (error) {
+                    console.error('District selection error:', error);
+                  }
+                }}
+                error={errors.district}
+                disabled={!formData.state}
+              />
+
+              {/* Farming Information Section */}
+              <Text 
+                className="text-gray-800 font-bold" 
+                style={{ fontSize: 16, marginBottom: 12, marginTop: 16, letterSpacing: 0.3 }}
+              >
+                {tr('signUp.farmingInfo', 'Farming Information')}
+              </Text>
+
+              <Dropdown
+                label={tr('signUp.farmerType', 'Farmer Type')}
+                placeholder={tr('signUp.farmerTypePlaceholder', 'Select farmer type')}
+                value={
+                  FARMER_TYPES.find((f) => f.value === formData.farmerType)
+                    ? (() => {
+                        try {
+                          const type = FARMER_TYPES.find((f) => f.value === formData.farmerType);
+                          return type ? t(type.labelKey) : '';
+                        } catch {
+                          return '';
+                        }
+                      })()
+                    : ''
+                }
+                options={FARMER_TYPES.map((type) => {
+                  try {
+                    return t(type.labelKey);
+                  } catch {
+                    return type.value;
+                  }
+                })}
+                onSelect={(value) => {
+                  try {
+                    const selectedType = FARMER_TYPES.find(
+                      (type) => {
+                        try {
+                          return t(type.labelKey) === value;
+                        } catch {
+                          return type.value === value;
+                        }
+                      }
+                    );
+                    if (selectedType) {
+                      handleFieldChange('farmerType', selectedType.value);
+                    }
+                  } catch (error) {
+                    console.error('Farmer type selection error:', error);
+                  }
+                }}
+                error={errors.farmerType}
+              />
+
+              <CustomInput
+                label={tr('signUp.landSize', 'Land Size')}
+                placeholder={tr('signUp.landSizePlaceholder', 'Enter land size')}
+                value={formData.landSize}
+                onChangeText={(value) => handleFieldChange('landSize', value)}
+                keyboardType="decimal-pad"
+                suffix={tr('signUp.acres', 'acres')}
+                error={errors.landSize}
+              />
             </>
           )}
         </View>
@@ -698,29 +911,10 @@ export const SignUpScreen = () => {
             <ActivityIndicator color="white" />
           ) : (
             <Text className="text-white text-center text-lg font-semibold">
-              {isLoading ? tr('signUp.creating', 'Creating...') : tr('signUp.createAccount', 'Create Account')}
+              {tr('signUp.createAccount', 'Create Account')}
             </Text>
           )}
         </TouchableOpacity>
-
-        {/* Google Sign Up (web only) */}
-        {Platform.OS === 'web' ? (
-          <TouchableOpacity
-            onPress={handleGoogleSignUp}
-            disabled={googleBusy || isLoading}
-            className={`rounded-xl py-4 mb-6 border ${googleBusy || isLoading
-                ? 'border-gray-300 bg-gray-50'
-                : 'border-gray-300 bg-white'
-              }`}
-          >
-            <Text
-              className={`text-center text-lg font-semibold ${googleBusy || isLoading ? 'text-gray-400' : 'text-gray-900'
-                }`}
-            >
-              {tr('signUp.googleButton', 'Sign up with Google')}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
 
         {/* Sign In Link */}
         <View className="flex-row justify-center items-center flex-wrap">

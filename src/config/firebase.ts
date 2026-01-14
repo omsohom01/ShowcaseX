@@ -129,12 +129,14 @@ let auth: Auth;
 
 try {
   // Try to use React Native persistence with AsyncStorage
-  // Import dynamically to handle different Firebase versions
-  const { getReactNativePersistence } = require('firebase/auth/react-native');
+  // Use the proper import for Firebase 12.x
+  const { getReactNativePersistence } = require('firebase/auth');
 
   auth = initializeAuth(app, {
     persistence: getReactNativePersistence(AsyncStorage),
   });
+  
+  console.log('✅ Firebase Auth initialized with AsyncStorage persistence');
 } catch (error) {
   // Fallback: if getReactNativePersistence is not available, use default getAuth
   console.warn('Using default auth persistence. For session persistence, ensure Firebase SDK supports React Native persistence.');

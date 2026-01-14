@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// TEMPORARY RULES FOR TESTING
+// ⚠️ WARNING: These rules are INSECURE and should only be used for testing
+// Deploy the proper firestore.rules file for production
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // TEMPORARY: Allow all authenticated users to read/write
+    // This is to test authentication flow
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

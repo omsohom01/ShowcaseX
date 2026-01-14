@@ -772,19 +772,9 @@ export const acceptMarketDeal = async (deal: MarketDeal): Promise<void> => {
     updatedAt: now,
   });
 
-  if (deal.kind === 'negotiation') {
-    // If negotiation is accepted, apply the buyer's offered price to the product.
-    // IMPORTANT: do not mutate quantity here; quantities are managed by the farmer.
-    batch.update(doc(db, 'products', deal.productId), {
-      rate: Number(deal.offerPrice),
-    });
-  }
-
-  if (deal.kind === 'requestToBuy') {
-    // If farmer accepts a request-to-buy, remove the product from listings.
-    // This matches the UX expectation that the farmer no longer has stock.
-    batch.delete(doc(db, 'products', deal.productId));
-  }
+  // For both negotiation and requestToBuy, remove the product from listings
+  // since the farmer has accepted to sell the product
+  batch.delete(doc(db, 'products', deal.productId));
 
   await batch.commit();
 };
