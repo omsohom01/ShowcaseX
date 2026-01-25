@@ -10,15 +10,18 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useRoute } from '@react-navigation/native';
-import { Sprout, ShoppingBasket, Phone } from 'lucide-react-native';
-import BackButton from '@/components/BackButton';
+import { Sprout, ShoppingBasket, Phone, Mail, LogIn, LogOut } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { CustomInput } from '../components/CustomInput';
+import { CustomAlert } from '../components/CustomAlert';
+import MovingBackgroundCircle from '../components/MovingBackgroundCircle';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { 
   sendPhoneOTP, 
@@ -54,10 +57,12 @@ export const SignInScreen = () => {
   const navigation = useNavigation<SignInScreenNavigationProp>();
   const route = useRoute<SignInScreenRouteProp>();
   const insets = useSafeAreaInsets();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
   const [authMethod, setAuthMethod] = useState<AuthMethod>('phone');
+  const [showExitAlert, setShowExitAlert] = useState(false);
   const role = route.params?.role;
   const [formData, setFormData] = useState<FormData>({
     phoneNumber: '',
@@ -66,6 +71,18 @@ export const SignInScreen = () => {
     otp: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Handle back button press to show exit confirmation
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        setShowExitAlert(true);
+        return true; // Prevent default back behavior
+      };
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   // Load saved language on mount
   useEffect(() => {
@@ -145,17 +162,16 @@ export const SignInScreen = () => {
       return;
     }
 
-    setIsLoading(true);
+    setIsSendingOtp(true);
     try {
       // Test API connection first
       console.log('Testing API connection before sending OTP...');
       const connectionTest = await testAPIConnection();
       if (!connectionTest.success) {
         Alert.alert(
-          tr('signIn.title', 'Sign In'),
-          `Unable to connect to server: ${connectionTest.message}\n\nPlease check your internet connection and try again.`
+          tr('signIn.signInTitle', 'Sign In'),
+          `${tr('signIn.errors.connectionFailed', 'Unable to connect to server')}: ${connectionTest.message}\n\n${tr('signIn.errors.checkInternet', 'Please check your internet connection and try again.')}`
         );
-        setIsLoading(false);
         return;
       }
       console.log('API connection successful:', connectionTest.message);
@@ -168,8 +184,8 @@ export const SignInScreen = () => {
 
       if (!result.success) {
         Alert.alert(
-          tr('signIn.title', 'Sign In'), 
-          result.message + '\n\nIf the problem persists, please check your internet connection.'
+          tr('signIn.signInTitle', 'Sign In'), 
+          `${result.message}\n\n${tr('signIn.errors.checkInternet', 'Please check your internet connection and try again.')}`
         );
         return;
       }
@@ -183,11 +199,11 @@ export const SignInScreen = () => {
     } catch (error) {
       console.error('Send OTP error:', error);
       Alert.alert(
-        tr('signIn.title', 'Sign In'),
+        tr('signIn.signInTitle', 'Sign In'),
         tr('signIn.errors.otpSendFailed', 'Failed to send OTP. Please check your internet connection and try again.')
       );
     } finally {
-      setIsLoading(false);
+      setIsSendingOtp(false);
     }
   };
 
@@ -196,7 +212,7 @@ export const SignInScreen = () => {
     let requiredFields: (keyof FormData)[] = [];
     
     if (authMethod === 'phone') {
-      requiredFields = ['phoneNumber', 'otp'];
+      requiredFields = otpSent ? ['phoneNumber', 'otp'] : ['phoneNumber'];
     } else {
       requiredFields = ['email', 'password'];
     }
@@ -211,18 +227,18 @@ export const SignInScreen = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
-    
     // Check OTP requirement for phone auth
     if (authMethod === 'phone' && !otpSent) {
       Alert.alert(
-        tr('signIn.title', 'Sign In'),
+        tr('signIn.signInTitle', 'Sign In'),
         tr('signIn.errors.sendOTPFirst', 'Please send OTP first')
       );
       return;
     }
 
-    setIsLoading(true);
+    if (!validateForm()) return;
+
+    setIsSigningIn(true);
     try {
       let result;
       
@@ -237,7 +253,7 @@ export const SignInScreen = () => {
       
       if (!result.success) {
         Alert.alert(
-          tr('signIn.title', 'Sign In'),
+          tr('signIn.signInTitle', 'Sign In'),
           result.message
         );
         return;
@@ -266,11 +282,11 @@ export const SignInScreen = () => {
     } catch (error) {
       console.error('Sign in error:', error);
       Alert.alert(
-        tr('signIn.title', 'Sign In'),
+        tr('signIn.signInTitle', 'Sign In'),
         tr('signIn.errors.default', 'Sign in failed. Please try again.')
       );
     } finally {
-      setIsLoading(false);
+      setIsSigningIn(false);
     }
   };
 
@@ -297,8 +313,12 @@ export const SignInScreen = () => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       className="flex-1"
-      style={{ backgroundColor: '#FAFAFA' }}
+      style={{ backgroundColor: '#F7FAF7' }}
     >
+      {/* Slow Moving Background */}
+      <MovingBackgroundCircle size={260} speed={0.35} opacity={0.06} color="#16A34A" />
+      <MovingBackgroundCircle size={180} speed={0.25} opacity={0.045} color="#22C55E" />
+
       {/* Decorative Background Shape */}
       <View style={{
         position: 'absolute',
@@ -308,7 +328,7 @@ export const SignInScreen = () => {
         height: 300,
         borderRadius: 150,
         backgroundColor: '#E8F5E9',
-        opacity: 0.5,
+        opacity: 0.35,
       }} />
       <View style={{
         position: 'absolute',
@@ -318,7 +338,7 @@ export const SignInScreen = () => {
         height: 250,
         borderRadius: 125,
         backgroundColor: '#F1F8E9',
-        opacity: 0.4,
+        opacity: 0.3,
       }} />
       
       <ScrollView
@@ -327,9 +347,26 @@ export const SignInScreen = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Back Button */}
+        {/* Back Button - Shows exit confirmation since this is the root auth screen */}
         <View className="mb-8">
-          <BackButton />
+          <TouchableOpacity
+            onPress={() => setShowExitAlert(true)}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 8,
+              backgroundColor: '#F3F4F6',
+              alignItems: 'center',
+              justifyContent: 'center',
+              elevation: 4,
+              shadowColor: '#000',
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              shadowOffset: { width: 0, height: 2 },
+            }}
+          >
+            <Ionicons name="arrow-back" size={22} color="#000" />
+          </TouchableOpacity>
         </View>
 
         {/* Header - Innovative Design with Icon */}
@@ -355,7 +392,7 @@ export const SignInScreen = () => {
                 ) : role === 'buyer' ? (
                   <ShoppingBasket size={26} color="white" strokeWidth={2.5} />
                 ) : (
-                  <Phone size={26} color="white" strokeWidth={2.5} />
+                  <LogIn size={26} color="white" strokeWidth={2.5} />
                 )}
               </View>
               <View style={{ flex: 1 }}>
@@ -363,12 +400,16 @@ export const SignInScreen = () => {
                   className="text-gray-900 font-extrabold" 
                   style={{ fontSize: 30, lineHeight: 36, letterSpacing: -0.5 }}
                 >
-                  {tr('signIn.title', role === 'farmer' ? 'Farmer Sign In' : role === 'buyer' ? 'Buyer Sign In' : 'Sign In')}
+                  {role === 'farmer'
+                    ? tr('signIn.farmerTitle', 'Farmer Sign In')
+                    : role === 'buyer'
+                      ? tr('signIn.buyerTitle', 'Buyer Sign In')
+                      : tr('signIn.signInTitle', 'Sign In')}
                 </Text>
               </View>
             </View>
             <Text className="text-gray-600" style={{ fontSize: 14, marginTop: 4 }}>
-              {tr('signIn.phoneAuth', 'Sign in with your phone number or email')}
+              {tr('signIn.subtitle', 'Sign in to continue')}
             </Text>
           </View>
         </View>
@@ -398,14 +439,17 @@ export const SignInScreen = () => {
               borderRadius: 16,
               backgroundColor: authMethod === 'phone' ? '#16A34A' : 'transparent',
               alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
             }}
           >
+            <Phone size={16} color={authMethod === 'phone' ? 'white' : '#6B7280'} style={{ marginRight: 8 }} />
             <Text style={{
               color: authMethod === 'phone' ? 'white' : '#6B7280',
               fontWeight: '600',
               fontSize: 15,
             }}>
-              📱 {tr('signIn.phoneMethod', 'Phone')}
+              {tr('signIn.phoneMethod', 'Phone')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -421,14 +465,17 @@ export const SignInScreen = () => {
               borderRadius: 16,
               backgroundColor: authMethod === 'email' ? '#16A34A' : 'transparent',
               alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
             }}
           >
+            <Mail size={16} color={authMethod === 'email' ? 'white' : '#6B7280'} style={{ marginRight: 8 }} />
             <Text style={{
               color: authMethod === 'email' ? 'white' : '#6B7280',
               fontWeight: '600',
               fontSize: 15,
             }}>
-              ✉️ {tr('signIn.emailMethod', 'Email')}
+              {tr('signIn.emailMethod', 'Email')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -451,9 +498,9 @@ export const SignInScreen = () => {
           {/* Phone Number with Send OTP Button */}
           <View style={{ marginBottom: 16 }}>
             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>
-              {tr('signIn.phoneNumber', 'Phone Number')}
+              {tr('signIn.mobileNumber', 'Mobile Number')}
             </Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row' }}>
               <View style={{ flex: 1 }}>
                 <View style={{
                   flexDirection: 'row',
@@ -464,10 +511,12 @@ export const SignInScreen = () => {
                   borderWidth: 1,
                   borderColor: errors.phoneNumber ? '#EF4444' : '#E5E7EB',
                 }}>
-                  <Text style={{ fontSize: 16, color: '#6B7280', marginRight: 8 }}>+91</Text>
+                  <Text style={{ fontSize: 16, color: '#6B7280', marginRight: 8 }}>
+                    {tr('signIn.countryCode', '+91')}
+                  </Text>
                   <TextInput
                     style={{ flex: 1, paddingVertical: 14, fontSize: 16, color: '#111827' }}
-                    placeholder={tr('signIn.phoneNumberPlaceholder', '9876543210')}
+                    placeholder={tr('signIn.mobileNumberPlaceholder', '9876543210')}
                     value={localizeNumber(formData.phoneNumber, i18n.language)}
                     onChangeText={(value) => {
                       const delocalized = delocalizeNumber(value, i18n.language);
@@ -486,24 +535,30 @@ export const SignInScreen = () => {
               </View>
               <TouchableOpacity
                 onPress={handleSendOTP}
-                disabled={isLoading || otpTimer > 0 || !formData.phoneNumber}
+                disabled={isSendingOtp || otpTimer > 0 || !formData.phoneNumber}
                 style={{
-                  backgroundColor: (isLoading || otpTimer > 0 || !formData.phoneNumber) ? '#D1D5DB' : '#16A34A',
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
+                  marginLeft: 10,
+                  backgroundColor: (isSendingOtp || otpTimer > 0 || !formData.phoneNumber) ? '#D1D5DB' : '#16A34A',
+                  height: 50,
+                  width: 110,
                   borderRadius: 12,
                   justifyContent: 'center',
                   alignItems: 'center',
-                  minWidth: 100,
+                  flexShrink: 0,
                 }}
               >
-                {isLoading ? (
+                {isSendingOtp ? (
                   <ActivityIndicator color="white" size="small" />
                 ) : (
-                  <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>
-                    {otpTimer > 0 
-                      ? `${otpTimer}s` 
-                      : otpSent 
+                  <Text
+                    style={{ color: 'white', fontWeight: '600', fontSize: 14, textAlign: 'center' }}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
+                    {otpTimer > 0
+                      ? `${otpTimer}${tr('signIn.secondsShort', 's')}`
+                      : otpSent
                         ? tr('signIn.resendOTP', 'Resend')
                         : tr('signIn.sendOTP', 'Send OTP')}
                   </Text>
@@ -559,40 +614,67 @@ export const SignInScreen = () => {
         {/* Sign In Button */}
         <TouchableOpacity
           onPress={handleSubmit}
-          disabled={!isFormValid() || isLoading}
+          disabled={!isFormValid() || isSigningIn}
           style={{
-            backgroundColor: (!isFormValid() || isLoading) ? '#D1D5DB' : '#16A34A',
+            backgroundColor: (!isFormValid() || isSigningIn) ? '#D1D5DB' : '#16A34A',
             borderRadius: 12,
             paddingVertical: 16,
             marginBottom: 20,
             shadowColor: '#16A34A',
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: (!isFormValid() || isLoading) ? 0 : 0.3,
+            shadowOpacity: (!isFormValid() || isSigningIn) ? 0 : 0.3,
             shadowRadius: 8,
-            elevation: (!isFormValid() || isLoading) ? 0 : 4,
+            elevation: (!isFormValid() || isSigningIn) ? 0 : 4,
           }}
         >
-          {isLoading ? (
+          {isSigningIn ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={{ color: 'white', textAlign: 'center', fontSize: 18, fontWeight: '600' }}>
+            <Text 
+              style={{ color: 'white', textAlign: 'center', fontSize: 18, fontWeight: '600' }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               {tr('signIn.signInButton', 'Sign In')}
             </Text>
           )}
         </TouchableOpacity>
 
         {/* Sign Up Link */}
-        <View className="flex-row justify-center items-center flex-wrap">
-          <Text className="text-gray-600 text-base text-center">
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', paddingHorizontal: 12 }}>
+          <Text style={{ color: '#4B5563', fontSize: 16, textAlign: 'center', lineHeight: 22 }}>
             {tr('signIn.noAccount', "Don't have an account?")}{' '}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('RoleChoice')}>
-            <Text className="text-primary font-semibold text-base">
+            <Text style={{ color: '#16A34A', fontWeight: '700', fontSize: 16, lineHeight: 22 }}>
               {tr('signIn.signUp', 'Sign Up')}
             </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Exit App Confirmation Alert */}
+      <CustomAlert
+        visible={showExitAlert}
+        type="warning"
+        icon={LogOut}
+        title={tr('exitApp.title', 'Exit App')}
+        message={tr('exitApp.message', 'Are you sure you want to exit the app?')}
+        buttons={[
+          {
+            text: tr('exitApp.cancel', 'Cancel'),
+            style: 'cancel',
+            onPress: () => setShowExitAlert(false),
+          },
+          {
+            text: tr('exitApp.confirm', 'Exit'),
+            style: 'destructive',
+            onPress: () => BackHandler.exitApp(),
+          },
+        ]}
+        onClose={() => setShowExitAlert(false)}
+      />
     </KeyboardAvoidingView>
   );
 };

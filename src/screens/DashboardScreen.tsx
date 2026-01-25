@@ -17,15 +17,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { HandHeart, Sun, Droplets, Wind, Wheat, Ruler, Heart, MapPin, Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, Sprout, Tractor, Leaf, Moon, X, Newspaper, TrendingUp, CloudSun, Scale, Cpu, Calendar, ExternalLink, RefreshCcw } from 'lucide-react-native';
+import { HandHeart, Sun, Droplets, Wind, Wheat, Ruler, Heart, MapPin, Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, Sprout, Tractor, Leaf, Moon, X, Newspaper, TrendingUp, CloudSun, Scale, Cpu, Calendar, ExternalLink, RefreshCcw, LogOut } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { ChatbotModal } from '../components/ChatbotModal';
 import { SideDrawer } from '../components/SideDrawer';
+import { CustomAlert } from '../components/CustomAlert';
+import { WeatherIcon } from '../components/WeatherIcon';
 import { localizeNumber } from '../utils/numberLocalization';
-import { getWeatherForCurrentLocation, WeatherData, getWeatherIcon, getWeatherConditionKey } from '../services/weather';
+import { getWeatherForCurrentLocation, WeatherData, getWeatherConditionKey, getWeatherIllustrationKey } from '../services/weather';
 import { getAgriculturalNews, NewsArticle } from '../services/news';
 import { auth } from '../config/firebase';
 import {
@@ -44,10 +46,16 @@ export const DashboardScreen = () => {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
   const insets = useSafeAreaInsets();
 
-  // Prevent navigating back to auth (or exiting) from dashboard
+  // Exit app confirmation state
+  const [showExitAlert, setShowExitAlert] = useState(false);
+
+  // Handle back button to show exit confirmation
   useFocusEffect(
     React.useCallback(() => {
-      const onBackPress = () => true;
+      const onBackPress = () => {
+        setShowExitAlert(true);
+        return true; // Prevent default back behavior
+      };
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => subscription.remove();
     }, [])
@@ -61,7 +69,7 @@ export const DashboardScreen = () => {
   // Farming tasks state (actionable reminders)
   const [farmingPlans, setFarmingPlans] = useState<FarmingPlanSummary[]>([]);
   const [isLoadingFarmingPlans, setIsLoadingFarmingPlans] = useState(true);
-  
+
   // News state
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [isLoadingNews, setIsLoadingNews] = useState(true);
@@ -76,6 +84,28 @@ export const DashboardScreen = () => {
 
   // Hardcoded: 2 buyers have contacted this farmer
   const notificationCount = 2;
+
+  // Localized month names for date formatting
+  const MONTH_NAMES_SHORT: Record<string, string[]> = {
+    en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    hi: ['जन', 'फर', 'मार्च', 'अप्रै', 'मई', 'जून', 'जुल', 'अग', 'सित', 'अक्टू', 'नव', 'दिस'],
+    bn: ['জানু', 'ফেব্রু', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে'],
+  };
+
+  // Format ISO date to localized format (e.g., "25 জানু 2026" for Bengali)
+  const formatLocalizedDate = (isoDate: string): string => {
+    if (!isoDate) return '';
+    const parts = isoDate.split('-');
+    if (parts.length !== 3) return isoDate;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    const monthNames = MONTH_NAMES_SHORT[i18n.language] || MONTH_NAMES_SHORT.en;
+    const monthName = monthNames[month - 1] || monthNames[0];
+    const localizedDay = localizeNumber(day, i18n.language);
+    const localizedYear = localizeNumber(year, i18n.language);
+    return `${localizedDay} ${monthName} ${localizedYear}`;
+  };
 
   // Safe translation helper
   const tr = (key: string, fallback?: string, options?: Record<string, unknown>) => {
@@ -194,10 +224,10 @@ export const DashboardScreen = () => {
       // Extract state from user display name or email
       // Expected format: "Name - State" or fallback to West Bengal
       const userState = user?.displayName?.split(' - ')[1] || 'West Bengal';
-      
+
       // Get current language from i18n
       const currentLanguage = i18n.language || 'en';
-      
+
       const articles = await getAgriculturalNews(userState, 3, currentLanguage, { forceRefresh });
       setNewsArticles(articles);
     } catch (error) {
@@ -272,55 +302,11 @@ export const DashboardScreen = () => {
 
   // Get weather icon component based on weather code and time of day
   const getWeatherIconComponent = (weatherCode: number, timeString?: string, size: number = 56) => {
-    const iconType = getWeatherIcon(weatherCode);
     const checkTime = timeString ? new Date(timeString) : new Date();
     const isNight = isNightTime(checkTime);
 
-    // For clear weather, show moon at night, sun during day
-    if (iconType === 'clear') {
-      return isNight
-        ? <Moon size={size} color="#60A5FA" strokeWidth={2.5} />
-        : <Sun size={size} color="#FBBF24" strokeWidth={2.5} />;
-    }
-
-    // For partly cloudy/cloudy at night, show moon with cloud
-    if ((iconType === 'partly-cloudy' || iconType === 'cloudy') && isNight) {
-      return (
-        <View style={{ position: 'relative', width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-          <Cloud size={size} color="#93C5FD" strokeWidth={2} style={{ position: 'absolute' }} />
-          <Moon size={size * 0.5} color="#60A5FA" strokeWidth={2} style={{ position: 'absolute', top: size * 0.15, left: size * 0.1 }} />
-        </View>
-      );
-    }
-
-    // Other weather conditions
-    switch (iconType) {
-      case 'partly-cloudy':
-        return (
-          <View style={{ position: 'relative', width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-            <Cloud size={size} color="#93C5FD" strokeWidth={2} style={{ position: 'absolute' }} />
-            <Sun size={size * 0.5} color="#FBBF24" strokeWidth={2} style={{ position: 'absolute', top: size * 0.15, right: size * 0.1 }} />
-          </View>
-        );
-      case 'cloudy':
-        return <Cloud size={size} color="#93C5FD" strokeWidth={2} />;
-      case 'fog':
-        return <CloudFog size={size} color="#64748B" strokeWidth={2} />;
-      case 'drizzle':
-        return <CloudDrizzle size={size} color="#60A5FA" strokeWidth={2} />;
-      case 'rain':
-        return <CloudRain size={size} color="#3B82F6" strokeWidth={2} />;
-      case 'heavy-rain':
-        return <CloudRain size={size} color="#2563EB" strokeWidth={2} />;
-      case 'snow':
-        return <CloudSnow size={size} color="#BFDBFE" strokeWidth={2} />;
-      case 'thunderstorm':
-        return <CloudLightning size={size} color="#6366F1" strokeWidth={2} />;
-      default:
-        return isNight
-          ? <Moon size={size} color="#E0E7FF" strokeWidth={2.5} />
-          : <Sun size={size} color="#FCD34D" strokeWidth={2.5} />;
-    }
+    const key = getWeatherIllustrationKey(weatherCode, { isNight });
+    return <WeatherIcon iconKey={key} size={size} />;
   };
 
   // Format time for hourly forecast (e.g., "14:00" -> "2 PM", "00:00" -> "12 am")
@@ -358,7 +344,7 @@ export const DashboardScreen = () => {
     status: tr('dashboard.farmSummary.healthy', 'Healthy'),
   };
 
-  const handleDrawerNavigate = (screen: 'Profile' | 'CropPrediction' | 'CropPlanner' | 'DocumentAnalyzer' | 'CropDiseaseDetection' | 'ContactBuyer') => {
+  const handleDrawerNavigate = (screen: 'Profile' | 'CropPrediction' | 'DocumentAnalyzer' | 'CropDiseaseDetection' | 'ContactBuyer') => {
     navigation.navigate(screen);
   };
 
@@ -523,7 +509,7 @@ export const DashboardScreen = () => {
           ) : (
             <Animated.View style={{ transform: [{ scale: weatherCardScale }] }}>
               <LinearGradient
-                colors={['#F0F9FF', '#E0F2FE', '#DBEAFE']}
+                colors={['#FFFFFF', '#F0F9FF']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{
@@ -558,7 +544,9 @@ export const DashboardScreen = () => {
                       elevation: 3,
                     }}
                   >
-                    {getWeatherIconComponent(weatherData.current.weatherCode, undefined, 38)}
+                    <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                      {getWeatherIconComponent(weatherData.current.weatherCode, undefined, 50)}
+                    </View>
                   </LinearGradient>
                   <Text style={{
                     fontSize: 14,
@@ -701,18 +689,13 @@ export const DashboardScreen = () => {
                             alignItems: 'center',
                             borderWidth: 1,
                             borderColor: '#E2E8F0',
-                            shadowColor: '#64748B',
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.05,
-                            shadowRadius: 3,
-                            elevation: 2,
                           }}
                         >
                           <Text style={{
                             color: '#475569',
                             fontSize: 10,
                             fontWeight: '600',
-                            marginBottom: 2,
+                            marginBottom: 4,
                           }}>
                             {formatTime(hour.time)}
                           </Text>
@@ -720,18 +703,19 @@ export const DashboardScreen = () => {
                             color: '#9CA3AF',
                             fontSize: 8,
                             fontWeight: '500',
-                            marginBottom: 6,
+                            marginBottom: 8,
                             textTransform: 'capitalize',
                           }}>
                             {timePeriod}
                           </Text>
-                          {getWeatherIconComponent(hour.weatherCode, hour.time, 28)}
+                          <View style={{ alignItems: 'center', justifyContent: 'center', height: 34, width: 34, marginBottom: 8 }}>
+                            {getWeatherIconComponent(hour.weatherCode, hour.time, 32)}
+                          </View>
                           <Text style={{
                             color: '#0F172A',
                             fontSize: 16,
                             fontWeight: '800',
-                            marginTop: 8,
-                            marginBottom: 5,
+                            marginBottom: 6,
                           }}>
                             {localizeNumber(Math.round(hour.temperature), i18n.language)}°
                           </Text>
@@ -754,196 +738,6 @@ export const DashboardScreen = () => {
               </LinearGradient>
             </Animated.View>
           )}
-        </View>
-
-        {/* Farm Summary - Village Theme */}
-        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-            <Wheat size={24} color="#16A34A" strokeWidth={2.5} />
-            <Text
-              style={{
-                color: '#111827',
-                fontSize: 20,
-                fontWeight: '800',
-                marginLeft: 10,
-                letterSpacing: -0.3,
-              }}
-            >
-              {tr('dashboard.farmSummary.title', 'Farm Summary')}
-            </Text>
-          </View>
-
-          <Animated.View style={{ transform: [{ scale: farmCardScale }] }}>
-            <LinearGradient
-              colors={['#FFFFFF', '#F0FDF4', '#ECFDF5']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                borderRadius: 24,
-                padding: 24,
-                borderWidth: 2,
-                borderColor: '#BBF7D0',
-                shadowColor: '#22C55E',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.15,
-                shadowRadius: 20,
-                elevation: 6,
-              }}
-            >
-              {/* Crop Info */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-                <LinearGradient
-                  colors={['#22C55E', '#16A34A']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{
-                    borderRadius: 50,
-                    width: 68,
-                    height: 68,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 18,
-                    shadowColor: '#16A34A',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 12,
-                    elevation: 6,
-                  }}
-                >
-                  <Wheat size={34} color="#FFFFFF" strokeWidth={2.5} />
-                </LinearGradient>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: '#6B7280',
-                      fontSize: 14,
-                      fontWeight: '600',
-                      marginBottom: 6,
-                    }}
-                  >
-                    {tr('dashboard.farmSummary.crops', 'Crops')}
-                  </Text>
-                  <Text
-                    style={{
-                      color: '#111827',
-                      fontSize: 22,
-                      fontWeight: '800',
-                      letterSpacing: -0.5,
-                      lineHeight: 28,
-                    }}
-                  >
-                    {FARM_SUMMARY.crops}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Area Info */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-                <LinearGradient
-                  colors={['#3B82F6', '#2563EB']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{
-                    borderRadius: 50,
-                    width: 68,
-                    height: 68,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 18,
-                    shadowColor: '#2563EB',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 12,
-                    elevation: 6,
-                  }}
-                >
-                  <Ruler size={34} color="#FFFFFF" strokeWidth={2.5} />
-                </LinearGradient>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: '#6B7280',
-                      fontSize: 14,
-                      fontWeight: '600',
-                      marginBottom: 6,
-                    }}
-                  >
-                    {tr('dashboard.farmSummary.area', 'Area')}
-                  </Text>
-                  <Text
-                    style={{
-                      color: '#111827',
-                      fontSize: 22,
-                      fontWeight: '800',
-                      letterSpacing: -0.5,
-                      lineHeight: 28,
-                    }}
-                  >
-                    {localizeNumber(FARM_SUMMARY.area, i18n.language)} {tr('dashboard.farmSummary.acres', 'acres')}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Status Info */}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <LinearGradient
-                  colors={['#EAB308', '#CA8A04']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{
-                    borderRadius: 50,
-                    width: 68,
-                    height: 68,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 18,
-                    shadowColor: '#CA8A04',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 12,
-                    elevation: 6,
-                  }}
-                >
-                  <Heart size={34} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
-                </LinearGradient>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: '#6B7280',
-                      fontSize: 14,
-                      fontWeight: '600',
-                      marginBottom: 8,
-                    }}
-                  >
-                    {tr('dashboard.farmSummary.status', 'Status')}
-                  </Text>
-                  <View style={{
-                    backgroundColor: '#D1FAE5',
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 20,
-                    alignSelf: 'flex-start',
-                    shadowColor: '#10B981',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}>
-                    <Text
-                      style={{
-                        color: '#047857',
-                        fontSize: 18,
-                        fontWeight: '800',
-                        letterSpacing: -0.3,
-                      }}
-                    >
-                      {tr('dashboard.farmSummary.healthy', 'Healthy')}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </LinearGradient>
-          </Animated.View>
         </View>
 
         {/* Farming Plans (Carousel) */}
@@ -1056,7 +850,7 @@ export const DashboardScreen = () => {
                 {t('dashboard.farmingPlans.emptyBody')}
               </Text>
               <TouchableOpacity
-                onPress={() => navigation.navigate('CropPlanner')}
+                onPress={() => navigation.navigate('CropPrediction')}
                 style={{
                   marginTop: 14,
                   backgroundColor: '#16A34A',
@@ -1078,7 +872,7 @@ export const DashboardScreen = () => {
             >
               {farmingPlans.map((plan) => {
                 const nextLabel = plan.nextTaskDateISO && plan.nextTaskTitle
-                  ? `${plan.nextTaskDateISO} • ${plan.nextTaskTitle}`
+                  ? `${formatLocalizedDate(plan.nextTaskDateISO)} • ${plan.nextTaskTitle}`
                   : t('dashboard.farmingPlans.noUpcoming');
 
                 return (
@@ -1101,25 +895,22 @@ export const DashboardScreen = () => {
                       elevation: 3,
                     }}
                   >
-                    <Text style={{ color: '#065F46', fontSize: 12, fontWeight: '900' }}>
-                      {plan.cropName}
-                    </Text>
-                    <Text style={{ marginTop: 6, color: '#111827', fontSize: 16, fontWeight: '900' }} numberOfLines={2}>
+                    <Text style={{ color: '#111827', fontSize: 16, fontWeight: '900' }} numberOfLines={2}>
                       {plan.planTitle}
                     </Text>
 
                     <View style={{ marginTop: 10, gap: 6 }}>
                       <Text style={{ color: '#374151', fontSize: 12, fontWeight: '700' }}>
-                        {t('dashboard.farmingPlans.planting', { date: plan.plantingDateISO })}
+                        {t('dashboard.farmingPlans.planting', { date: formatLocalizedDate(plan.plantingDateISO) })}
                       </Text>
                       <Text style={{ color: '#374151', fontSize: 12, fontWeight: '700' }}>
-                        {t('dashboard.farmingPlans.harvest', { date: plan.expectedHarvestDateISO })}
+                        {t('dashboard.farmingPlans.harvest', { date: formatLocalizedDate(plan.expectedHarvestDateISO) })}
                       </Text>
                       <Text style={{ color: '#166534', fontSize: 12, fontWeight: '900', marginTop: 2 }} numberOfLines={2}>
                         {t('dashboard.farmingPlans.nextTask', { text: nextLabel })}
                       </Text>
                       <Text style={{ color: '#166534', fontSize: 12, fontWeight: '800' }}>
-                        {t('dashboard.farmingPlans.tasksNext7Days', { count: plan.nextTaskCountIn7Days || 0 })}
+                        {t('dashboard.farmingPlans.tasksNext7Days', { countText: localizeNumber(plan.nextTaskCountIn7Days || 0, i18n.language) })}
                       </Text>
                     </View>
 
@@ -1655,6 +1446,28 @@ export const DashboardScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Exit App Confirmation Alert */}
+      <CustomAlert
+        visible={showExitAlert}
+        type="warning"
+        icon={LogOut}
+        title={t('exitApp.title')}
+        message={t('exitApp.message')}
+        buttons={[
+          {
+            text: t('exitApp.cancel'),
+            style: 'cancel',
+            onPress: () => setShowExitAlert(false),
+          },
+          {
+            text: t('exitApp.confirm'),
+            style: 'destructive',
+            onPress: () => BackHandler.exitApp(),
+          },
+        ]}
+        onClose={() => setShowExitAlert(false)}
+      />
     </View>
   );
 };

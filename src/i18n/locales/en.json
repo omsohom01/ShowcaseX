@@ -1,4 +1,13 @@
 {
+  "getStarted": {
+    "step1": "Detect crop diseases, understand health and take action early.",
+    "step2": "Predict crops, plan farming tasks and manage harvest timing.",
+    "step3": "Ask farming questions, get accurate answers and trusted guidance.",
+    "step4": "Understand documents clearly, avoid scams and stay informed.",
+    "step5": "Connect with buyers, negotiate prices and sell crops directly.",
+    "buyerStep1": "Contact farmers, negotiate prices and buy crops directly.",
+    "button": "Get Started"
+  },
   "roleSelection": {
     "title": "KrishakSarthi",
     "subtitle": "Select your role to continue",
@@ -501,13 +510,19 @@
     },
     "languages": {
       "en": "English",
-      "bn": "Bengali",
-      "hi": "Hindi"
+      "bn": "বাংলা",
+      "hi": "हिंदी"
     }
   },
   "signIn": {
+    "signInTitle": "Sign In",
+    "farmerTitle": "Farmer Sign In",
+    "buyerTitle": "Buyer Sign In",
     "title": "Welcome Back",
     "subtitle": "Sign in to continue",
+    "phoneMethod": "Phone",
+    "emailMethod": "Email",
+    "countryCode": "+91",
     "mobileNumber": "Mobile Number",
     "mobileNumberPlaceholder": "9876543210",
     "password": "Password",
@@ -517,13 +532,28 @@
     "email": "Email",
     "emailPlaceholder": "Enter your email",
     "forgotPassword": "Forgot Password?",
+    "sendOTP": "Send OTP",
+    "resendOTP": "Resend",
+    "secondsShort": "s",
+    "otp": "Enter OTP",
+    "otpPlaceholder": "Enter 6-digit OTP",
+    "otpHelp": "Enter the OTP sent to your phone",
+    "otpSent": "OTP Sent",
+    "otpSentMessage": "A 6-digit OTP has been sent to your phone number.",
     "signInButton": "Sign In",
     "noAccount": "Don't have an account?",
     "signUp": "Sign Up",
     "errors": {
       "required": "This field is required",
       "invalidMobile": "Enter a valid 10-digit mobile number",
-      "invalidEmail": "Enter a valid email address"
+      "invalidEmail": "Enter a valid email address",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "invalidOTP": "OTP must be 6 digits",
+      "otpSendFailed": "Failed to send OTP. Please check your internet connection and try again.",
+      "sendOTPFirst": "Please send OTP first",
+      "default": "Sign in failed. Please try again.",
+      "connectionFailed": "Unable to connect to server",
+      "checkInternet": "Please check your internet connection and try again."
     }
   },
   "dashboard": {
@@ -599,7 +629,7 @@
       "harvest": "Harvest: {{date}}",
       "nextTask": "Next: {{text}}",
       "noUpcoming": "No upcoming tasks",
-      "tasksNext7Days": "Tasks (next 7 days): {{count}}"
+      "tasksNext7Days": "Tasks (next 7 days): {{countText}}"
     },
     "farmingFeed": {
       "title": "Farming Updates",
@@ -667,7 +697,21 @@
       "disease": "DISEASE",
       "field": "FIELD",
       "harvest": "HARVEST",
-      "general": "GENERAL"
+      "general": "GENERAL",
+      "planting": "PLANTING",
+      "weeding": "WEEDING",
+      "pruning": "PRUNING",
+      "mulching": "MULCHING",
+      "staking": "STAKING",
+      "transplanting": "TRANSPLANTING",
+      "thinning": "THINNING",
+      "harvesting": "HARVESTING",
+      "irrigation": "IRRIGATION",
+      "sowing": "SOWING",
+      "cultivation": "CULTIVATION",
+      "spraying": "SPRAYING",
+      "monitoring": "MONITORING",
+      "preparation": "PREPARATION"
     }
   },
   "drawer": {
@@ -870,6 +914,7 @@
     "takePhoto": "Take Photo",
     "useCamera": "Use Camera",
     "choosePhoto": "Choose Photo",
+    "fromGallery": "From Gallery",
     "cropAge": "Crop Age (Days)",
     "cropAgePlaceholder": "Enter age in days",
     "days": "days",
@@ -948,7 +993,6 @@
   },
   "profile": {
     "title": "My Profile",
-    
     "back": "Back",
     "noName": "User",
     "noEmail": "No email",
@@ -1215,5 +1259,11 @@
     "locationShared": "Location shared",
     "openInMaps": "Open in Maps",
     "openMapsFailed": "Unable to open maps."
+  },
+  "exitApp": {
+    "title": "Exit App",
+    "message": "Are you sure you want to exit the app?",
+    "cancel": "Cancel",
+    "confirm": "Exit"
   }
 }

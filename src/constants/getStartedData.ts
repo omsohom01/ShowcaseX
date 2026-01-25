@@ -7,32 +7,27 @@ export interface GetStartedItem {
 export const getStartedData: GetStartedItem[] = [
   {
     id: '1',
-    image: require('../../public/assets/onboarding-1.jpg'),
-    text: 'Predict crops, understand profit and manage risks easily.',
+    image: require('../../public/assets/onboarding-2.jpg'),
+    text: 'getStarted.step1',
   },
   {
     id: '2',
-    image: require('../../public/assets/onboarding-2.jpg'),
-    text: 'Detect crop diseases, understand health and take action early.',
+    image: require('../../public/assets/onboarding-3.jpg'),
+    text: 'getStarted.step2',
   },
   {
     id: '3',
-    image: require('../../public/assets/onboarding-3.jpg'),
-    text: 'Plan daily farming tasks, get reminders and harvest on time.',
+    image: require('../../public/assets/onboarding-4.jpg'),
+    text: 'getStarted.step3',
   },
   {
     id: '4',
-    image: require('../../public/assets/onboarding-4.jpg'),
-    text: 'Ask farming questions, get accurate answers and trusted guidance.',
+    image: require('../../public/assets/onboarding-5.jpg'),
+    text: 'getStarted.step4',
   },
   {
     id: '5',
-    image: require('../../public/assets/onboarding-5.jpg'),
-    text: 'Understand documents clearly, avoid scams and stay informed.',
-  },
-  {
-    id: '6',
     image: require('../../public/assets/onboarding-6.jpg'),
-    text: 'Connect with buyers, negotiate prices and sell crops directly.',
+    text: 'getStarted.step5',
   },
 ];

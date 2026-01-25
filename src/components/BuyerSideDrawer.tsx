@@ -17,12 +17,14 @@ interface BuyerSideDrawerProps {
     visible: boolean;
     onClose: () => void;
     onNavigate: (screen: 'Profile' | 'ContactFarmer' | 'ViewAllCrops') => void;
+    unreadCount?: number;
 }
 
 export const BuyerSideDrawer: React.FC<BuyerSideDrawerProps> = ({
     visible,
     onClose,
     onNavigate,
+    unreadCount = 0,
 }) => {
     const { t, i18n } = useTranslation();
 
@@ -219,66 +221,7 @@ export const BuyerSideDrawer: React.FC<BuyerSideDrawerProps> = ({
 
                                     {/* Menu Items Container */}
                                     <View style={{ padding: 14 }}>
-                                        {/* View All Crops */}
-                                        <Animated.View style={{
-                                            opacity: item1Anim,
-                                            transform: [{
-                                                translateX: item1Anim.interpolate({
-                                                    inputRange: [0, 1],
-                                                    outputRange: [50, 0],
-                                                })
-                                            }]
-                                        }}>
-                                            <TouchableOpacity
-                                                onPress={() => handleNavigate('ViewAllCrops')}
-                                                activeOpacity={0.7}
-                                                style={{
-                                                    backgroundColor: '#FFFFFF',
-                                                    borderRadius: 16,
-                                                    padding: 12,
-                                                    marginBottom: 8,
-                                                    flexDirection: 'row',
-                                                    alignItems: 'center',
-                                                    borderWidth: 1.5,
-                                                    borderColor: '#DCFCE7',
-                                                    shadowColor: '#22C55E',
-                                                    shadowOffset: { width: 0, height: 1 },
-                                                    shadowOpacity: 0.08,
-                                                    shadowRadius: 4,
-                                                    elevation: 2,
-                                                }}
-                                            >
-                                                <LinearGradient
-                                                    colors={['#22C55E', '#16A34A']}
-                                                    style={{
-                                                        borderRadius: 12,
-                                                        width: 38,
-                                                        height: 38,
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                    }}
-                                                >
-                                                    <Wheat size={20} color="#FFFFFF" strokeWidth={2.5} />
-                                                </LinearGradient>
-                                                <View style={{ flex: 1, marginLeft: 10 }}>
-                                                    <Text style={{
-                                                        fontSize: 14,
-                                                        fontWeight: '700',
-                                                        color: '#1F2937',
-                                                        marginBottom: 1,
-                                                    }}>
-                                                        {tr('buyerDrawer.viewAllCrops', 'View All Crops')}
-                                                    </Text>
-                                                    <Text style={{
-                                                        fontSize: 10,
-                                                        color: '#6B7280',
-                                                    }}>
-                                                        {tr('buyerDrawer.viewAllCropsSubtitle', 'Browse crops')}
-                                                    </Text>
-                                                </View>
-                                                <ChevronRight size={16} color="#9CA3AF" strokeWidth={2} />
-                                            </TouchableOpacity>
-                                        </Animated.View>
+
 
                                         {/* Contact Farmer */}
                                         <Animated.View style={{
@@ -307,6 +250,7 @@ export const BuyerSideDrawer: React.FC<BuyerSideDrawerProps> = ({
                                                     shadowOpacity: 0.08,
                                                     shadowRadius: 4,
                                                     elevation: 2,
+                                                    position: 'relative',
                                                 }}
                                             >
                                                 <LinearGradient
@@ -337,6 +281,25 @@ export const BuyerSideDrawer: React.FC<BuyerSideDrawerProps> = ({
                                                         {tr('buyerDrawer.contactFarmerSubtitle', 'Connect directly')}
                                                     </Text>
                                                 </View>
+                                                {unreadCount > 0 && (
+                                                    <View
+                                                        style={{
+                                                            backgroundColor: '#EF4444',
+                                                            borderRadius: 10,
+                                                            width: 22,
+                                                            height: 22,
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            borderWidth: 2,
+                                                            borderColor: '#fff',
+                                                            marginRight: 4,
+                                                        }}
+                                                    >
+                                                        <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>
+                                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                                        </Text>
+                                                    </View>
+                                                )}
                                                 <ChevronRight size={16} color="#9CA3AF" strokeWidth={2} />
                                             </TouchableOpacity>
                                         </Animated.View>

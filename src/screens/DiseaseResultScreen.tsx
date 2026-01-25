@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { localizeNumber } from '../utils/numberLocalization';
 
 type DiseaseResultScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -28,7 +29,7 @@ type DiseaseResultScreenRouteProp = RouteProp<
 >;
 
 export const DiseaseResultScreen = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation<DiseaseResultScreenNavigationProp>();
   const route = useRoute<DiseaseResultScreenRouteProp>();
   const insets = useSafeAreaInsets();
@@ -514,7 +515,7 @@ export const DiseaseResultScreen = () => {
                       fontSize: 28,
                       fontWeight: 'bold',
                     }}>
-                      {diseaseData.healthPercentage}%
+                      {localizeNumber(diseaseData.healthPercentage, i18n.language)}%
                     </Text>
                   </View>
                 </View>

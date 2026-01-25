@@ -145,15 +145,14 @@ export const FarmerDailyRoutine = () => {
                   {list.map((task) => (
                     <View key={`${task.planId}-${task.dueDateISO}-${task.title}`} style={{ backgroundColor: '#F0FDF4', borderRadius: 14, borderWidth: 1, borderColor: '#BBF7D0', padding: 12 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={{ color: '#166534', fontWeight: '900', fontSize: 12 }}>{t(`dailyRoutine.type.${task.type}`)}</Text>
-                        <Text style={{ color: '#166534', fontWeight: '900', fontSize: 12 }}>{formatTimeHHmm(task.timeHHmm)}</Text>
-                        {task.waterAmountHint ? (
-                          <Text style={{ color: '#166534', fontWeight: '900', fontSize: 12 }}>{t('dailyRoutine.waterAmount', { amount: task.waterAmountHint })}</Text>
-                        ) : null}
+                        <Text style={{ color: '#111827', fontWeight: '900', fontSize: 14, flex: 1 }}>{task.title}</Text>
+                        <Text style={{ color: '#166534', fontWeight: '900', fontSize: 12, marginLeft: 8 }}>{formatTimeHHmm(task.timeHHmm)}</Text>
                       </View>
-                      <Text style={{ marginTop: 6, color: '#111827', fontWeight: '900', fontSize: 14 }}>{task.title}</Text>
                       {task.notes ? (
                         <Text style={{ marginTop: 6, color: '#374151', fontWeight: '700', lineHeight: 18 }}>{task.notes}</Text>
+                      ) : null}
+                      {task.waterAmountHint ? (
+                        <Text style={{ marginTop: 4, color: '#166534', fontWeight: '700', fontSize: 12 }}>{t('dailyRoutine.waterAmount', { amount: task.waterAmountHint })}</Text>
                       ) : null}
                     </View>
                   ))}

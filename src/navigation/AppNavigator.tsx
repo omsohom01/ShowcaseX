@@ -10,7 +10,6 @@ import { SignInScreen } from '../screens/SignInScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { BuyerDashboardScreen } from '../screens/BuyerDashboardScreen';
 import { CropPredictionScreen } from '../screens/CropPredictionScreen';
-import { CropPlannerScreen } from '../screens/CropPlannerScreen';
 import { PlanCalendarScreen } from '../screens/PlanCalendarScreen';
 import { FarmerDailyRoutine } from '../screens/FarmerDailyRoutine';
 import { PredictionResultScreen } from '../screens/PredictionResultScreen';
@@ -76,7 +75,6 @@ export type RootStackParamList = {
 
   // Crop Prediction
   CropPrediction: undefined;
-  CropPlanner: undefined;
   PlanCalendar: { planId: string; planTitle?: string };
   FarmerDailyRoutine: { planId: string; dateISO: string; planTitle?: string };
   PredictionResult: {
@@ -135,7 +133,6 @@ export const AppNavigator = () => {
 
         {/* Features */}
         <Stack.Screen name="CropPrediction" component={CropPredictionScreen} />
-        <Stack.Screen name="CropPlanner" component={CropPlannerScreen} />
         <Stack.Screen name="PlanCalendar" component={PlanCalendarScreen} />
         <Stack.Screen name="FarmerDailyRoutine" component={FarmerDailyRoutine} />
         <Stack.Screen name="PredictionResult" component={PredictionResultScreen} />

@@ -148,16 +148,26 @@ const buildKeyInsights = (params: {
   // Keep these short; PDF is farmer-friendly.
   const insights: string[] = [];
 
+  // Pass localized numbers to translation function
+  const localizedYieldKg = formatNumberLocalized(yieldKg, lang);
+  const localizedYieldTons = formatDecimalLocalized(yieldTons, 1, lang);
+  const localizedRevenue = formatNumberLocalized(revenue, lang);
+  const localizedPrice = formatNumberLocalized(price, lang);
+  const localizedConfidence = formatNumberLocalized(confidence, lang);
+  const localizedClimate = formatNumberLocalized(climate, lang);
+  const localizedClimate100 = formatNumberLocalized(100, lang);
+  const localizedHealth = formatNumberLocalized(health, lang);
+
   insights.push(
     safeT(
       t,
       'pdf.insight.yield',
       lang === 'hi'
-        ? `अनुमानित उपज: ${formatNumberLocalized(yieldKg, lang)} किग्रा (लगभग ${formatDecimalLocalized(yieldTons, 1, lang)} टन)`
+        ? `अनुमानित उपज: ${localizedYieldKg} किग्रा (लगभग ${localizedYieldTons} टन)`
         : lang === 'bn'
-          ? `আনুমানিক ফলন: ${formatNumberLocalized(yieldKg, lang)} কেজি (প্রায় ${formatDecimalLocalized(yieldTons, 1, lang)} টন)`
-          : `Estimated yield: ${formatNumberLocalized(yieldKg, lang)} kg (~${formatDecimalLocalized(yieldTons, 1, lang)} tons)`,
-      { yieldKg, yieldTons }
+          ? `আনুমানিক ফলন: ${localizedYieldKg} কেজি (প্রায় ${localizedYieldTons} টন)`
+          : `Estimated yield: ${localizedYieldKg} kg (~${localizedYieldTons} tons)`,
+      { yieldKg: localizedYieldKg, yieldTons: localizedYieldTons }
     )
   );
 
@@ -166,11 +176,11 @@ const buildKeyInsights = (params: {
       t,
       'pdf.insight.revenue',
       lang === 'hi'
-        ? `अनुमानित आय: ₹${formatNumberLocalized(revenue, lang)} (₹${formatNumberLocalized(price, lang)}/किग्रा के आसपास)`
+        ? `अनुमानित आय: ₹${localizedRevenue} (₹${localizedPrice}/किग्रा के आसपास)`
         : lang === 'bn'
-          ? `আনুমানিক আয়: ₹${formatNumberLocalized(revenue, lang)} (প্রায় ₹${formatNumberLocalized(price, lang)}/কেজি)`
-          : `Projected revenue: ₹${formatNumberLocalized(revenue, lang)} (~₹${formatNumberLocalized(price, lang)}/kg)`,
-      { revenue, price }
+          ? `আনুমানিক আয়: ₹${localizedRevenue} (প্রায় ₹${localizedPrice}/কেজি)`
+          : `Projected revenue: ₹${localizedRevenue} (~₹${localizedPrice}/kg)`,
+      { revenue: localizedRevenue, price: localizedPrice }
     )
   );
 
@@ -179,11 +189,11 @@ const buildKeyInsights = (params: {
       t,
       'pdf.insight.confidence',
       lang === 'hi'
-        ? `विश्वास स्तर: ${formatNumberLocalized(confidence, lang)}% • जलवायु स्कोर: ${formatNumberLocalized(climate, lang)}/100`
+        ? `विश्वास स्तर: ${localizedConfidence}% • जलवायु स्कोर: ${localizedClimate}/${localizedClimate100}`
         : lang === 'bn'
-          ? `আস্থা: ${formatNumberLocalized(confidence, lang)}% • জলবায়ু স্কোর: ${formatNumberLocalized(climate, lang)}/100`
-          : `Confidence: ${formatNumberLocalized(confidence, lang)}% • Climate score: ${formatNumberLocalized(climate, lang)}/100`,
-      { confidence, climate }
+          ? `আস্থা: ${localizedConfidence}% • জলবায়ু স্কোর: ${localizedClimate}/${localizedClimate100}`
+          : `Confidence: ${localizedConfidence}% • Climate score: ${localizedClimate}/100`,
+      { confidence: localizedConfidence, climate: localizedClimate, climate100: localizedClimate100 }
     )
   );
 
@@ -192,11 +202,11 @@ const buildKeyInsights = (params: {
       t,
       'pdf.insight.health',
       lang === 'hi'
-        ? `फसल स्वास्थ्य: ${formatNumberLocalized(health, lang)}% (${levelLabel(levelFromPercent(health), lang)})`
+        ? `फसल स्वास्थ्य: ${localizedHealth}% (${levelLabel(levelFromPercent(health), lang)})`
         : lang === 'bn'
-          ? `ফসলের স্বাস্থ্য: ${formatNumberLocalized(health, lang)}% (${levelLabel(levelFromPercent(health), lang)})`
-          : `Crop health: ${formatNumberLocalized(health, lang)}% (${levelLabel(levelFromPercent(health), lang)})`,
-      { health }
+          ? `ফসলের স্বাস্থ্য: ${localizedHealth}% (${levelLabel(levelFromPercent(health), lang)})`
+          : `Crop health: ${localizedHealth}% (${levelLabel(levelFromPercent(health), lang)})`,
+      { health: localizedHealth }
     )
   );
 

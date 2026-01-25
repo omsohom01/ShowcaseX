@@ -33,6 +33,20 @@ const getMonthRange = (year: number, monthIndex0: number): { startISO: string; e
   return { startISO: toISODate(start), endISO: toISODate(end) };
 };
 
+// Localized month names
+const MONTH_NAMES: Record<string, string[]> = {
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+  hi: ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'],
+  bn: ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'],
+};
+
+const getLocalizedMonthYear = (year: number, month: number, language: string): string => {
+  const monthNames = MONTH_NAMES[language] || MONTH_NAMES.en;
+  const monthName = monthNames[month - 1] || monthNames[0];
+  const localizedYear = localizeNumber(year, language);
+  return `${monthName} ${localizedYear}`;
+};
+
 export const PlanCalendarScreen = () => {
   const navigation = useNavigation<Nav>();
   const route = useRoute();
@@ -140,6 +154,16 @@ export const PlanCalendarScreen = () => {
             onMonthChange={(m) => {
               const iso = `${m.year}-${String(m.month).padStart(2, '0')}-01`;
               setVisibleMonthISO(iso);
+            }}
+            renderHeader={(date) => {
+              const d = new Date(date);
+              const year = d.getFullYear();
+              const month = d.getMonth() + 1;
+              return (
+                <Text style={{ fontSize: 16, fontWeight: '900', color: '#111827', paddingVertical: 8 }}>
+                  {getLocalizedMonthYear(year, month, i18n.language)}
+                </Text>
+              );
             }}
             dayComponent={({ date, marking }) => {
               const isMarked = marking?.marked;

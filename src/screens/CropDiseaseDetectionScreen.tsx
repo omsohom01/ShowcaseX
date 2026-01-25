@@ -506,7 +506,7 @@ export const CropDiseaseDetectionScreen = () => {
                       marginTop: 4,
                       textAlign: 'center',
                     }}>
-                      From Gallery
+                      {t('disease.fromGallery')}
                     </Text>
                   </View>
                 </TouchableOpacity>

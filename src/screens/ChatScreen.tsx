@@ -87,7 +87,7 @@ export const ChatScreen = () => {
   // Wait for auth to initialize
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((user) => {
-      console.log('ChatScreen - Auth state changed:', user ? `User ${user.uid}` : 'No user');
+      // console.log('ChatScreen - Auth state changed:', user ? `User ${user.uid}` : 'No user');
       setAuthReady(true);
       if (!user) {
         console.warn('ChatScreen: No authenticated user');
@@ -103,7 +103,7 @@ export const ChatScreen = () => {
   // Initialize chat thread
   useEffect(() => {
     if (!authReady) return; // Wait for auth to initialize
-    
+
     const user = auth.currentUser;
     if (!user) {
       console.error('ChatScreen: Cannot initialize chat - no authenticated user');
@@ -114,7 +114,7 @@ export const ChatScreen = () => {
       return;
     }
 
-    console.log('Initializing chat for user:', user.uid);
+    // console.log('Initializing chat for user:', user.uid);
 
     if (!buyerId || !farmerId) {
       // Backwards-compat navigation (no IDs). Keep screen functional but without DB chat.
@@ -203,7 +203,7 @@ export const ChatScreen = () => {
       Alert.alert(tr('chat.error', 'Error'), tr('chat.notSignedIn', 'Please sign in again. Try logging out and back in.'));
       return;
     }
-    console.log('Sending message as user:', user.uid);
+    // console.log('Sending message as user:', user.uid);
     if (!threadId) {
       Alert.alert(
         tr('chat.error', 'Error'),
@@ -236,7 +236,7 @@ export const ChatScreen = () => {
       Alert.alert(tr('chat.error', 'Error'), tr('chat.notSignedIn', 'Please sign in again. Try logging out and back in.'));
       return;
     }
-    console.log('Sharing location as user:', user.uid);
+    // console.log('Sharing location as user:', user.uid);
     if (!threadId) {
       Alert.alert(
         tr('chat.error', 'Error'),
@@ -292,7 +292,7 @@ export const ChatScreen = () => {
             <View className="mr-4">
               <BackButton />
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               className="bg-white/35 rounded-full w-12 h-12 items-center justify-center mr-3"
               activeOpacity={0.7}
               style={{
@@ -346,106 +346,104 @@ export const ChatScreen = () => {
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="interactive"
             >
-          {messages.map((msg) => {
-            const myId = auth.currentUser?.uid;
-            const isMe = !!myId && msg.senderId === myId;
-            return (
-            <View
-              key={msg.id}
-              className={`mb-2.5 ${
-                isMe ? 'items-end' : 'items-start'
-              }`}
-            >
-              <View
-                className={`max-w-[82%] rounded-lg px-3.5 py-2.5 ${
-                  isMe ? 'bg-[#DCF8C6] rounded-tr-none' : 'bg-white rounded-tl-none'
-                }`}
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: isMe ? 0.08 : 0.1,
-                  shadowRadius: 2,
-                  elevation: 2,
-                }}
-              >
-                {msg.type === 'location' && msg.location ? (
-                  <>
-                    <Text className="text-[15.5px] leading-5 text-gray-900">
-                      {tr('chat.locationShared', 'Location shared')}
-                    </Text>
-                    <Text className="text-[13px] text-gray-700 mt-1">
-                      {msg.location.lat.toFixed(6)}, {msg.location.lng.toFixed(6)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => openInMaps(msg.location!.lat, msg.location!.lng)}
-                      activeOpacity={0.8}
-                      style={{ marginTop: 10, alignSelf: 'flex-start' }}
+              {messages.map((msg) => {
+                const myId = auth.currentUser?.uid;
+                const isMe = !!myId && msg.senderId === myId;
+                return (
+                  <View
+                    key={msg.id}
+                    className={`mb-2.5 ${isMe ? 'items-end' : 'items-start'
+                      }`}
+                  >
+                    <View
+                      className={`max-w-[82%] rounded-lg px-3.5 py-2.5 ${isMe ? 'bg-[#DCF8C6] rounded-tr-none' : 'bg-white rounded-tl-none'
+                        }`}
+                      style={{
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: isMe ? 0.08 : 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
+                      }}
                     >
-                      <View
-                        style={{
-                          backgroundColor: '#128C7E',
-                          paddingHorizontal: 12,
-                          paddingVertical: 8,
-                          borderRadius: 12,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <MapPin size={16} color="#fff" strokeWidth={2.5} />
-                        <Text style={{ color: '#fff', fontWeight: '900', marginLeft: 8 }}>
-                          {tr('chat.openInMaps', 'Open in Maps')}
+                      {msg.type === 'location' && msg.location ? (
+                        <>
+                          <Text className="text-[15.5px] leading-5 text-gray-900">
+                            {tr('chat.locationShared', 'Location shared')}
+                          </Text>
+                          <Text className="text-[13px] text-gray-700 mt-1">
+                            {msg.location.lat.toFixed(6)}, {msg.location.lng.toFixed(6)}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => openInMaps(msg.location!.lat, msg.location!.lng)}
+                            activeOpacity={0.8}
+                            style={{ marginTop: 10, alignSelf: 'flex-start' }}
+                          >
+                            <View
+                              style={{
+                                backgroundColor: '#128C7E',
+                                paddingHorizontal: 12,
+                                paddingVertical: 8,
+                                borderRadius: 12,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <MapPin size={16} color="#fff" strokeWidth={2.5} />
+                              <Text style={{ color: '#fff', fontWeight: '900', marginLeft: 8 }}>
+                                {tr('chat.openInMaps', 'Open in Maps')}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        </>
+                      ) : (
+                        <Text className="text-[15.5px] leading-5 text-gray-900">{msg.text}</Text>
+                      )}
+                      <View className="flex-row items-center justify-end mt-1 -mb-0.5">
+                        <Text className={`text-[11px] ${isMe ? 'text-gray-600' : 'text-gray-500'}`}>
+                          {formatTime(msg.createdAt)}
                         </Text>
                       </View>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <Text className="text-[15.5px] leading-5 text-gray-900">{msg.text}</Text>
-                )}
-                <View className="flex-row items-center justify-end mt-1 -mb-0.5">
-                  <Text className={`text-[11px] ${isMe ? 'text-gray-600' : 'text-gray-500'}`}>
-                    {formatTime(msg.createdAt)}
-                  </Text>
-                </View>
-              </View>
-            </View>
-            );
-          })}
-        </ScrollView>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
 
             {/* Input Area */}
             <View className="bg-[#F0F0F0] px-4 py-3">
               <View className="flex-row items-center">
-            {/* Removed location button (requested) */}
-            <View
-              className="flex-1 bg-white rounded-[22px] px-4 py-2 flex-row items-center mr-2"
-              style={{
-                borderWidth: 1,
-                borderColor: '#E5E7EB',
-              }}
-            >
-              <TextInput
-                className="flex-1 text-[16px] text-gray-900 max-h-24"
-                placeholder={tr('chat.typeMessage', 'Type a message...')}
-                placeholderTextColor="#9CA3AF"
-                value={message}
-                onChangeText={setMessage}
-                multiline
-                maxLength={500}
-              />
+                {/* Removed location button (requested) */}
+                <View
+                  className="flex-1 bg-white rounded-[22px] px-4 py-2 flex-row items-center mr-2"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
+                  }}
+                >
+                  <TextInput
+                    className="flex-1 text-[16px] text-gray-900 max-h-24"
+                    placeholder={tr('chat.typeMessage', 'Type a message...')}
+                    placeholderTextColor="#9CA3AF"
+                    value={message}
+                    onChangeText={setMessage}
+                    multiline
+                    maxLength={500}
+                  />
+                </View>
+                <TouchableOpacity
+                  onPress={handleSendMessage}
+                  className="bg-[#128C7E] rounded-full w-11 h-11 items-center justify-center"
+                  activeOpacity={0.7}
+                  disabled={message.trim().length === 0}
+                  style={{
+                    opacity: message.trim().length === 0 ? 0.5 : 1,
+                  }}
+                >
+                  <Send size={20} color="#fff" strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <TouchableOpacity
-              onPress={handleSendMessage}
-              className="bg-[#128C7E] rounded-full w-11 h-11 items-center justify-center"
-              activeOpacity={0.7}
-              disabled={message.trim().length === 0}
-              style={{
-                opacity: message.trim().length === 0 ? 0.5 : 1,
-              }}
-            >
-              <Send size={20} color="#fff" strokeWidth={2.5} />
-            </TouchableOpacity>
-          </View>
-        </View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

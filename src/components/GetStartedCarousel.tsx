@@ -11,6 +11,7 @@ import {
   NativeSyntheticEvent,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 import { getStartedData, GetStartedItem } from '../constants/getStartedData';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -19,11 +20,14 @@ const STORAGE_KEY = 'hasSeenGetStarted';
 
 interface GetStartedCarouselProps {
   onComplete: () => void;
+  data?: GetStartedItem[];
 }
 
-export default function GetStartedCarousel({ onComplete }: GetStartedCarouselProps) {
+export default function GetStartedCarousel({ onComplete, data }: GetStartedCarouselProps) {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const carouselData = data || getStartedData;
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -44,19 +48,19 @@ export default function GetStartedCarousel({ onComplete }: GetStartedCarouselPro
   const renderItem = ({ item }: { item: GetStartedItem }) => (
     <View style={styles.slide}>
       <View style={styles.imageContainer}>
-        <Image 
-          source={item.image} 
-          style={styles.image} 
+        <Image
+          source={item.image}
+          style={styles.image}
           resizeMode="contain"
         />
       </View>
-      <Text style={styles.text}>{item.text}</Text>
+      <Text style={styles.text}>{t(item.text)}</Text>
     </View>
   );
 
   const renderDots = () => (
     <View style={styles.dotsContainer}>
-      {getStartedData.map((_, index) => (
+      {carouselData.map((_, index) => (
         <View
           key={index}
           style={[
@@ -75,7 +79,7 @@ export default function GetStartedCarousel({ onComplete }: GetStartedCarouselPro
     >
       <FlatList
         ref={flatListRef}
-        data={getStartedData}
+        data={carouselData}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         horizontal
@@ -87,7 +91,7 @@ export default function GetStartedCarousel({ onComplete }: GetStartedCarouselPro
 
       {renderDots()}
 
-      {currentIndex === getStartedData.length - 1 && (
+      {currentIndex === carouselData.length - 1 && (
         <TouchableOpacity
           style={styles.buttonContainer}
           onPress={handleGetStarted}
@@ -99,7 +103,7 @@ export default function GetStartedCarousel({ onComplete }: GetStartedCarouselPro
             end={{ x: 1, y: 1 }}
             style={styles.button}
           >
-            <Text style={styles.buttonText}>Get Started</Text>
+            <Text style={styles.buttonText}>{t('getStarted.button')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       )}

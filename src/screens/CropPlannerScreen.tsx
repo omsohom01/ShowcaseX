@@ -27,7 +27,7 @@ import { upsertFarmingPlanForCurrentUser } from '../services/farmingPlan';
 import { requestTaskNotificationPermissionAsync, schedulePlanTaskNotificationsAsync } from '../services/notifications';
 import BackButton from '@/components/BackButton';
 
-type CropPlannerNav = NativeStackNavigationProp<RootStackParamList, 'CropPlanner'>;
+type CropPlannerNav = NativeStackNavigationProp<RootStackParamList, 'CropPrediction'>;
 
 type FormData = {
   cropType: string;
@@ -378,7 +378,7 @@ export const CropPlannerScreen = () => {
                   onSelect={(opt) => {
                     const selected = typeof opt === 'string' ? opt : opt.value;
                     setField('cropType', selected);
-                    
+
                     // Open modal for custom crop entry
                     if (selected === 'other') {
                       setCustomCropInput('');
@@ -407,14 +407,14 @@ export const CropPlannerScreen = () => {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                   <Ruler size={18} color="#16A34A" strokeWidth={2.4} />
                   <Text style={{ marginLeft: 8, color: '#374151', fontWeight: '700', fontSize: 15 }}>
-                      {tr('cropPlanner.fields.plotArea', 'Plot Area')}
+                    {tr('cropPlanner.fields.plotArea', 'Plot Area')}
                   </Text>
                 </View>
                 <CustomInput
-                    label={tr('cropPlanner.fields.areaAcres', 'Area (acres)')}
+                  label={tr('cropPlanner.fields.areaAcres', 'Area (acres)')}
                   value={form.areaAcres}
                   onChangeText={(v) => setField('areaAcres', v)}
-                    placeholder={tr('cropPlanner.fields.areaPlaceholder', 'e.g., 2')}
+                  placeholder={tr('cropPlanner.fields.areaPlaceholder', 'e.g., 2')}
                   keyboardType="numeric"
                   error={errors.areaAcres}
                 />
@@ -436,8 +436,8 @@ export const CropPlannerScreen = () => {
                   placeholder={
                     estimatedHarvestLabel
                       ? tr('cropPlanner.fields.harvestSuggested', 'Suggested: {{date}}', {
-                          date: estimatedHarvestLabel,
-                        })
+                        date: estimatedHarvestLabel,
+                      })
                       : tr('cropPlanner.fields.selectDate', 'Select date')
                   }
                   value={form.expectedHarvestDate}

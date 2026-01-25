@@ -1,4 +1,13 @@
 {
+  "getStarted": {
+    "step1": "फसल रोगों का पता लगाएं, स्वास्थ्य को समझें और जल्दी कार्रवाई करें।",
+    "step2": "फसल की भविष्यवाणी करें, खेती के कार्यों की योजना बनाएं और फसल कटाई का समय प्रबंधित करें।",
+    "step3": "खेती से जुड़े सवाल पूछें, सटीक जवाब और भरोसेमंद मार्गदर्शन पाएं।",
+    "step4": "दस्तावेजों को स्पष्ट रूप से समझें, घोटालों से बचें और सूचित रहें।",
+    "step5": "खरीदारों से जुड़ें, कीमतों पर बातचीत करें और सीधे फसल बेचें।",
+    "buyerStep1": "किसानों से संपर्क करें, कीमतों पर बातचीत करें और सीधे फसलें खरीदें।",
+    "button": "शुरू करें"
+  },
   "roleSelection": {
     "title": "कृषकशार्थी",
     "subtitle": "जारी रखने के लिए अपनी भूमिका चुनें",
@@ -111,7 +120,7 @@
     "insight": {
       "yield": "अनुमानित उपज: {{yieldKg}} किग्रा (लगभग {{yieldTons}} टन)",
       "revenue": "अनुमानित आय: ₹{{revenue}} (लगभग ₹{{price}}/किग्रा)",
-      "confidence": "विश्वास: {{confidence}}% • जलवायु स्कोर: {{climate}}/100",
+      "confidence": "विश्वास: {{confidence}}% • जलवायु स्कोर: {{climate}}/{{climate100}}",
       "health": "फसल स्वास्थ्य: {{health}}%"
     }
   },
@@ -414,30 +423,30 @@
     "failedToMarkRead": "पढ़ा हुआ चिह्नित नहीं हो सका",
     "failedToMarkAllRead": "सभी को पढ़ा हुआ नहीं कर सके",
     "kg": "किलोग्राम",
-  "quintal": "क्विंटल",
-  "uploadBlocked": "अपलोड अवरुद्ध है",
-  "productNameCorrected": "उत्पाद का नाम सुधारा गया",
-  "aiDetectedProduct": "एआई ने आपके उत्पाद को इस रूप में पहचाना है:",
-  "originalName": "मूल नाम:",
-  "category": "श्रेणी:",
-  "proceedWithCorrected": "क्या आप सुधारे गए नाम के साथ आगे बढ़ना चाहते हैं?",
-  "useCorrectedName": "सुधारा हुआ नाम उपयोग करें",
-  "cancel": "रद्द करें",
-  "ok": "ठीक है",
-  "deleteProduct": "उत्पाद हटाएँ",
-  "deleteConfirm": "\"{name}\" को हटाना चाहते हैं?",
-  "delete": "हटाएँ",
-  "permissionRequired": "माफ़ कीजिए, चित्र अपलोड करने के लिए हमें गैलरी की अनुमति चाहिए!",
-  "fillAllFields": "कृपया सभी विवरण भरें (स्थान सहित)",
-  "uploadImageRequired": "सत्यापन के लिए कृपया उत्पाद की एक छवि अपलोड करें",
-  "signInRequired": "उत्पाद अपलोड करने के लिए कृपया साइन इन करें",
-  "validationFailed": "उत्पाद सत्यापन विफल रहा। कृपया अपना इंटरनेट कनेक्शन जाँचें और फिर से प्रयास करें।",
-  "uploadValidProduct": "कृपया सही नाम के साथ एक वैध खाद्य/कृषि उत्पाद अपलोड करें।",
-  "productUploaded": "{name} सफलतापूर्वक अपलोड हो गया!",
-  "enterValidQuantityPrice": "मान्य मात्रा और मूल्य दर्ज करें",
-  "counterOfferSent": "काउंटर ऑफर भेज दिया गया है। खरीदार को सूचित कर दिया गया है।",
-  "failedToSendCounter": "काउंटर ऑफर भेजने में विफल",
-  "failedToDeleteProduct": "उत्पाद हटाने में विफल",
+    "quintal": "क्विंटल",
+    "uploadBlocked": "अपलोड अवरुद्ध है",
+    "productNameCorrected": "उत्पाद का नाम सुधारा गया",
+    "aiDetectedProduct": "एआई ने आपके उत्पाद को इस रूप में पहचाना है:",
+    "originalName": "मूल नाम:",
+    "category": "श्रेणी:",
+    "proceedWithCorrected": "क्या आप सुधारे गए नाम के साथ आगे बढ़ना चाहते हैं?",
+    "useCorrectedName": "सुधारा हुआ नाम उपयोग करें",
+    "cancel": "रद्द करें",
+    "ok": "ठीक है",
+    "deleteProduct": "उत्पाद हटाएँ",
+    "deleteConfirm": "\"{name}\" को हटाना चाहते हैं?",
+    "delete": "हटाएँ",
+    "permissionRequired": "माफ़ कीजिए, चित्र अपलोड करने के लिए हमें गैलरी की अनुमति चाहिए!",
+    "fillAllFields": "कृपया सभी विवरण भरें (स्थान सहित)",
+    "uploadImageRequired": "सत्यापन के लिए कृपया उत्पाद की एक छवि अपलोड करें",
+    "signInRequired": "उत्पाद अपलोड करने के लिए कृपया साइन इन करें",
+    "validationFailed": "उत्पाद सत्यापन विफल रहा। कृपया अपना इंटरनेट कनेक्शन जाँचें और फिर से प्रयास करें।",
+    "uploadValidProduct": "कृपया सही नाम के साथ एक वैध खाद्य/कृषि उत्पाद अपलोड करें।",
+    "productUploaded": "{name} सफलतापूर्वक अपलोड हो गया!",
+    "enterValidQuantityPrice": "मान्य मात्रा और मूल्य दर्ज करें",
+    "counterOfferSent": "काउंटर ऑफर भेज दिया गया है। खरीदार को सूचित कर दिया गया है।",
+    "failedToSendCounter": "काउंटर ऑफर भेजने में विफल",
+    "failedToDeleteProduct": "उत्पाद हटाने में विफल",
     "buyers": {
       "name1": "थोक बाजार दिल्ली",
       "address1": "आज़ादपुर मंडी, दिल्ली",
@@ -500,14 +509,20 @@
       "large": "बड़ा किसान"
     },
     "languages": {
-      "en": "अंग्रेज़ी",
-      "bn": "बंगाली",
+      "en": "English",
+      "bn": "বাংলা",
       "hi": "हिंदी"
     }
   },
   "signIn": {
+    "signInTitle": "साइन इन करें",
+    "farmerTitle": "किसान साइन इन",
+    "buyerTitle": "खरीदार साइन इन",
     "title": "स्वागत है",
     "subtitle": "जारी रखने के लिए साइन इन करें",
+    "phoneMethod": "फोन",
+    "emailMethod": "ईमेल",
+    "countryCode": "+91",
     "mobileNumber": "मोबाइल नंबर",
     "mobileNumberPlaceholder": "9876543210",
     "password": "पासवर्ड",
@@ -517,13 +532,28 @@
     "email": "ईमेल",
     "emailPlaceholder": "अपना ईमेल दर्ज करें",
     "forgotPassword": "पासवर्ड भूल गए?",
+    "sendOTP": "OTP भेजें",
+    "resendOTP": "फिर भेजें",
+    "secondsShort": "s",
+    "otp": "OTP दर्ज करें",
+    "otpPlaceholder": "6 अंकों का OTP दर्ज करें",
+    "otpHelp": "आपके फोन पर भेजा गया OTP दर्ज करें",
+    "otpSent": "OTP भेजा गया",
+    "otpSentMessage": "आपके फोन नंबर पर 6 अंकों का OTP भेजा गया है।",
     "signInButton": "साइन इन करें",
     "noAccount": "खाता नहीं है?",
     "signUp": "साइन अप करें",
     "errors": {
       "required": "यह फ़ील्ड आवश्यक है",
       "invalidMobile": "एक वैध 10 अंकों का मोबाइल नंबर दर्ज करें",
-      "invalidEmail": "एक वैध ईमेल पता दर्ज करें"
+      "invalidEmail": "एक वैध ईमेल पता दर्ज करें",
+      "passwordTooShort": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+      "invalidOTP": "OTP 6 अंकों का होना चाहिए",
+      "otpSendFailed": "OTP भेजने में विफल। कृपया अपना इंटरनेट जांचें और फिर से प्रयास करें।",
+      "sendOTPFirst": "कृपया पहले OTP भेजें",
+      "default": "साइन इन विफल। कृपया फिर से प्रयास करें।",
+      "connectionFailed": "सर्वर से कनेक्ट नहीं हो पाया",
+      "checkInternet": "कृपया अपना इंटरनेट कनेक्शन जांचें और फिर से प्रयास करें।"
     }
   },
   "dashboard": {
@@ -584,7 +614,7 @@
       "emptyTitle": "अभी कोई शेड्यूल कार्य नहीं",
       "emptyBody": "एक बार योजना बनाएं, और हम यहाँ रिमाइंडर दिखाएँगे।",
       "createPlan": "योजना बनाएं",
-      "seeMore": "और देखें ({{count}} और)",
+      "seeMore": "और देखें ({{countText}} और)",
       "seeLess": "कम दिखाएं"
     },
     "farmingPlans": {
@@ -599,7 +629,7 @@
       "harvest": "कटाई: {{date}}",
       "nextTask": "अगला: {{text}}",
       "noUpcoming": "कोई आने वाला कार्य नहीं",
-      "tasksNext7Days": "कार्य (अगले 7 दिन): {{count}}"
+      "tasksNext7Days": "कार्य (अगले 7 दिन): {{countText}}"
     },
     "farmingFeed": {
       "title": "कृषि अपडेट",
@@ -667,7 +697,21 @@
       "disease": "रोग",
       "field": "खेत",
       "harvest": "कटाई",
-      "general": "सामान्य"
+      "general": "सामान्य",
+      "planting": "रोपण",
+      "weeding": "खरपतवार निकालना",
+      "pruning": "छंटाई",
+      "mulching": "मल्चिंग",
+      "staking": "सहारा देना",
+      "transplanting": "पौध रोपाई",
+      "thinning": "विरलन",
+      "harvesting": "कटाई",
+      "irrigation": "सिंचाई",
+      "sowing": "बुवाई",
+      "cultivation": "खेती",
+      "spraying": "छिड़काव",
+      "monitoring": "निगरानी",
+      "preparation": "तैयारी"
     }
   },
   "drawer": {
@@ -896,6 +940,7 @@
     "takePhoto": "फोटो लें",
     "useCamera": "कैमरा उपयोग करें",
     "choosePhoto": "फोटो चुनें",
+    "fromGallery": "गैलरी से",
     "cropAge": "फसल की आयु (दिन)",
     "cropAgePlaceholder": "दिनों में आयु दर्ज करें",
     "days": "दिन",
@@ -974,7 +1019,6 @@
   },
   "profile": {
     "title": "मेरी प्रोफ़ाइल",
-    
     "back": "वापस",
     "noName": "उपयोगकर्ता",
     "noEmail": "कोई ईमेल नहीं",
@@ -1241,5 +1285,11 @@
     "locationShared": "लोकेशन शेयर की गई",
     "openInMaps": "मैप में खोलें",
     "openMapsFailed": "मैप नहीं खुल पाया।"
+  },
+  "exitApp": {
+    "title": "ऐप बंद करें",
+    "message": "क्या आप वाकई ऐप बंद करना चाहते हैं?",
+    "cancel": "रद्द करें",
+    "confirm": "बाहर निकलें"
   }
 }

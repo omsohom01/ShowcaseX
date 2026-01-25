@@ -9,13 +9,31 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Sprout, ShoppingBasket, Phone } from 'lucide-react-native';
-import BackButton from '@/components/BackButton';
+import { 
+  Sprout, 
+  ShoppingBasket, 
+  Phone, 
+  Mail,
+  ArrowLeft,
+  Send,
+  KeyRound,
+  Eye,
+  EyeOff,
+  ChevronRight,
+  User,
+  MapPin,
+  Tractor,
+  LandPlot,
+  Globe,
+  LogIn,
+} from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { CustomInput } from '../components/CustomInput';
 import { Dropdown } from '../components/Dropdown';
@@ -81,6 +99,13 @@ export const SignUpScreen = () => {
     landSize: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Theme colors based on role
+  const primaryColor = role === 'farmer' ? '#16A34A' : '#10B981';
+  const gradientColors = role === 'farmer' 
+    ? ['#16A34A', '#15803D'] as const
+    : ['#10B981', '#059669'] as const;
 
   // Load saved language on mount
   useEffect(() => {
@@ -404,325 +429,455 @@ export const SignUpScreen = () => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
-      style={{ backgroundColor: '#FAFAFA' }}
+      style={{ backgroundColor: '#F8FAFC' }}
     >
-      {/* Decorative Background Shapes */}
-      <View style={{
-        position: 'absolute',
-        top: -100,
-        right: -50,
-        width: 300,
-        height: 300,
-        borderRadius: 150,
-        backgroundColor: '#E8F5E9',
-        opacity: 0.5,
-      }} />
-      <View style={{
-        position: 'absolute',
-        bottom: -80,
-        left: -60,
-        width: 250,
-        height: 250,
-        borderRadius: 125,
-        backgroundColor: '#F1F8E9',
-        opacity: 0.4,
-      }} />
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 260,
+          borderBottomLeftRadius: 40,
+          borderBottomRightRadius: 40,
+        }}
+      >
+        {/* Decorative circles */}
+        <View style={{
+          position: 'absolute',
+          top: -30,
+          right: -30,
+          width: 120,
+          height: 120,
+          borderRadius: 60,
+          backgroundColor: 'rgba(255,255,255,0.1)',
+        }} />
+        <View style={{
+          position: 'absolute',
+          top: 80,
+          left: -40,
+          width: 100,
+          height: 100,
+          borderRadius: 50,
+          backgroundColor: 'rgba(255,255,255,0.08)',
+        }} />
+        <View style={{
+          position: 'absolute',
+          bottom: 40,
+          right: 40,
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          backgroundColor: 'rgba(255,255,255,0.12)',
+        }} />
+      </LinearGradient>
       
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingTop: 60, paddingBottom: Math.max(insets.bottom, 24) + 24 }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 24 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Back Button */}
-        <View className="mb-8">
-          <BackButton />
-        </View>
+        {/* Header Content */}
+        <View style={{ paddingTop: insets.top + 16, paddingHorizontal: 24 }}>
+          {/* Back Button */}
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 20,
+            }}
+          >
+            <ArrowLeft size={22} color="white" strokeWidth={2.5} />
+          </TouchableOpacity>
 
-        {/* Header */}
-        <View className="mb-10">
-          <View style={{ marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <View style={{
-                width: 50,
-                height: 50,
-                borderRadius: 25,
-                backgroundColor: role === 'farmer' ? '#16A34A' : '#10B981',
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginRight: 12,
-                shadowColor: role === 'farmer' ? '#16A34A' : '#10B981',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 6,
-              }}>
-                {role === 'farmer' ? (
-                  <Sprout size={26} color="white" strokeWidth={2.5} />
-                ) : (
-                  <ShoppingBasket size={26} color="white" strokeWidth={2.5} />
-                )}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text 
-                  className="text-gray-900 font-extrabold" 
-                  style={{ fontSize: 30, lineHeight: 36, letterSpacing: -0.5 }}
-                >
-                  {tr('signUp.title', role === 'farmer' ? 'Farmer Sign Up' : 'Buyer Sign Up')}
-                </Text>
-              </View>
+          {/* Header Text */}
+          <View style={{ marginBottom: 28 }}>
+            <View style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 16,
+            }}>
+              {role === 'farmer' ? (
+                <Sprout size={28} color="white" strokeWidth={2.5} />
+              ) : (
+                <ShoppingBasket size={28} color="white" strokeWidth={2.5} />
+              )}
             </View>
-            <Text className="text-gray-600" style={{ fontSize: 14, marginTop: 4 }}>
-              {tr('signUp.phoneAuth', 'Sign up with your phone number or email')}
+            <Text style={{ 
+              fontSize: 30, 
+              fontWeight: '800', 
+              color: 'white',
+              marginBottom: 6,
+              letterSpacing: -0.5,
+            }}>
+              {tr('signUp.title', role === 'farmer' ? 'Farmer Sign Up' : 'Buyer Sign Up')}
+            </Text>
+            <Text style={{ fontSize: 15, color: 'rgba(255,255,255,0.85)' }}>
+              {tr('signUp.phoneAuth', 'Create your account to get started')}
             </Text>
           </View>
         </View>
 
-        {/* Auth Method Toggle */}
+        {/* Form Card */}
         <View style={{
+          marginHorizontal: 20,
           backgroundColor: 'white',
-          borderRadius: 20,
-          padding: 6,
-          marginBottom: 16,
-          flexDirection: 'row',
+          borderRadius: 24,
+          padding: 24,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 12,
-          elevation: 3,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.08,
+          shadowRadius: 24,
+          elevation: 8,
         }}>
-          <TouchableOpacity
-            onPress={() => {
-              setAuthMethod('phone');
-              setFormData(prev => ({ ...prev, email: '', password: '' }));
-              setErrors({});
-            }}
-            style={{
-              flex: 1,
-              paddingVertical: 12,
-              borderRadius: 16,
-              backgroundColor: authMethod === 'phone' ? '#16A34A' : 'transparent',
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{
-              color: authMethod === 'phone' ? 'white' : '#6B7280',
-              fontWeight: '600',
-              fontSize: 15,
-            }}>
-              📱 {tr('signUp.phoneMethod', 'Phone')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setAuthMethod('email');
-              setFormData(prev => ({ ...prev, phoneNumber: '', otp: '' }));
-              setOtpSent(false);
-              setErrors({});
-            }}
-            style={{
-              flex: 1,
-              paddingVertical: 12,
-              borderRadius: 16,
-              backgroundColor: authMethod === 'email' ? '#16A34A' : 'transparent',
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{
-              color: authMethod === 'email' ? 'white' : '#6B7280',
-              fontWeight: '600',
-              fontSize: 15,
-            }}>
-              ✉️ {tr('signUp.emailMethod', 'Email')}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          {/* Auth Method Toggle */}
+          <View style={{
+            backgroundColor: '#F1F5F9',
+            borderRadius: 16,
+            padding: 4,
+            marginBottom: 24,
+            flexDirection: 'row',
+          }}>
+            <TouchableOpacity
+              onPress={() => {
+                setAuthMethod('phone');
+                setFormData(prev => ({ ...prev, email: '', password: '' }));
+                setErrors({});
+              }}
+              style={{
+                flex: 1,
+                paddingVertical: 12,
+                borderRadius: 12,
+                backgroundColor: authMethod === 'phone' ? primaryColor : 'transparent',
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+            >
+              <Phone size={18} color={authMethod === 'phone' ? 'white' : '#64748B'} strokeWidth={2} />
+              <Text style={{
+                color: authMethod === 'phone' ? 'white' : '#64748B',
+                fontWeight: '600',
+                fontSize: 14,
+              }}>
+                {tr('signUp.phoneMethod', 'Phone')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setAuthMethod('email');
+                setFormData(prev => ({ ...prev, otp: '' }));
+                setOtpSent(false);
+                setErrors({});
+              }}
+              style={{
+                flex: 1,
+                paddingVertical: 12,
+                borderRadius: 12,
+                backgroundColor: authMethod === 'email' ? primaryColor : 'transparent',
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+            >
+              <Mail size={18} color={authMethod === 'email' ? 'white' : '#64748B'} strokeWidth={2} />
+              <Text style={{
+                color: authMethod === 'email' ? 'white' : '#64748B',
+                fontWeight: '600',
+                fontSize: 14,
+              }}>
+                {tr('signUp.emailMethod', 'Email')}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Form - Card Style */}
-        <View style={{
-          backgroundColor: 'white',
-          borderRadius: 20,
-          padding: 20,
-          marginBottom: 16,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 12,
-          elevation: 3,
-        }}>
           {/* Account Information Section */}
-          <Text 
-            className="text-gray-800 font-bold" 
-            style={{ fontSize: 16, marginBottom: 12, letterSpacing: 0.3 }}
-          >
+          <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 16 }}>
             {tr('signUp.accountInfo', 'Account Information')}
           </Text>
           
-          <View style={{ gap: 8 }}>
-            <CustomInput
-              label={tr('signUp.fullName', 'Full Name')}
-              placeholder={tr('signUp.fullNamePlaceholder', 'Enter your full name')}
-              value={formData.fullName}
-              onChangeText={(value) => handleFieldChange('fullName', value)}
-              error={errors.fullName}
-            />
-
-            {/* Phone Auth Fields */}
-            {authMethod === 'phone' && (
-              <>
-                {/* Phone Number with Send OTP Button */}
-                <View>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>
-                {tr('signUp.phoneNumber', 'Phone Number')} *
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <View style={{ flex: 1 }}>
-                  <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: '#F9FAFB',
-                    borderRadius: 12,
-                    paddingHorizontal: 16,
-                    borderWidth: 1,
-                    borderColor: errors.phoneNumber ? '#EF4444' : '#E5E7EB',
-                  }}>
-                    <Text style={{ fontSize: 16, color: '#6B7280', marginRight: 8 }}>+91</Text>
-                    <TextInput
-                      style={{ flex: 1, paddingVertical: 14, fontSize: 16, color: '#111827' }}
-                      placeholder={tr('signUp.phoneNumberPlaceholder', '9876543210')}
-                      value={localizeNumber(formData.phoneNumber, i18n.language)}
-                      onChangeText={(value) => {
-                        const delocalized = delocalizeNumber(value, i18n.language);
-                        handleFieldChange('phoneNumber', delocalized);
-                      }}
-                      keyboardType="phone-pad"
-                      maxLength={10}
-                      editable={!otpSent}
-                    />
-                  </View>
-                  {errors.phoneNumber && (
-                    <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>
-                      {errors.phoneNumber}
-                    </Text>
-                  )}
-                </View>
-                <TouchableOpacity
-                  onPress={handleSendOTP}
-                  disabled={isLoading || otpTimer > 0 || !formData.phoneNumber}
-                  style={{
-                    backgroundColor: (isLoading || otpTimer > 0 || !formData.phoneNumber) ? '#D1D5DB' : '#16A34A',
-                    paddingHorizontal: 16,
-                    paddingVertical: 14,
-                    borderRadius: 12,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    minWidth: 100,
-                  }}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator color="white" size="small" />
-                  ) : (
-                    <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>
-                      {otpTimer > 0 
-                        ? `${otpTimer}s` 
-                        : otpSent 
-                          ? tr('signUp.resendOTP', 'Resend')
-                          : tr('signUp.sendOTP', 'Send OTP')}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+          {/* Full Name Input */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+              {tr('signUp.fullName', 'Full Name')}
+            </Text>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#F8FAFC',
+              borderRadius: 14,
+              paddingHorizontal: 16,
+              height: 52,
+              borderWidth: 1.5,
+              borderColor: errors.fullName ? '#EF4444' : '#E2E8F0',
+            }}>
+              <User size={18} color="#64748B" strokeWidth={2} style={{ marginRight: 10 }} />
+              <TextInput
+                style={{ flex: 1, fontSize: 16, color: '#1E293B', fontWeight: '500' }}
+                placeholder={tr('signUp.fullNamePlaceholder', 'Enter your full name')}
+                placeholderTextColor="#94A3B8"
+                value={formData.fullName}
+                onChangeText={(value) => handleFieldChange('fullName', value)}
+              />
             </View>
+            {errors.fullName && (
+              <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 6 }}>
+                {errors.fullName}
+              </Text>
+            )}
+          </View>
 
-            {/* OTP Input - Only show after OTP is sent */}
-            {otpSent && (
-              <View>
-                <CustomInput
-                  label={tr('signUp.otp', 'Enter OTP')}
-                  placeholder={tr('signUp.otpPlaceholder', 'Enter 6-digit OTP')}
-                  value={formData.otp}
-                  onChangeText={(value) => handleFieldChange('otp', value)}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  error={errors.otp}
-                />
-                <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>
-                  {tr('signUp.otpHelp', 'Enter the OTP sent to your phone')}
+          {/* Phone Auth Fields */}
+          {authMethod === 'phone' && (
+            <>
+              {/* Phone Number with Send OTP Button */}
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+                  {tr('signUp.phoneNumber', 'Phone Number')}
                 </Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: '#F8FAFC',
+                      borderRadius: 14,
+                      paddingHorizontal: 16,
+                      height: 52,
+                      borderWidth: 1.5,
+                      borderColor: errors.phoneNumber ? '#EF4444' : '#E2E8F0',
+                    }}>
+                      <Phone size={18} color="#64748B" strokeWidth={2} style={{ marginRight: 10 }} />
+                      <Text style={{ fontSize: 16, color: '#64748B', marginRight: 8 }}>+91</Text>
+                      <TextInput
+                        style={{ flex: 1, fontSize: 16, color: '#1E293B', fontWeight: '500' }}
+                        placeholder={tr('signUp.phoneNumberPlaceholder', '9876543210')}
+                        placeholderTextColor="#94A3B8"
+                        value={localizeNumber(formData.phoneNumber, i18n.language)}
+                        onChangeText={(value) => {
+                          const delocalized = delocalizeNumber(value, i18n.language);
+                          handleFieldChange('phoneNumber', delocalized);
+                        }}
+                        keyboardType="phone-pad"
+                        maxLength={10}
+                        editable={!otpSent}
+                      />
+                    </View>
+                    {errors.phoneNumber && (
+                      <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 6 }}>
+                        {errors.phoneNumber}
+                      </Text>
+                    )}
+                  </View>
+                  {/* Send OTP Button - Fixed size */}
+                  <TouchableOpacity
+                    onPress={handleSendOTP}
+                    disabled={isLoading || otpTimer > 0 || !formData.phoneNumber}
+                    style={{
+                      backgroundColor: (isLoading || otpTimer > 0 || !formData.phoneNumber) ? '#CBD5E1' : primaryColor,
+                      width: 90,
+                      height: 52,
+                      borderRadius: 14,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="white" size="small" />
+                    ) : (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Send size={16} color="white" strokeWidth={2.5} />
+                        <Text style={{ color: 'white', fontWeight: '700', fontSize: 13 }}>
+                          {otpTimer > 0 
+                            ? `${otpTimer}s` 
+                            : otpSent 
+                              ? tr('signUp.resendOTP', 'Resend')
+                              : tr('signUp.sendOTP', 'OTP')}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
-            )}
-            </>
-            )}
 
-            {/* Email Auth Fields */}
-            {authMethod === 'email' && (
-              <>
-                {/* Phone Number for Email Auth */}
-                <View>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>
-                    {tr('signUp.phoneNumber', 'Phone Number')} *
+              {/* OTP Input - Only show after OTP is sent */}
+              {otpSent && (
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+                    {tr('signUp.otp', 'Enter OTP')}
                   </Text>
                   <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    backgroundColor: '#F9FAFB',
-                    borderRadius: 12,
+                    backgroundColor: '#F8FAFC',
+                    borderRadius: 14,
                     paddingHorizontal: 16,
-                    borderWidth: 1,
-                    borderColor: errors.phoneNumber ? '#EF4444' : '#E5E7EB',
+                    height: 52,
+                    borderWidth: 1.5,
+                    borderColor: errors.otp ? '#EF4444' : '#E2E8F0',
                   }}>
-                    <Text style={{ fontSize: 16, color: '#6B7280', marginRight: 8 }}>+91</Text>
+                    <KeyRound size={18} color="#64748B" strokeWidth={2} style={{ marginRight: 10 }} />
                     <TextInput
-                      style={{ flex: 1, paddingVertical: 14, fontSize: 16, color: '#111827' }}
-                      placeholder={tr('signUp.phoneNumberPlaceholder', '9876543210')}
-                      value={localizeNumber(formData.phoneNumber, i18n.language)}
-                      onChangeText={(value) => {
-                        const delocalized = delocalizeNumber(value, i18n.language);
-                        handleFieldChange('phoneNumber', delocalized);
-                      }}
-                      keyboardType="phone-pad"
-                      maxLength={10}
+                      style={{ flex: 1, fontSize: 16, color: '#1E293B', fontWeight: '500', letterSpacing: 4 }}
+                      placeholder={tr('signUp.otpPlaceholder', '● ● ● ● ● ●')}
+                      placeholderTextColor="#94A3B8"
+                      value={formData.otp}
+                      onChangeText={(value) => handleFieldChange('otp', value)}
+                      keyboardType="number-pad"
+                      maxLength={6}
                     />
                   </View>
-                  {errors.phoneNumber && (
-                    <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>
-                      {errors.phoneNumber}
+                  {errors.otp && (
+                    <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 6 }}>
+                      {errors.otp}
                     </Text>
                   )}
+                  <Text style={{ fontSize: 12, color: '#64748B', marginTop: 8 }}>
+                    {tr('signUp.otpHelp', 'Enter the OTP sent to your phone')}
+                  </Text>
                 </View>
+              )}
+            </>
+          )}
 
-                <CustomInput
-                  label={tr('signUp.email', 'Email')}
-                  placeholder={tr('signUp.emailPlaceholder', 'Enter your email')}
-                  value={formData.email}
-                  onChangeText={(value) => handleFieldChange('email', value)}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  error={errors.email}
-                />
-                <CustomInput
-                  label={tr('signUp.password', 'Password')}
-                  placeholder={tr('signUp.passwordPlaceholder', 'Enter your password')}
-                  value={formData.password}
-                  onChangeText={(value) => handleFieldChange('password', value)}
-                  secureTextEntry
-                  error={errors.password}
-                />
-                <Text style={{ fontSize: 12, color: '#6B7280', marginTop: -4 }}>
+          {/* Email Auth Fields */}
+          {authMethod === 'email' && (
+            <>
+              {/* Phone Number for Email Auth */}
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+                  {tr('signUp.phoneNumber', 'Phone Number')}
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#F8FAFC',
+                  borderRadius: 14,
+                  paddingHorizontal: 16,
+                  height: 52,
+                  borderWidth: 1.5,
+                  borderColor: errors.phoneNumber ? '#EF4444' : '#E2E8F0',
+                }}>
+                  <Phone size={18} color="#64748B" strokeWidth={2} style={{ marginRight: 10 }} />
+                  <Text style={{ fontSize: 16, color: '#64748B', marginRight: 8 }}>+91</Text>
+                  <TextInput
+                    style={{ flex: 1, fontSize: 16, color: '#1E293B', fontWeight: '500' }}
+                    placeholder={tr('signUp.phoneNumberPlaceholder', '9876543210')}
+                    placeholderTextColor="#94A3B8"
+                    value={localizeNumber(formData.phoneNumber, i18n.language)}
+                    onChangeText={(value) => {
+                      const delocalized = delocalizeNumber(value, i18n.language);
+                      handleFieldChange('phoneNumber', delocalized);
+                    }}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                  />
+                </View>
+                {errors.phoneNumber && (
+                  <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 6 }}>
+                    {errors.phoneNumber}
+                  </Text>
+                )}
+              </View>
+
+              {/* Email Input */}
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+                  {tr('signUp.email', 'Email')}
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#F8FAFC',
+                  borderRadius: 14,
+                  paddingHorizontal: 16,
+                  height: 52,
+                  borderWidth: 1.5,
+                  borderColor: errors.email ? '#EF4444' : '#E2E8F0',
+                }}>
+                  <Mail size={18} color="#64748B" strokeWidth={2} style={{ marginRight: 10 }} />
+                  <TextInput
+                    style={{ flex: 1, fontSize: 16, color: '#1E293B', fontWeight: '500' }}
+                    placeholder={tr('signUp.emailPlaceholder', 'Enter your email')}
+                    placeholderTextColor="#94A3B8"
+                    value={formData.email}
+                    onChangeText={(value) => handleFieldChange('email', value)}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+                {errors.email && (
+                  <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 6 }}>
+                    {errors.email}
+                  </Text>
+                )}
+              </View>
+
+              {/* Password Input */}
+              <View style={{ marginBottom: 8 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+                  {tr('signUp.password', 'Password')}
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#F8FAFC',
+                  borderRadius: 14,
+                  paddingHorizontal: 16,
+                  height: 52,
+                  borderWidth: 1.5,
+                  borderColor: errors.password ? '#EF4444' : '#E2E8F0',
+                }}>
+                  <KeyRound size={18} color="#64748B" strokeWidth={2} style={{ marginRight: 10 }} />
+                  <TextInput
+                    style={{ flex: 1, fontSize: 16, color: '#1E293B', fontWeight: '500' }}
+                    placeholder={tr('signUp.passwordPlaceholder', 'Enter your password')}
+                    placeholderTextColor="#94A3B8"
+                    value={formData.password}
+                    onChangeText={(value) => handleFieldChange('password', value)}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    {showPassword ? (
+                      <EyeOff size={20} color="#64748B" strokeWidth={2} />
+                    ) : (
+                      <Eye size={20} color="#64748B" strokeWidth={2} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                {errors.password && (
+                  <Text style={{ fontSize: 12, color: '#EF4444', marginTop: 6 }}>
+                    {errors.password}
+                  </Text>
+                )}
+                <Text style={{ fontSize: 12, color: '#64748B', marginTop: 8 }}>
                   {tr('signUp.passwordHelp', 'Minimum 6 characters')}
                 </Text>
-              </>
-            )}
-          </View>
+              </View>
+            </>
+          )}
 
           {/* Farmer-Specific Fields */}
           {role === 'farmer' && (
             <>
               {/* Personal Information Section */}
-              <Text 
-                className="text-gray-800 font-bold" 
-                style={{ fontSize: 16, marginBottom: 12, marginTop: 16, letterSpacing: 0.3 }}
-              >
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 16, marginTop: 16 }}>
                 {tr('signUp.personalInfo', 'Personal Information')}
               </Text>
 
@@ -814,10 +969,7 @@ export const SignUpScreen = () => {
               />
 
               {/* Farming Information Section */}
-              <Text 
-                className="text-gray-800 font-bold" 
-                style={{ fontSize: 16, marginBottom: 12, marginTop: 16, letterSpacing: 0.3 }}
-              >
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 16, marginTop: 16 }}>
                 {tr('signUp.farmingInfo', 'Farming Information')}
               </Text>
 
@@ -875,33 +1027,54 @@ export const SignUpScreen = () => {
               />
             </>
           )}
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={!isFormValid() || isLoading}
+            style={{
+              backgroundColor: (!isFormValid() || isLoading) ? '#CBD5E1' : primaryColor,
+              borderRadius: 14,
+              height: 52,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginTop: 20,
+              flexDirection: 'row',
+              gap: 8,
+            }}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <>
+                <Text style={{ color: 'white', fontSize: 17, fontWeight: '700' }}>
+                  {tr('signUp.createAccount', 'Create Account')}
+                </Text>
+                <ChevronRight size={20} color="white" strokeWidth={2.5} />
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
-        {/* Submit Button */}
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={!isFormValid() || isLoading}
-          className={`rounded-xl py-4 mb-4 ${!isFormValid() || isLoading ? 'bg-gray-300' : 'bg-primary'
-            }`}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white text-center text-lg font-semibold">
-              {tr('signUp.createAccount', 'Create Account')}
-            </Text>
-          )}
-        </TouchableOpacity>
-
         {/* Sign In Link */}
-        <View className="flex-row justify-center items-center flex-wrap">
-          <Text className="text-gray-600 text-base text-center">
+        <View style={{ 
+          flexDirection: 'row', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          marginTop: 24,
+          marginHorizontal: 20,
+        }}>
+          <Text style={{ color: '#64748B', fontSize: 15 }}>
             {tr('signUp.alreadyHaveAccount', 'Already have an account?')}{' '}
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SignIn', { role })}>
-            <Text className="text-primary font-semibold text-base">
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('SignIn', { role })}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+          >
+            <Text style={{ color: primaryColor, fontWeight: '700', fontSize: 15 }}>
               {tr('signUp.signIn', 'Sign In')}
             </Text>
+            <LogIn size={16} color={primaryColor} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </ScrollView>

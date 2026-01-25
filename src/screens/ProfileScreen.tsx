@@ -13,14 +13,15 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 // @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
-import { User, Mail, Phone, MapPin, Globe, Sprout, Bell, ShoppingBag } from 'lucide-react-native';
+import { User, Mail, Phone, MapPin, Globe, Sprout, Bell, ShoppingBag, LogOut } from 'lucide-react-native';
 import BackButton from '@/components/BackButton';
 import { CustomInput } from '../components/CustomInput';
+import { CustomAlert } from '../components/CustomAlert';
 import { Dropdown } from '../components/Dropdown';
 import { INDIAN_STATES, FARMER_TYPES, LANGUAGES, INDIAN_DISTRICTS } from '../constants/data';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -63,6 +64,7 @@ export const ProfileScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
 
   const [initialData, setInitialData] = useState<ProfileData>({
     fullName: '',
@@ -260,24 +262,22 @@ export const ProfileScreen = () => {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      tr('profile.logout.confirmTitle', 'Confirm Logout'),
-      tr('profile.logout.confirmMessage', 'Are you sure you want to logout?'),
-      [
-        { text: tr('profile.logout.cancel', 'Cancel'), style: 'cancel' },
-        {
-          text: tr('profile.logout.confirm', 'Logout'),
-          style: 'destructive',
-          onPress: async () => {
-            const result = await logout();
-            if (!result.success) {
-              Alert.alert(tr('profile.error.title', 'Error'), result.message);
-              return;
-            }
-            navigation.navigate('SignIn', {});
-          },
-        },
-      ]
+    setShowLogoutAlert(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutAlert(false);
+    const result = await logout();
+    if (!result.success) {
+      Alert.alert(tr('profile.error.title', 'Error'), result.message);
+      return;
+    }
+    // Reset navigation stack so back button can't return to previous screens
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'SignIn' }],
+      })
     );
   };
 
@@ -807,6 +807,28 @@ export const ProfileScreen = () => {
         )}
       </View>
       </ScrollView>
+
+      {/* Logout Confirmation Alert */}
+      <CustomAlert
+        visible={showLogoutAlert}
+        type="warning"
+        icon={LogOut}
+        title={tr('profile.logout.confirmTitle', 'Confirm Logout')}
+        message={tr('profile.logout.confirmMessage', 'Are you sure you want to logout?')}
+        buttons={[
+          {
+            text: tr('profile.logout.cancel', 'Cancel'),
+            style: 'cancel',
+            onPress: () => setShowLogoutAlert(false),
+          },
+          {
+            text: tr('profile.logout.confirm', 'Logout'),
+            style: 'destructive',
+            onPress: confirmLogout,
+          },
+        ]}
+        onClose={() => setShowLogoutAlert(false)}
+      />
     </View>
   );
 };

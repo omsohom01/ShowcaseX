@@ -1,4 +1,13 @@
 {
+  "getStarted": {
+    "step1": "ফসলের রোগ সনাক্ত করুন, স্বাস্থ্য বুঝুন এবং দ্রুত ব্যবস্থা নিন।",
+    "step2": "ফসলের পূর্বাভাস পান, কৃষি কাজের পরিকল্পনা করুন এবং ফসল তোলার সময় নির্ধারণ করুন।",
+    "step3": "কৃষি বিষয়ক প্রশ্ন জিজ্ঞাসা করুন, সঠিক উত্তর এবং নির্ভরযোগ্য পরামর্শ পান।",
+    "step4": "নথিগুলি স্পষ্টভাবে বুঝুন, প্রতারণা এড়ান এবং অবহিত থাকুন।",
+    "step5": "ক্রেতাদের সাথে যোগাযোগ করুন, দাম নিয়ে আলোচনা করুন এবং সরাসরি ফসল বিক্রি করুন।",
+    "buyerStep1": "কৃষকদের সাথে যোগাযোগ করুন, দাম নিয়ে আলোচনা করুন এবং সরাসরি ফসল কিনুন।",
+    "button": "শুরু করুন"
+  },
   "roleSelection": {
     "title": "কৃষকসারথি",
     "subtitle": "চালিয়ে যেতে আপনার ভূমিका নির্বাচন করুন",
@@ -111,7 +120,7 @@
     "insight": {
       "yield": "আনুমানিক ফলন: {{yieldKg}} কেজি (প্রায় {{yieldTons}} টন)",
       "revenue": "আনুমানিক আয়: ₹{{revenue}} (প্রায় ₹{{price}}/কেজি)",
-      "confidence": "আস্থা: {{confidence}}% • জলবায়ু স্কোর: {{climate}}/100",
+      "confidence": "আস্থা: {{confidence}}% • জলবায়ু স্কোর: {{climate}}/{{climate100}}",
       "health": "ফসলের স্বাস্থ্য: {{health}}%"
     }
   },
@@ -220,25 +229,25 @@
       "update3Region": "হরিয়ানা"
     }
   },
-        "news": {
-          "title": "কৃষি সংবাদ",
-          "refresh": "রিফ্রেশ",
-          "loading": "সর্বশেষ সংবাদ লোড হচ্ছে...",
-          "empty": "কোনও সংবাদ পাওয়া যায়নি",
-          "retry": "আবার চেষ্টা করুন",
-          "readMore": "আরও পড়ুন",
-          "fullArticle": "সম্পূর্ণ নিবন্ধ",
-          "source": "সূত্র",
-          "summary": "সারাংশ",
-          "footer": "সর্বশেষ কৃষি সংবাদ দিয়ে আপডেট থাকুন",
-          "categories": {
-            "agriculture": "কৃষি",
-            "weather": "আবহাওয়া",
-            "market": "বাজার",
-            "policy": "নীতি",
-            "technology": "প্রযুক্তি"
-          }
-        },
+  "news": {
+    "title": "কৃষি সংবাদ",
+    "refresh": "রিফ্রেশ",
+    "loading": "সর্বশেষ সংবাদ লোড হচ্ছে...",
+    "empty": "কোনও সংবাদ পাওয়া যায়নি",
+    "retry": "আবার চেষ্টা করুন",
+    "readMore": "আরও পড়ুন",
+    "fullArticle": "সম্পূর্ণ নিবন্ধ",
+    "source": "সূত্র",
+    "summary": "সারাংশ",
+    "footer": "সর্বশেষ কৃষি সংবাদ দিয়ে আপডেট থাকুন",
+    "categories": {
+      "agriculture": "কৃষি",
+      "weather": "আবহাওয়া",
+      "market": "বাজার",
+      "policy": "নীতি",
+      "technology": "প্রযুক্তি"
+    }
+  },
   "buyerDrawer": {
     "title": "ক্রেতা মেনু",
     "subtitle": "বৈশিষ্ট্যগুলিতে নেভিগেট করুন",
@@ -433,30 +442,30 @@
     "failedToMarkRead": "পড়া হিসেবে চিহ্নিত করা যায়নি",
     "failedToMarkAllRead": "সবগুলো পড়া হিসেবে চিহ্নিত করা যায়নি",
     "kg": "কেজি",
-  "quintal": "কুইন্টাল",
-  "uploadBlocked": "আপলোড বন্ধ করা হয়েছে",
-  "productNameCorrected": "পণ্যের নাম সংশোধন করা হয়েছে",
-  "aiDetectedProduct": "এআই আপনার পণ্যটি শনাক্ত করেছে:",
-  "originalName": "মূল নাম:",
-  "category": "বিভাগ:",
-  "proceedWithCorrected": "সংশোধিত নামটি ব্যবহার করতে চান?",
-  "useCorrectedName": "সংশোধিত নাম ব্যবহার করুন",
-  "cancel": "বাতিল",
-  "ok": "ঠিক আছে",
-  "deleteProduct": "পণ্য মুছুন",
-  "deleteConfirm": "\"{name}\" মুছে ফেলবেন?",
-  "delete": "মুছুন",
-  "permissionRequired": "দুঃখিত, ছবি আপলোড করতে আমাদের ক্যামেরা রোলের অনুমতি প্রয়োজন!",
-  "fillAllFields": "অনুগ্রহ করে সব তথ্য পূরণ করুন (লোকেশনসহ)",
-  "uploadImageRequired": "যাচাইয়ের জন্য অনুগ্রহ করে পণ্যের একটি ছবি আপলোড করুন",
-  "signInRequired": "পণ্য আপলোড করতে অনুগ্রহ করে সাইন ইন করুন",
-  "validationFailed": "পণ্য যাচাই ব্যর্থ হয়েছে। অনুগ্রহ করে আপনার ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
-  "uploadValidProduct": "অনুগ্রহ করে সঠিক নামসহ একটি বৈধ খাদ্য/কৃষি পণ্য আপলোড করুন।",
-  "productUploaded": "{name} সফলভাবে আপলোড হয়েছে!",
-  "enterValidQuantityPrice": "সঠিক পরিমাণ ও মূল্য লিখুন",
-  "counterOfferSent": "কাউন্টার অফার পাঠানো হয়েছে। ক্রেতাকে জানানো হয়েছে।",
-  "failedToSendCounter": "কাউন্টার অফার পাঠাতে ব্যর্থ হয়েছে",
-  "failedToDeleteProduct": "পণ্য মুছতে ব্যর্থ হয়েছে",
+    "quintal": "কুইন্টাল",
+    "uploadBlocked": "আপলোড বন্ধ করা হয়েছে",
+    "productNameCorrected": "পণ্যের নাম সংশোধন করা হয়েছে",
+    "aiDetectedProduct": "এআই আপনার পণ্যটি শনাক্ত করেছে:",
+    "originalName": "মূল নাম:",
+    "category": "বিভাগ:",
+    "proceedWithCorrected": "সংশোধিত নামটি ব্যবহার করতে চান?",
+    "useCorrectedName": "সংশোধিত নাম ব্যবহার করুন",
+    "cancel": "বাতিল",
+    "ok": "ঠিক আছে",
+    "deleteProduct": "পণ্য মুছুন",
+    "deleteConfirm": "\"{name}\" মুছে ফেলবেন?",
+    "delete": "মুছুন",
+    "permissionRequired": "দুঃখিত, ছবি আপলোড করতে আমাদের ক্যামেরা রোলের অনুমতি প্রয়োজন!",
+    "fillAllFields": "অনুগ্রহ করে সব তথ্য পূরণ করুন (লোকেশনসহ)",
+    "uploadImageRequired": "যাচাইয়ের জন্য অনুগ্রহ করে পণ্যের একটি ছবি আপলোড করুন",
+    "signInRequired": "পণ্য আপলোড করতে অনুগ্রহ করে সাইন ইন করুন",
+    "validationFailed": "পণ্য যাচাই ব্যর্থ হয়েছে। অনুগ্রহ করে আপনার ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
+    "uploadValidProduct": "অনুগ্রহ করে সঠিক নামসহ একটি বৈধ খাদ্য/কৃষি পণ্য আপলোড করুন।",
+    "productUploaded": "{name} সফলভাবে আপলোড হয়েছে!",
+    "enterValidQuantityPrice": "সঠিক পরিমাণ ও মূল্য লিখুন",
+    "counterOfferSent": "কাউন্টার অফার পাঠানো হয়েছে। ক্রেতাকে জানানো হয়েছে।",
+    "failedToSendCounter": "কাউন্টার অফার পাঠাতে ব্যর্থ হয়েছে",
+    "failedToDeleteProduct": "পণ্য মুছতে ব্যর্থ হয়েছে",
     "buyers": {
       "name1": "হোলসেল মার্কেট দিল্লি",
       "address1": "আজাদপুর মণ্ডি, দিল্লি",
@@ -519,14 +528,20 @@
       "large": "বড় কৃষক"
     },
     "languages": {
-      "en": "ইংরেজি",
+      "en": "English",
       "bn": "বাংলা",
-      "hi": "হিন্দি"
+      "hi": "हिंदी"
     }
   },
   "signIn": {
+    "signInTitle": "সাইন ইন",
+    "farmerTitle": "কৃষক সাইন ইন",
+    "buyerTitle": "ক্রেতা সাইন ইন",
     "title": "স্বাগতম",
     "subtitle": "চালিয়ে যেতে সাইন ইন করুন",
+    "phoneMethod": "ফোন",
+    "emailMethod": "ইমেইল",
+    "countryCode": "+91",
     "mobileNumber": "মোবাইল নম্বর",
     "mobileNumberPlaceholder": "৯৮৭৬৫৪৩২১০",
     "password": "পাসওয়ার্ড",
@@ -536,13 +551,28 @@
     "email": "ইমেইল",
     "emailPlaceholder": "আপনার ইমেইল লিখুন",
     "forgotPassword": "পাসওয়ার্ড ভুলে গেছেন?",
+    "sendOTP": "OTP পাঠান",
+    "resendOTP": "আবার পাঠান",
+    "secondsShort": "s",
+    "otp": "OTP লিখুন",
+    "otpPlaceholder": "৬ সংখ্যার OTP লিখুন",
+    "otpHelp": "আপনার ফোনে পাঠানো OTP লিখুন",
+    "otpSent": "OTP পাঠানো হয়েছে",
+    "otpSentMessage": "আপনার ফোন নম্বরে ৬ সংখ্যার OTP পাঠানো হয়েছে।",
     "signInButton": "সাইন ইন",
     "noAccount": "অ্যাকাউন্ট নেই?",
     "signUp": "সাইন আপ",
     "errors": {
       "required": "এই ক্ষেত্রটি প্রয়োজনীয়",
       "invalidMobile": "দয়া করে একটি বৈধ ১০ ডিজিটের মোবাইল নম্বর লিখুন",
-      "invalidEmail": "একটি বৈধ ইমেইল ঠিকানা লিখুন"
+      "invalidEmail": "একটি বৈধ ইমেইল ঠিকানা লিখুন",
+      "passwordTooShort": "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে",
+      "invalidOTP": "OTP অবশ্যই ৬ সংখ্যা হতে হবে",
+      "otpSendFailed": "OTP পাঠাতে ব্যর্থ। অনুগ্রহ করে ইন্টারনেট পরীক্ষা করে আবার চেষ্টা করুন।",
+      "sendOTPFirst": "অনুগ্রহ করে আগে OTP পাঠান",
+      "default": "সাইন ইন ব্যর্থ। অনুগ্রহ করে আবার চেষ্টা করুন।",
+      "connectionFailed": "সার্ভারের সাথে সংযোগ করা যাচ্ছে না",
+      "checkInternet": "অনুগ্রহ করে আপনার ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।"
     }
   },
   "dashboard": {
@@ -603,7 +633,7 @@
       "emptyTitle": "এখনও কোনো নির্ধারিত কাজ নেই",
       "emptyBody": "একবার পরিকল্পনা তৈরি করুন, তারপর এখানে রিমাইন্ডার দেখানো হবে।",
       "createPlan": "পরিকল্পনা তৈরি করুন",
-      "seeMore": "আরও দেখুন ({{count}}টি আরও)",
+      "seeMore": "আরও দেখুন ({{countText}}টি আরও)",
       "seeLess": "কম দেখুন"
     },
     "farmingPlans": {
@@ -618,7 +648,7 @@
       "harvest": "ফসল তোলা: {{date}}",
       "nextTask": "পরবর্তী: {{text}}",
       "noUpcoming": "কোনো আসন্ন কাজ নেই",
-      "tasksNext7Days": "কাজ (পরবর্তী ৭ দিন): {{count}}"
+      "tasksNext7Days": "কাজ (পরবর্তী ৭ দিন): {{countText}}"
     },
     "farmingFeed": {
       "title": "কৃষি আপডেট",
@@ -686,7 +716,21 @@
       "disease": "রোগ",
       "field": "ক্ষেত",
       "harvest": "ফসল তোলা",
-      "general": "সাধারণ"
+      "general": "সাধারণ",
+      "planting": "রোপণ",
+      "weeding": "আগাছা দমন",
+      "pruning": "ছাঁটাই",
+      "mulching": "মালচিং",
+      "staking": "খুঁটি দেওয়া",
+      "transplanting": "চারা রোপণ",
+      "thinning": "পাতলা করা",
+      "harvesting": "ফসল কাটা",
+      "irrigation": "সেচ",
+      "sowing": "বপন",
+      "cultivation": "চাষ",
+      "spraying": "স্প্রে করা",
+      "monitoring": "পর্যবেক্ষণ",
+      "preparation": "প্রস্তুতি"
     }
   },
   "drawer": {
@@ -915,6 +959,7 @@
     "takePhoto": "ছবি তুলুন",
     "useCamera": "ক্যামেরা ব্যবহার করুন",
     "choosePhoto": "ছবি নির্বাচন করুন",
+    "fromGallery": "গ্যালারি থেকে",
     "cropAge": "ফসলের বয়স (দিন)",
     "cropAgePlaceholder": "দিনে বয়স লিখুন",
     "days": "দিন",
@@ -984,7 +1029,6 @@
   },
   "profile": {
     "title": "আমার প্রোফাইল",
-    
     "back": "ফিরে যান",
     "noName": "ব্যবহারকারী",
     "noEmail": "কোনো ইমেইল নেই",
@@ -1259,5 +1303,11 @@
     "locationShared": "লোকেশন শেয়ার করা হয়েছে",
     "openInMaps": "ম্যাপে খুলুন",
     "openMapsFailed": "ম্যাপ খোলা যাচ্ছে না।"
+  },
+  "exitApp": {
+    "title": "অ্যাপ বন্ধ করুন",
+    "message": "আপনি কি সত্যিই অ্যাপ থেকে বের হতে চান?",
+    "cancel": "বাতিল",
+    "confirm": "বের হন"
   }
 }

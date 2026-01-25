@@ -30,6 +30,8 @@ export interface FarmingWateringRule {
   startDay: number; // days after planting (0-based)
   endDay: number; // inclusive
   everyDays: number;
+  timeOfDay?: TimeOfDay;
+  timeHHmm?: string;
   title?: string;
   titleI18n?: LocalizedText3;
   notes: string;
@@ -274,6 +276,288 @@ const inferMaturityDays = (cropNameOrType: string): number => {
   return 110;
 };
 
+// ============ HEURISTIC PLAN TRANSLATIONS ============
+// These translations are used when Gemini is not available and we fall back to heuristic plans
+
+const HEURISTIC_TRANSLATIONS: Record<string, LocalizedText3> = {
+  // Common titles
+  'Field scouting (pests, disease, weeds, moisture)': {
+    en: 'Field scouting (pests, disease, weeds, moisture)',
+    hi: 'खेत का निरीक्षण (कीट, रोग, खरपतवार, नमी)',
+    bn: 'ক্ষেত পর্যবেক্ষণ (পোকামাকড়, রোগ, আগাছা, আর্দ্রতা)',
+  },
+  'Check drainage & remove standing water (monsoon)': {
+    en: 'Check drainage & remove standing water (monsoon)',
+    hi: 'जल निकासी जांचें और जमा पानी हटाएं (मानसून)',
+    bn: 'নিষ্কাশন পরীক্ষা করুন এবং জমা জল সরান (বর্ষা)',
+  },
+  'Water/irrigate (as per stage)': {
+    en: 'Water/irrigate (as per stage)',
+    hi: 'सिंचाई करें (अवस्था के अनुसार)',
+    bn: 'সেচ দিন (পর্যায় অনুযায়ী)',
+  },
+  'Harvest window starts (plan labor, bags, storage, drying)': {
+    en: 'Harvest window starts (plan labor, bags, storage, drying)',
+    hi: 'फसल कटाई का समय शुरू (मजदूर, बोरी, भंडारण, सुखाने की योजना बनाएं)',
+    bn: 'ফসল কাটার সময় শুরু (শ্রমিক, বস্তা, সংরক্ষণ, শুকানোর পরিকল্পনা করুন)',
+  },
+
+  // Rice/Paddy specific
+  'Basal fertilization (FYM/compost + recommended NPK) and zinc if needed': {
+    en: 'Basal fertilization (FYM/compost + recommended NPK) and zinc if needed',
+    hi: 'आधार उर्वरक (गोबर खाद/कम्पोस्ट + अनुशंसित NPK) और जिंक यदि आवश्यक हो',
+    bn: 'বেসাল সার (গোবর সার/কম্পোস্ট + প্রস্তাবিত NPK) এবং প্রয়োজনে জিঙ্ক',
+  },
+  'Top dress nitrogen (tillering stage)': {
+    en: 'Top dress nitrogen (tillering stage)',
+    hi: 'नाइट्रोजन की टॉप ड्रेसिंग (कल्ले निकलने की अवस्था)',
+    bn: 'টপ ড্রেসিং নাইট্রোজেন (কুশি পর্যায়)',
+  },
+  'Top dress nitrogen/potash (panicle initiation)': {
+    en: 'Top dress nitrogen/potash (panicle initiation)',
+    hi: 'नाइट्रोजन/पोटाश की टॉप ड्रेसिंग (बाली निकलने की शुरुआत)',
+    bn: 'নাইট্রোজেন/পটাশ টপ ড্রেসিং (শীষ উদ্গমন)',
+  },
+  'Install pheromone/light traps (stem borer/leaf folder monitoring)': {
+    en: 'Install pheromone/light traps (stem borer/leaf folder monitoring)',
+    hi: 'फेरोमोन/लाइट ट्रैप लगाएं (तना छेदक/पत्ती मोड़क की निगरानी)',
+    bn: 'ফেরোমন/লাইট ট্র্যাপ লাগান (কাণ্ড ছিদ্রকারী/পাতা মোড়ক পর্যবেক্ষণ)',
+  },
+
+  // Wheat specific
+  'Irrigation #1 (Crown Root Initiation - CRI)': {
+    en: 'Irrigation #1 (Crown Root Initiation - CRI)',
+    hi: 'सिंचाई #1 (क्राउन रूट इनिशिएशन - CRI)',
+    bn: 'সেচ #1 (ক্রাউন রুট ইনিশিয়েশন - CRI)',
+  },
+  'Irrigation #2 (Tillering)': {
+    en: 'Irrigation #2 (Tillering)',
+    hi: 'सिंचाई #2 (कल्ले निकलना)',
+    bn: 'সেচ #2 (কুশি)',
+  },
+  'Irrigation #3 (Jointing/Booting)': {
+    en: 'Irrigation #3 (Jointing/Booting)',
+    hi: 'सिंचाई #3 (गांठ बनना/बूटिंग)',
+    bn: 'সেচ #3 (জয়েন্টিং/বুটিং)',
+  },
+  'Irrigation #4 (Heading/Flowering)': {
+    en: 'Irrigation #4 (Heading/Flowering)',
+    hi: 'सिंचाई #4 (बाली निकलना/फूल आना)',
+    bn: 'সেচ #4 (শীষ উদ্গমন/ফুল)',
+  },
+  'Irrigation #5 (Milking/Dough stage)': {
+    en: 'Irrigation #5 (Milking/Dough stage)',
+    hi: 'सिंचाई #5 (दूधिया/आटा अवस्था)',
+    bn: 'সেচ #5 (দুধ/আটা পর্যায়)',
+  },
+  'Basal dose (FYM/compost + recommended NPK)': {
+    en: 'Basal dose (FYM/compost + recommended NPK)',
+    hi: 'आधार खुराक (गोबर खाद/कम्पोस्ट + अनुशंसित NPK)',
+    bn: 'বেসাল ডোজ (গোবর সার/কম্পোস্ট + প্রস্তাবিত NPK)',
+  },
+  'Top dress nitrogen (after first irrigation / CRI)': {
+    en: 'Top dress nitrogen (after first irrigation / CRI)',
+    hi: 'नाइट्रोजन की टॉप ड्रेसिंग (पहली सिंचाई/CRI के बाद)',
+    bn: 'নাইট্রোজেন টপ ড্রেসিং (প্রথম সেচ/CRI পরে)',
+  },
+  'Rust/leaf blight monitoring and preventive spray decision': {
+    en: 'Rust/leaf blight monitoring and preventive spray decision',
+    hi: 'रस्ट/पत्ती झुलसा की निगरानी और निवारक स्प्रे का निर्णय',
+    bn: 'মরিচা/পাতা ঝলসা পর্যবেক্ষণ এবং প্রতিরোধমূলক স্প্রে সিদ্ধান্ত',
+  },
+
+  // Generic/Vegetable specific
+  'Basal nutrition (FYM/compost + recommended NPK)': {
+    en: 'Basal nutrition (FYM/compost + recommended NPK)',
+    hi: 'आधार पोषण (गोबर खाद/कम्पोस्ट + अनुशंसित NPK)',
+    bn: 'বেসাল পুষ্টি (গোবর সার/কম্পোস্ট + প্রস্তাবিত NPK)',
+  },
+  'Top dressing (nitrogen) + micronutrient check': {
+    en: 'Top dressing (nitrogen) + micronutrient check',
+    hi: 'टॉप ड्रेसिंग (नाइट्रोजन) + सूक्ष्म पोषक तत्व जांच',
+    bn: 'টপ ড্রেসিং (নাইট্রোজেন) + মাইক্রোনিউট্রিয়েন্ট পরীক্ষা',
+  },
+  'Install sticky/pheromone traps (monitoring)': {
+    en: 'Install sticky/pheromone traps (monitoring)',
+    hi: 'चिपचिपा/फेरोमोन ट्रैप लगाएं (निगरानी)',
+    bn: 'আঠালো/ফেরোমন ট্র্যাপ লাগান (পর্যবেক্ষণ)',
+  },
+  'Preventive fungal risk check (humidity/leaf wetness)': {
+    en: 'Preventive fungal risk check (humidity/leaf wetness)',
+    hi: 'फफूंद जोखिम की निवारक जांच (नमी/पत्ती गीलापन)',
+    bn: 'প্রতিরোধমূলক ছত্রাক ঝুঁকি পরীক্ষা (আর্দ্রতা/পাতা ভেজা)',
+  },
+};
+
+const HEURISTIC_NOTES_TRANSLATIONS: Record<string, LocalizedText3> = {
+  // Common notes
+  'Walk the plot early morning; check undersides of leaves, new growth, and waterlogging. Act only if thresholds are met.': {
+    en: 'Walk the plot early morning; check undersides of leaves, new growth, and waterlogging. Act only if thresholds are met.',
+    hi: 'सुबह जल्दी खेत का चक्कर लगाएं; पत्तियों के नीचे, नई वृद्धि और जलभराव की जांच करें। केवल सीमा पार होने पर ही कार्रवाई करें।',
+    bn: 'সকালে মাঠে হাঁটুন; পাতার নিচে, নতুন বৃদ্ধি এবং জলাবদ্ধতা পরীক্ষা করুন। সীমা অতিক্রম করলেই পদক্ষেপ নিন।',
+  },
+  'Prevent root rot and nutrient loss; keep bunds/field channels clear.': {
+    en: 'Prevent root rot and nutrient loss; keep bunds/field channels clear.',
+    hi: 'जड़ सड़न और पोषक तत्व हानि रोकें; मेड़/खेत की नालियां साफ रखें।',
+    bn: 'শিকড় পচা এবং পুষ্টি ক্ষতি রোধ করুন; আল/মাঠের চ্যানেল পরিষ্কার রাখুন।',
+  },
+  'Harvest at physiological maturity; avoid harvesting immediately after rain. Dry/grade produce for better price.': {
+    en: 'Harvest at physiological maturity; avoid harvesting immediately after rain. Dry/grade produce for better price.',
+    hi: 'शारीरिक परिपक्वता पर फसल काटें; बारिश के तुरंत बाद कटाई से बचें। बेहतर मूल्य के लिए उपज सुखाएं/ग्रेड करें।',
+    bn: 'শারীরিক পরিপক্কতায় ফসল কাটুন; বৃষ্টির পরপরই কাটা এড়িয়ে চলুন। ভালো দামের জন্য ফসল শুকান/গ্রেড করুন।',
+  },
+
+  // Rice/Paddy watering notes
+  'Maintain shallow water layer (2–3 cm) after establishment; skip if continuous rainfall and waterlogging risk.': {
+    en: 'Maintain shallow water layer (2–3 cm) after establishment; skip if continuous rainfall and waterlogging risk.',
+    hi: 'स्थापना के बाद उथला पानी (2-3 सेमी) बनाए रखें; लगातार बारिश और जलभराव के खतरे में छोड़ें।',
+    bn: 'স্থাপনের পরে অগভীর জল স্তর (2-3 সেমি) বজায় রাখুন; ক্রমাগত বৃষ্টি এবং জলাবদ্ধতার ঝুঁকিতে এড়িয়ে যান।',
+  },
+  'Irrigate to keep soil moist; avoid long dry gaps during tillering and panicle initiation.': {
+    en: 'Irrigate to keep soil moist; avoid long dry gaps during tillering and panicle initiation.',
+    hi: 'मिट्टी नम रखने के लिए सिंचाई करें; कल्ले निकलने और बाली शुरू होने के दौरान लंबे सूखे अंतराल से बचें।',
+    bn: 'মাটি আর্দ্র রাখতে সেচ দিন; কুশি এবং শীষ উদ্গমনের সময় দীর্ঘ শুষ্ক ব্যবধান এড়িয়ে চলুন।',
+  },
+  'Stop irrigation ~10–14 days before harvest to improve grain maturity and ease harvesting.': {
+    en: 'Stop irrigation ~10–14 days before harvest to improve grain maturity and ease harvesting.',
+    hi: 'फसल कटाई से ~10-14 दिन पहले सिंचाई बंद करें ताकि दाने की परिपक्वता बेहतर हो और कटाई आसान हो।',
+    bn: 'ফসল কাটার ~10-14 দিন আগে সেচ বন্ধ করুন যাতে দানা পরিপক্বতা ভালো হয় এবং কাটা সহজ হয়।',
+  },
+
+  // Rice fertilizer notes
+  'Apply well-decomposed FYM/compost. Use soil-test based NPK; consider zinc sulfate in zinc-deficient areas.': {
+    en: 'Apply well-decomposed FYM/compost. Use soil-test based NPK; consider zinc sulfate in zinc-deficient areas.',
+    hi: 'अच्छी तरह सड़ी गोबर खाद/कम्पोस्ट डालें। मृदा परीक्षण आधारित NPK का उपयोग करें; जिंक की कमी वाले क्षेत्रों में जिंक सल्फेट पर विचार करें।',
+    bn: 'ভালোভাবে পচা গোবর সার/কম্পোস্ট দিন। মাটি পরীক্ষা ভিত্তিক NPK ব্যবহার করুন; জিঙ্ক-ঘাটতি এলাকায় জিঙ্ক সালফেট বিবেচনা করুন।',
+  },
+  'Split N improves uptake; apply just before irrigation or rainfall.': {
+    en: 'Split N improves uptake; apply just before irrigation or rainfall.',
+    hi: 'विभाजित N अवशोषण बेहतर करता है; सिंचाई या बारिश से ठीक पहले डालें।',
+    bn: 'বিভক্ত N শোষণ উন্নত করে; সেচ বা বৃষ্টির ঠিক আগে দিন।',
+  },
+  'Critical for grain formation; avoid over-N in cloudy/humid conditions.': {
+    en: 'Critical for grain formation; avoid over-N in cloudy/humid conditions.',
+    hi: 'दाना बनने के लिए महत्वपूर्ण; बादल/आर्द्र स्थितियों में अधिक N से बचें।',
+    bn: 'দানা গঠনের জন্য গুরুত্বপূর্ণ; মেঘলা/আর্দ্র অবস্থায় অতিরিক্ত N এড়িয়ে চলুন।',
+  },
+  'Use traps for monitoring; spray only if infestation crosses thresholds.': {
+    en: 'Use traps for monitoring; spray only if infestation crosses thresholds.',
+    hi: 'निगरानी के लिए ट्रैप का उपयोग करें; केवल संक्रमण सीमा पार करने पर ही स्प्रे करें।',
+    bn: 'পর্যবেক্ষণের জন্য ট্র্যাপ ব্যবহার করুন; সংক্রমণ সীমা অতিক্রম করলেই স্প্রে করুন।',
+  },
+
+  // Wheat irrigation notes
+  'Most critical irrigation for wheat. If rainfall occurred recently and soil is moist, adjust accordingly.': {
+    en: 'Most critical irrigation for wheat. If rainfall occurred recently and soil is moist, adjust accordingly.',
+    hi: 'गेहूं के लिए सबसे महत्वपूर्ण सिंचाई। यदि हाल ही में बारिश हुई और मिट्टी नम है, तो तदनुसार समायोजित करें।',
+    bn: 'গমের জন্য সবচেয়ে গুরুত্বপূর্ণ সেচ। সম্প্রতি বৃষ্টি হলে এবং মাটি আর্দ্র থাকলে সেই অনুযায়ী সামঞ্জস্য করুন।',
+  },
+  'Avoid water stress; do not over-irrigate in cold foggy spells.': {
+    en: 'Avoid water stress; do not over-irrigate in cold foggy spells.',
+    hi: 'पानी की कमी से बचें; ठंडे कोहरे में अधिक सिंचाई न करें।',
+    bn: 'জলের চাপ এড়িয়ে চলুন; ঠান্ডা কুয়াশায় অতিরিক্ত সেচ দেবেন না।',
+  },
+  'Supports spike development; ensure good drainage after irrigation.': {
+    en: 'Supports spike development; ensure good drainage after irrigation.',
+    hi: 'बाली विकास में सहायक; सिंचाई के बाद अच्छी जल निकासी सुनिश्चित करें।',
+    bn: 'শীষ বিকাশে সহায়ক; সেচের পরে ভালো নিষ্কাশন নিশ্চিত করুন।',
+  },
+  'Avoid stress; irrigate in morning hours when possible.': {
+    en: 'Avoid stress; irrigate in morning hours when possible.',
+    hi: 'तनाव से बचें; संभव हो तो सुबह के समय सिंचाई करें।',
+    bn: 'চাপ এড়িয়ে চলুন; সম্ভব হলে সকালে সেচ দিন।',
+  },
+  'Last critical irrigation; stop irrigation 10–12 days before harvest.': {
+    en: 'Last critical irrigation; stop irrigation 10–12 days before harvest.',
+    hi: 'आखिरी महत्वपूर्ण सिंचाई; फसल कटाई से 10-12 दिन पहले सिंचाई बंद करें।',
+    bn: 'শেষ গুরুত্বপূর্ণ সেচ; ফসল কাটার 10-12 দিন আগে সেচ বন্ধ করুন।',
+  },
+  'Use soil-test based recommendations; place fertilizer below seed zone where applicable.': {
+    en: 'Use soil-test based recommendations; place fertilizer below seed zone where applicable.',
+    hi: 'मृदा परीक्षण आधारित सिफारिशें उपयोग करें; जहां लागू हो बीज क्षेत्र के नीचे उर्वरक रखें।',
+    bn: 'মাটি পরীক্ষা ভিত্তিক সুপারিশ ব্যবহার করুন; যেখানে প্রযোজ্য বীজ অঞ্চলের নিচে সার রাখুন।',
+  },
+  'Split N reduces lodging risk and improves grain filling.': {
+    en: 'Split N reduces lodging risk and improves grain filling.',
+    hi: 'विभाजित N गिरने का खतरा कम करता है और दाना भरने में सुधार करता है।',
+    bn: 'বিভক্ত N হেলে পড়ার ঝুঁকি কমায় এবং দানা ভরাট উন্নত করে।',
+  },
+  'In humid/foggy weather, rust risk rises. Use resistant varieties and spray only if symptoms appear.': {
+    en: 'In humid/foggy weather, rust risk rises. Use resistant varieties and spray only if symptoms appear.',
+    hi: 'आर्द्र/कोहरे वाले मौसम में रस्ट का खतरा बढ़ जाता है। प्रतिरोधी किस्में उपयोग करें और लक्षण दिखने पर ही स्प्रे करें।',
+    bn: 'আর্দ্র/কুয়াশা আবহাওয়ায় মরিচার ঝুঁকি বাড়ে। প্রতিরোধী জাত ব্যবহার করুন এবং লক্ষণ দেখা দিলেই স্প্রে করুন।',
+  },
+
+  // Generic/Vegetable notes
+  'Keep soil consistently moist for establishment; avoid waterlogging. Mulch helps in hot weather.': {
+    en: 'Keep soil consistently moist for establishment; avoid waterlogging. Mulch helps in hot weather.',
+    hi: 'स्थापना के लिए मिट्टी को लगातार नम रखें; जलभराव से बचें। गर्म मौसम में मल्च मदद करता है।',
+    bn: 'স্থাপনের জন্য মাটি ক্রমাগত আর্দ্র রাখুন; জলাবদ্ধতা এড়িয়ে চলুন। গরম আবহাওয়ায় মালচ সাহায্য করে।',
+  },
+  'Irrigate during dry spells; skip after good rainfall. Ensure drainage to prevent fungal diseases.': {
+    en: 'Irrigate during dry spells; skip after good rainfall. Ensure drainage to prevent fungal diseases.',
+    hi: 'शुष्क अवधि में सिंचाई करें; अच्छी बारिश के बाद छोड़ें। फफूंद रोग रोकने के लिए जल निकासी सुनिश्चित करें।',
+    bn: 'শুষ্ক সময়ে সেচ দিন; ভালো বৃষ্টির পরে এড়িয়ে যান। ছত্রাক রোগ প্রতিরোধে নিষ্কাশন নিশ্চিত করুন।',
+  },
+  'Irrigate every 2 days (adjust for soil type); avoid wetting foliage late evening.': {
+    en: 'Irrigate every 2 days (adjust for soil type); avoid wetting foliage late evening.',
+    hi: 'हर 2 दिन सिंचाई करें (मिट्टी के प्रकार के अनुसार समायोजित करें); शाम को पत्तियों को गीला करने से बचें।',
+    bn: 'প্রতি 2 দিন সেচ দিন (মাটির ধরন অনুযায়ী সামঞ্জস্য করুন); সন্ধ্যায় পাতা ভেজানো এড়িয়ে চলুন।',
+  },
+  'Reduce irrigation close to harvest to improve quality and reduce post-harvest rot.': {
+    en: 'Reduce irrigation close to harvest to improve quality and reduce post-harvest rot.',
+    hi: 'गुणवत्ता सुधारने और फसल के बाद सड़न कम करने के लिए कटाई के करीब सिंचाई कम करें।',
+    bn: 'গুণমান উন্নত করতে এবং ফসল কাটার পরে পচা কমাতে কাটার কাছাকাছি সেচ কমান।',
+  },
+  'Incorporate compost and basal P & K. Use soil test when available. Apply biofertilizers if using organic methods.': {
+    en: 'Incorporate compost and basal P & K. Use soil test when available. Apply biofertilizers if using organic methods.',
+    hi: 'कम्पोस्ट और आधार P & K मिलाएं। उपलब्ध होने पर मृदा परीक्षण का उपयोग करें। जैविक विधियों में जैव उर्वरक लगाएं।',
+    bn: 'কম্পোস্ট এবং বেসাল P & K মেশান। উপলব্ধ হলে মাটি পরীক্ষা ব্যবহার করুন। জৈব পদ্ধতিতে জৈব সার প্রয়োগ করুন।',
+  },
+  'Split nitrogen improves uptake. If leaf yellowing/poor growth, consider micronutrients (Zn/B) as per symptoms.': {
+    en: 'Split nitrogen improves uptake. If leaf yellowing/poor growth, consider micronutrients (Zn/B) as per symptoms.',
+    hi: 'विभाजित नाइट्रोजन अवशोषण सुधारता है। पत्ती पीली/खराब वृद्धि पर लक्षणों के अनुसार सूक्ष्म पोषक (Zn/B) पर विचार करें।',
+    bn: 'বিভক্ত নাইট্রোজেন শোষণ উন্নত করে। পাতা হলুদ/দুর্বল বৃদ্ধিতে লক্ষণ অনুযায়ী মাইক্রোনিউট্রিয়েন্ট (Zn/B) বিবেচনা করুন।',
+  },
+  'Use traps for monitoring; keep field clean to reduce pest carryover.': {
+    en: 'Use traps for monitoring; keep field clean to reduce pest carryover.',
+    hi: 'निगरानी के लिए ट्रैप का उपयोग करें; कीट वहन कम करने के लिए खेत साफ रखें।',
+    bn: 'পর্যবেক্ষণের জন্য ট্র্যাপ ব্যবহার করুন; পোকা বহন কমাতে মাঠ পরিষ্কার রাখুন।',
+  },
+  'Avoid overhead irrigation at night; ensure airflow. Use recommended protectant fungicide only if risk is high.': {
+    en: 'Avoid overhead irrigation at night; ensure airflow. Use recommended protectant fungicide only if risk is high.',
+    hi: 'रात में ऊपरी सिंचाई से बचें; वायु प्रवाह सुनिश्चित करें। उच्च जोखिम पर ही अनुशंसित रक्षक फफूंदनाशक उपयोग करें।',
+    bn: 'রাতে ওভারহেড সেচ এড়িয়ে চলুন; বায়ুপ্রবাহ নিশ্চিত করুন। উচ্চ ঝুঁকিতেই প্রস্তাবিত প্রতিরক্ষামূলক ছত্রাকনাশক ব্যবহার করুন।',
+  },
+};
+
+// Helper function to get translated text with fallback
+const getHeuristicTranslation = (text: string): LocalizedText3 => {
+  return HEURISTIC_TRANSLATIONS[text] || { en: text, hi: text, bn: text };
+};
+
+const getHeuristicNotesTranslation = (text: string): LocalizedText3 => {
+  return HEURISTIC_NOTES_TRANSLATIONS[text] || { en: text, hi: text, bn: text };
+};
+
+// Generate a localized plan title based on crop name
+const generatePlanTitleI18n = (cropName: string): LocalizedText3 => {
+  return {
+    en: `${cropName} Farming Plan`,
+    hi: `${cropName} खेती योजना`,
+    bn: `${cropName} চাষ পরিকল্পনা`,
+  };
+};
+
+// Generate a localized plan overview based on crop name
+const generatePlanOverviewI18n = (cropName: string, plantingDateISO: string, harvestDateISO: string): LocalizedText3 => {
+  return {
+    en: `Complete farming schedule for ${cropName} from planting (${plantingDateISO}) to harvest (${harvestDateISO}). Follow the daily tasks for best results.`,
+    hi: `${cropName} के लिए संपूर्ण खेती कार्यक्रम, बुवाई (${plantingDateISO}) से कटाई (${harvestDateISO}) तक। सर्वोत्तम परिणामों के लिए दैनिक कार्यों का पालन करें।`,
+    bn: `${cropName}-এর জন্য সম্পূর্ণ চাষ সময়সূচি, রোপণ (${plantingDateISO}) থেকে ফসল কাটা (${harvestDateISO}) পর্যন্ত। সেরা ফলাফলের জন্য দৈনিক কাজগুলি অনুসরণ করুন।`,
+  };
+};
+
 const buildHeuristicPlan = (params: {
   cropType: string;
   cropName: string;
@@ -314,12 +598,14 @@ const buildHeuristicPlan = (params: {
       id: rule.id || `${sanitizeId(rule.type)}-${sanitizeId(rule.title)}`,
       type: rule.type,
       title: rule.title,
+      titleI18n: getHeuristicTranslation(rule.title),
       startDay: rule.startDay,
       endDay: rule.endDay,
       everyDays: rule.everyDays,
       timeOfDay: inferred,
       timeHHmm: rule.timeHHmm || defaultTimeHHmmForTimeOfDay(inferred),
       notes: rule.notes,
+      notesI18n: rule.notes ? getHeuristicNotesTranslation(rule.notes) : undefined,
     });
   };
 
@@ -329,10 +615,12 @@ const buildHeuristicPlan = (params: {
       id: task.id || `${sanitizeId(task.type)}-${sanitizeId(task.title)}-${task.dueDateISO}`,
       type: task.type,
       title: task.title,
+      titleI18n: getHeuristicTranslation(task.title),
       dueDateISO: task.dueDateISO,
       timeOfDay: inferred,
       timeHHmm: task.timeHHmm || defaultTimeHHmmForTimeOfDay(inferred),
       notes: task.notes,
+      notesI18n: task.notes ? getHeuristicNotesTranslation(task.notes) : undefined,
     });
   };
 
@@ -368,6 +656,7 @@ const buildHeuristicPlan = (params: {
         everyDays: 1,
         notes:
           'Maintain shallow water layer (2–3 cm) after establishment; skip if continuous rainfall and waterlogging risk.',
+        notesI18n: getHeuristicNotesTranslation('Maintain shallow water layer (2–3 cm) after establishment; skip if continuous rainfall and waterlogging risk.'),
       },
       {
         startDay: 31,
@@ -375,12 +664,14 @@ const buildHeuristicPlan = (params: {
         everyDays: 2,
         notes:
           'Irrigate to keep soil moist; avoid long dry gaps during tillering and panicle initiation.',
+        notesI18n: getHeuristicNotesTranslation('Irrigate to keep soil moist; avoid long dry gaps during tillering and panicle initiation.'),
       },
       {
         startDay: Math.max(0, maturityDays - 14),
         endDay: maturityDays,
         everyDays: 9999,
         notes: 'Stop irrigation ~10–14 days before harvest to improve grain maturity and ease harvesting.',
+        notesI18n: getHeuristicNotesTranslation('Stop irrigation ~10–14 days before harvest to improve grain maturity and ease harvesting.'),
       }
     );
 
@@ -475,6 +766,7 @@ const buildHeuristicPlan = (params: {
         everyDays: 1,
         notes:
           'Keep soil consistently moist for establishment; avoid waterlogging. Mulch helps in hot weather.',
+        notesI18n: getHeuristicNotesTranslation('Keep soil consistently moist for establishment; avoid waterlogging. Mulch helps in hot weather.'),
       },
       {
         startDay: 15,
@@ -484,12 +776,16 @@ const buildHeuristicPlan = (params: {
           isMonsoonWindow
             ? 'Irrigate during dry spells; skip after good rainfall. Ensure drainage to prevent fungal diseases.'
             : 'Irrigate every 2 days (adjust for soil type); avoid wetting foliage late evening.',
+        notesI18n: isMonsoonWindow
+          ? getHeuristicNotesTranslation('Irrigate during dry spells; skip after good rainfall. Ensure drainage to prevent fungal diseases.')
+          : getHeuristicNotesTranslation('Irrigate every 2 days (adjust for soil type); avoid wetting foliage late evening.'),
       },
       {
         startDay: Math.max(0, maturityDays - 9),
         endDay: maturityDays,
         everyDays: 3,
         notes: 'Reduce irrigation close to harvest to improve quality and reduce post-harvest rot.',
+        notesI18n: getHeuristicNotesTranslation('Reduce irrigation close to harvest to improve quality and reduce post-harvest rot.'),
       }
     );
 
@@ -542,12 +838,17 @@ const buildHeuristicPlan = (params: {
     }, {})
   ).sort((a, b) => a.dueDateISO.localeCompare(b.dueDateISO));
 
+  const plantingISO = toISODate(plantingDate);
+  const harvestISO = toISODate(harvest);
+
   return {
     cropType,
     cropName,
     areaAcres,
-    plantingDateISO: toISODate(plantingDate),
-    expectedHarvestDateISO: toISODate(harvest),
+    planTitleI18n: generatePlanTitleI18n(cropName || cropType),
+    planOverviewI18n: generatePlanOverviewI18n(cropName || cropType, plantingISO, harvestISO),
+    plantingDateISO: plantingISO,
+    expectedHarvestDateISO: harvestISO,
     cleanupAfterISO: toISODate(cleanupAfter),
     wateringRules,
     recurringTasks,
@@ -582,6 +883,27 @@ const expandInRangeFromRules = (params: {
 
   const results: FarmingTaskInstance[] = [];
 
+  // Helper to get localized title with heuristic fallback for old plans
+  const getLocalizedTitle = (titleI18n: LocalizedText3 | undefined, fallbackTitle: string): string => {
+    const fromI18n = pickI18n(titleI18n, lang);
+    if (fromI18n) return fromI18n;
+    // Try heuristic translations for known texts
+    const heuristic = HEURISTIC_TRANSLATIONS[fallbackTitle];
+    if (heuristic) return pickI18n(heuristic, lang) || fallbackTitle;
+    return fallbackTitle;
+  };
+
+  // Helper to get localized notes with heuristic fallback for old plans
+  const getLocalizedNotes = (notesI18n: LocalizedText3 | undefined, fallbackNotes: string | undefined): string | undefined => {
+    if (!fallbackNotes) return undefined;
+    const fromI18n = pickI18n(notesI18n, lang);
+    if (fromI18n) return fromI18n;
+    // Try heuristic translations for known texts
+    const heuristic = HEURISTIC_NOTES_TRANSLATIONS[fallbackNotes];
+    if (heuristic) return pickI18n(heuristic, lang) || fallbackNotes;
+    return fallbackNotes;
+  };
+
   // One-off tasks.
   for (const t of plan.tasks || []) {
     if (inWindow(t.dueDateISO)) {
@@ -592,11 +914,11 @@ const expandInRangeFromRules = (params: {
         planTitle: pickI18n(plan.planTitleI18n, lang) || plan.cropName,
         planExpectedHarvestDateISO: plan.expectedHarvestDateISO,
         type: t.type,
-        title: pickI18n(t.titleI18n, lang) || t.title,
+        title: getLocalizedTitle(t.titleI18n, t.title),
         dueDateISO: t.dueDateISO,
         timeOfDay,
         timeHHmm: t.timeHHmm || defaultTimeHHmmForTimeOfDay(timeOfDay),
-        notes: pickI18n(t.notesI18n, lang) || t.notes,
+        notes: getLocalizedNotes(t.notesI18n, t.notes),
       });
     }
   }
@@ -606,6 +928,9 @@ const expandInRangeFromRules = (params: {
     const first = addDays(planting, r.startDay);
     const last = addDays(planting, r.endDay);
 
+    // Skip if everyDays is unreasonably large (effectively disabled)
+    if (r.everyDays >= 9999) continue;
+
     let cursor = new Date(first);
     const rangeStart = parseLooseDate(safeStartISO) || cursor;
     while (cursor < rangeStart) {
@@ -613,6 +938,7 @@ const expandInRangeFromRules = (params: {
       if (cursor > last) break;
     }
 
+    // Mathematical expansion: generate one task for each interval
     while (cursor <= last) {
       const due = toISODate(cursor);
       if (inWindow(due)) {
@@ -623,11 +949,11 @@ const expandInRangeFromRules = (params: {
           planTitle: pickI18n(plan.planTitleI18n, lang) || plan.cropName,
           planExpectedHarvestDateISO: plan.expectedHarvestDateISO,
           type: r.type,
-          title: pickI18n(r.titleI18n, lang) || r.title,
+          title: getLocalizedTitle(r.titleI18n, r.title),
           dueDateISO: due,
           timeOfDay,
           timeHHmm: r.timeHHmm || defaultTimeHHmmForTimeOfDay(timeOfDay),
-          notes: pickI18n(r.notesI18n, lang) || r.notes,
+          notes: getLocalizedNotes(r.notesI18n, r.notes),
         });
       }
       if (due > safeEndISO) break;
@@ -635,7 +961,7 @@ const expandInRangeFromRules = (params: {
     }
   }
 
-  // Watering rules.
+  // Watering rules - expand mathematically into individual watering events.
   for (const w of plan.wateringRules || []) {
     if (w.everyDays >= 9999) continue;
 
@@ -649,20 +975,23 @@ const expandInRangeFromRules = (params: {
       if (cursor > last) break;
     }
 
+    // Mathematical expansion: e.g., every 3 days becomes day 0, 3, 6, 9...
     while (cursor <= last) {
       const due = toISODate(cursor);
       if (inWindow(due)) {
+        const timeOfDay = (w.timeOfDay as TimeOfDay) || 'morning';
+        const defaultWateringTitle = 'Water/irrigate (as per stage)';
         results.push({
           planId: plan.id,
           cropName: plan.cropName,
           planTitle: pickI18n(plan.planTitleI18n, lang) || plan.cropName,
           planExpectedHarvestDateISO: plan.expectedHarvestDateISO,
           type: 'watering',
-          title: pickI18n(w.titleI18n, lang) || w.title || 'Water/irrigate (as per stage)',
+          title: getLocalizedTitle(w.titleI18n, w.title || defaultWateringTitle),
           dueDateISO: due,
-          timeOfDay: 'morning',
-          timeHHmm: defaultTimeHHmmForTimeOfDay('morning'),
-          notes: pickI18n(w.notesI18n, lang) || w.notes,
+          timeOfDay,
+          timeHHmm: w.timeHHmm || defaultTimeHHmmForTimeOfDay(timeOfDay),
+          notes: getLocalizedNotes(w.notesI18n, w.notes),
         });
       }
       if (due > safeEndISO) break;
@@ -910,6 +1239,8 @@ export const upsertFarmingPlanForCurrentUser = async (params: {
       startDay: Number(w.startDay) || 0,
       endDay: Number(w.endDay) || 0,
       everyDays: Math.max(1, Number(w.everyDays) || 1),
+      timeOfDay: (w.timeOfDay as TimeOfDay) || undefined,
+      timeHHmm: w.timeHHmm || undefined,
       title: (w.title?.en || '').trim(),
       titleI18n: w.title,
       notes: (w.notes?.en || '').trim(),
@@ -919,6 +1250,7 @@ export const upsertFarmingPlanForCurrentUser = async (params: {
     const recurringTasks: FarmingRecurringTaskRule[] = (generated.recurringTasks || []).map((r, idx) => {
       const titleEn = (r.title?.en || '').trim();
       const inferred = inferTimeOfDay(((r.type as FarmingTaskType) || 'general'));
+      const timeOfDay = (r.timeOfDay as TimeOfDay) || inferred;
       return {
         id: `${sanitizeId(r.type)}-${sanitizeId(titleEn || `task-${idx}`)}`,
         type: (r.type as FarmingTaskType) || 'general',
@@ -927,8 +1259,8 @@ export const upsertFarmingPlanForCurrentUser = async (params: {
         startDay: Number(r.startDay) || 0,
         endDay: Number(r.endDay) || 0,
         everyDays: Math.max(1, Number(r.everyDays) || 7),
-        timeOfDay: inferred,
-        timeHHmm: defaultTimeHHmmForTimeOfDay(inferred),
+        timeOfDay,
+        timeHHmm: r.timeHHmm || defaultTimeHHmmForTimeOfDay(timeOfDay),
         notes: (r.notes?.en || '').trim(),
         notesI18n: r.notes,
       };
@@ -938,14 +1270,15 @@ export const upsertFarmingPlanForCurrentUser = async (params: {
       const titleEn = (t.title?.en || '').trim();
       const due = (t.dueDateISO || '').trim();
       const inferred = inferTimeOfDay(((t.type as FarmingTaskType) || 'general'));
+      const timeOfDay = (t.timeOfDay as TimeOfDay) || inferred;
       return {
         id: `${sanitizeId(t.type)}-${sanitizeId(titleEn || `task-${idx}`)}-${due}`,
         type: (t.type as FarmingTaskType) || 'general',
         title: titleEn || 'Task',
         titleI18n: t.title,
         dueDateISO: due,
-        timeOfDay: inferred,
-        timeHHmm: defaultTimeHHmmForTimeOfDay(inferred),
+        timeOfDay,
+        timeHHmm: t.timeHHmm || defaultTimeHHmmForTimeOfDay(timeOfDay),
         notes: (t.notes?.en || '').trim(),
         notesI18n: t.notes,
       };
@@ -1023,6 +1356,11 @@ const expandUpcomingFromRules = (params: {
   const { plan, windowDays } = params;
   const lang = normalizeLanguage(params.language);
 
+  // MATHEMATICAL EXPANSION ENGINE
+  // This function takes Gemini-generated rules (e.g., "water every 3 days from day 0 to 30")
+  // and expands them into individual calendar entries (day 0, day 3, day 6, day 9...)
+  // The calendar UI shows these expanded entries in the user's language.
+
   const planting = parseLooseDate(plan.plantingDateISO);
   if (!planting) return [];
 
@@ -1034,6 +1372,25 @@ const expandUpcomingFromRules = (params: {
 
   const results: FarmingTaskInstance[] = [];
 
+  // Helper to get localized title with heuristic fallback for old plans
+  const getLocalizedTitleUpcoming = (titleI18n: LocalizedText3 | undefined, fallbackTitle: string): string => {
+    const fromI18n = pickI18n(titleI18n, lang);
+    if (fromI18n) return fromI18n;
+    const heuristic = HEURISTIC_TRANSLATIONS[fallbackTitle];
+    if (heuristic) return pickI18n(heuristic, lang) || fallbackTitle;
+    return fallbackTitle;
+  };
+
+  // Helper to get localized notes with heuristic fallback for old plans
+  const getLocalizedNotesUpcoming = (notesI18n: LocalizedText3 | undefined, fallbackNotes: string | undefined): string | undefined => {
+    if (!fallbackNotes) return undefined;
+    const fromI18n = pickI18n(notesI18n, lang);
+    if (fromI18n) return fromI18n;
+    const heuristic = HEURISTIC_NOTES_TRANSLATIONS[fallbackNotes];
+    if (heuristic) return pickI18n(heuristic, lang) || fallbackNotes;
+    return fallbackNotes;
+  };
+
   // One-off tasks.
   for (const t of plan.tasks || []) {
     if (inWindow(t.dueDateISO)) {
@@ -1043,9 +1400,9 @@ const expandUpcomingFromRules = (params: {
         planTitle: pickI18n(plan.planTitleI18n, lang) || plan.cropName,
         planExpectedHarvestDateISO: plan.expectedHarvestDateISO,
         type: t.type,
-        title: pickI18n(t.titleI18n, lang) || t.title,
+        title: getLocalizedTitleUpcoming(t.titleI18n, t.title),
         dueDateISO: t.dueDateISO,
-        notes: pickI18n(t.notesI18n, lang) || t.notes,
+        notes: getLocalizedNotesUpcoming(t.notesI18n, t.notes),
       });
     }
   }
@@ -1071,9 +1428,9 @@ const expandUpcomingFromRules = (params: {
         planTitle: pickI18n(plan.planTitleI18n, lang) || plan.cropName,
         planExpectedHarvestDateISO: plan.expectedHarvestDateISO,
         type: r.type,
-        title: pickI18n(r.titleI18n, lang) || r.title,
+        title: getLocalizedTitleUpcoming(r.titleI18n, r.title),
         dueDateISO: due,
-        notes: pickI18n(r.notesI18n, lang) || r.notes,
+        notes: getLocalizedNotesUpcoming(r.notesI18n, r.notes),
       });
       cursor = addDays(cursor, r.everyDays);
     }
@@ -1094,15 +1451,16 @@ const expandUpcomingFromRules = (params: {
 
     while (cursor <= end && cursor <= last) {
       const due = toISODate(cursor);
+      const defaultWateringTitle = 'Water/irrigate (as per stage)';
       results.push({
         planId: plan.id,
         cropName: plan.cropName,
         planTitle: pickI18n(plan.planTitleI18n, lang) || plan.cropName,
         planExpectedHarvestDateISO: plan.expectedHarvestDateISO,
         type: 'watering',
-        title: pickI18n(w.titleI18n, lang) || w.title || 'Water/irrigate (as per stage)',
+        title: getLocalizedTitleUpcoming(w.titleI18n, w.title || defaultWateringTitle),
         dueDateISO: due,
-        notes: pickI18n(w.notesI18n, lang) || w.notes,
+        notes: getLocalizedNotesUpcoming(w.notesI18n, w.notes),
       });
       cursor = addDays(cursor, w.everyDays);
     }

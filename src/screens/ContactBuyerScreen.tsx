@@ -96,7 +96,7 @@ export const ContactBuyerScreen = () => {
   const acceptedDealsCarouselWidth = Math.max(1, screenWidth - 48);
   const acceptedDealsListRef = useRef<FlatList<MarketDeal> | null>(null);
   const [acceptedDealsIndex, setAcceptedDealsIndex] = useState(0);
-  
+
   const [authReady, setAuthReady] = useState(false);
   const [notifications, setNotifications] = useState(0);
   const [marketDeals, setMarketDeals] = useState<MarketDeal[]>([]);
@@ -162,7 +162,7 @@ export const ContactBuyerScreen = () => {
   // Wait for auth to initialize, then load data
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((user) => {
-      console.log('Auth state changed:', user ? `User ${user.uid}` : 'No user');
+      // console.log('Auth state changed:', user ? `User ${user.uid}` : 'No user');
       setAuthReady(true);
       if (user) {
         loadProducts();
@@ -549,23 +549,23 @@ export const ContactBuyerScreen = () => {
       );
       return;
     }
-    
-    console.log('Uploading product for user:', user.uid, user.email);
+
+    // console.log('Uploading product for user:', user.uid, user.email);
 
     try {
       setUploading(true);
 
       // Step 1: Validate product with AI
-      console.log('Validating product with AI...', { productName, hasImage: !!productImage });
-      
+      // console.log('Validating product with AI...', { productName, hasImage: !!productImage });
+
       let validationResult;
       try {
         validationResult = await validateProductUpload({
           imageUri: productImage,
           productName: productName,
         });
-        
-        console.log('Validation result:', validationResult);
+
+        // console.log('Validation result:', validationResult);
       } catch (validationError: any) {
         console.error('Product validation error:', validationError);
         showAlert(
@@ -639,19 +639,19 @@ export const ContactBuyerScreen = () => {
     try {
       // Get user data - fetch actual phone from Firestore
       const farmerName = user.displayName || 'Farmer';
-      
+
       // Fetch farmer's actual phone number from Firestore
       const profileRes = await fetchCurrentUserProfile();
-      const farmerPhone = profileRes.success 
+      const farmerPhone = profileRes.success
         ? (profileRes.profile?.mobileNumber || profileRes.profile?.phoneNumber || user.phoneNumber || '+91 0000000000')
         : (user.phoneNumber || '+91 0000000000');
 
-      console.log('Starting product upload with validated name...', { 
-        farmerId: user.uid, 
-        validatedName,
-        hasImage: !!productImage,
-        farmerPhone: farmerPhone.substring(0, 5) + '...' // Log partial for debugging
-      });
+      // console.log('Starting product upload with validated name...', { 
+      //   farmerId: user.uid, 
+      //   validatedName,
+      //   hasImage: !!productImage,
+      //   farmerPhone: farmerPhone.substring(0, 5) + '...' // Log partial for debugging
+      // });
 
       await addProduct(
         user.uid,
@@ -667,7 +667,7 @@ export const ContactBuyerScreen = () => {
         }
       );
 
-      console.log('Product upload successful!');
+      // console.log('Product upload successful!');
 
       showAlert(
         'success',
@@ -690,9 +690,9 @@ export const ContactBuyerScreen = () => {
       setUploading(false);
     } catch (error: any) {
       console.error('Error uploading product - FULL ERROR:', error);
-      
+
       let errorMessage = 'Failed to upload product. ';
-      
+
       if (error?.message?.includes('Storage rules')) {
         errorMessage += 'Please update Firebase Storage rules. See FIREBASE_RULES_SETUP.md';
       } else if (error?.message?.includes('Firestore rules')) {
@@ -704,7 +704,7 @@ export const ContactBuyerScreen = () => {
       } else {
         errorMessage += 'Please check console for details.';
       }
-      
+
       showAlert(
         'error',
         tr('contactBuyer.error', 'Error'),
@@ -1007,14 +1007,14 @@ export const ContactBuyerScreen = () => {
 
           {/* Product Cards */}
           {loading ? (
-            <View style={{ 
-              height: 200, 
-              justifyContent: 'center', 
-              alignItems: 'center' 
+            <View style={{
+              height: 200,
+              justifyContent: 'center',
+              alignItems: 'center'
             }}>
               <ActivityIndicator size="large" color="#10B981" />
-              <Text style={{ 
-                color: '#6B7280', 
+              <Text style={{
+                color: '#6B7280',
                 marginTop: 12,
                 fontSize: 14,
                 fontWeight: '500',
@@ -1023,9 +1023,9 @@ export const ContactBuyerScreen = () => {
               </Text>
             </View>
           ) : uploadedProducts.length === 0 ? (
-            <View style={{ 
-              height: 200, 
-              justifyContent: 'center', 
+            <View style={{
+              height: 200,
+              justifyContent: 'center',
               alignItems: 'center',
               backgroundColor: '#F9FAFB',
               borderRadius: 20,
@@ -1034,16 +1034,16 @@ export const ContactBuyerScreen = () => {
               borderStyle: 'dashed',
             }}>
               <Package size={48} color="#9CA3AF" strokeWidth={1.5} />
-              <Text style={{ 
-                color: '#6B7280', 
+              <Text style={{
+                color: '#6B7280',
                 marginTop: 12,
                 fontSize: 16,
                 fontWeight: '600',
               }}>
                 {tr('contactBuyer.noProducts', 'No products uploaded yet')}
               </Text>
-              <Text style={{ 
-                color: '#9CA3AF', 
+              <Text style={{
+                color: '#9CA3AF',
                 marginTop: 4,
                 fontSize: 14,
               }}>
@@ -1325,236 +1325,6 @@ export const ContactBuyerScreen = () => {
             )}
           </View>
         )}
-
-        {/* Buyer Contact Cards */}
-        <View style={{ paddingHorizontal: 24, marginTop: 8 }}>
-          <Text style={{
-            color: '#111827',
-            fontSize: 22,
-            fontWeight: '800',
-            marginBottom: 20,
-            letterSpacing: -0.3,
-          }}>
-            {tr('contactBuyer.interestedBuyers', 'Interested Buyers')}
-          </Text>
-
-          {BUYER_CONTACTS.map((buyer) => {
-            return (
-              <LinearGradient
-                key={buyer.id}
-                colors={['#FFFFFF', '#FAFAFA']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{
-                  borderRadius: 20,
-                  padding: 20,
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: '#E5E7EB',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 12,
-                  elevation: 3,
-                }}
-              >
-                {/* Notification Badge */}
-                {buyer.hasNotification && (
-                  <View style={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    zIndex: 10,
-                  }}>
-                    <LinearGradient
-                      colors={['#10B981', '#059669']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{
-                        borderRadius: 16,
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        shadowColor: '#10B981',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 4,
-                        elevation: 3,
-                      }}
-                    >
-                      <Bell size={12} color="#fff" strokeWidth={2.5} />
-                      <Text style={{
-                        color: '#fff',
-                        fontSize: 11,
-                        fontWeight: '700',
-                        marginLeft: 4,
-                      }}>
-                        {tr('contactBuyer.newRequest', 'New')}
-                      </Text>
-                    </LinearGradient>
-                  </View>
-                )}
-
-                {/* Buyer Info Header */}
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 }}>
-                  <LinearGradient
-                    colors={['#3B82F6', '#2563EB']}
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 14,
-                      shadowColor: '#3B82F6',
-                      shadowOffset: { width: 0, height: 3 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 6,
-                      elevation: 4,
-                    }}
-                  >
-                    <User size={26} color="#fff" strokeWidth={2.5} />
-                  </LinearGradient>
-                  <View style={{ flex: 1, paddingRight: buyer.hasNotification ? 80 : 0 }}>
-                    <Text style={{
-                      color: '#111827',
-                      fontSize: 18,
-                      fontWeight: '800',
-                      marginBottom: 6,
-                    }}>
-                      {buyer.name}
-                    </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                      <MapPin size={14} color="#6B7280" strokeWidth={2} />
-                      <Text style={{
-                        color: '#6B7280',
-                        fontSize: 13,
-                        fontWeight: '500',
-                        marginLeft: 6,
-                      }}>
-                        {buyer.address}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Description */}
-                <Text style={{
-                  color: '#4B5563',
-                  fontSize: 14,
-                  fontWeight: '500',
-                  lineHeight: 20,
-                  marginBottom: 16,
-                }}>
-                  {buyer.description}
-                </Text>
-
-                {/* Action Buttons */}
-                <View style={{ gap: 10 }}>
-                  <TouchableOpacity
-                    onPress={() => handlePhoneCall(buyer.phone)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearGradient
-                      colors={['#10B981', '#059669']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{
-                        borderRadius: 14,
-                        paddingVertical: 14,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        shadowColor: '#10B981',
-                        shadowOffset: { width: 0, height: 3 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 6,
-                        elevation: 4,
-                      }}
-                    >
-                      <Phone size={18} color="#fff" strokeWidth={2.5} />
-                      <Text style={{
-                        color: '#fff',
-                        fontSize: 15,
-                        fontWeight: '700',
-                        marginLeft: 10,
-                      }}>
-                        {tr('contactBuyer.call', 'Call')} - {buyer.phone}
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleChat(buyer.name, buyer.phone)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearGradient
-                      colors={['#3B82F6', '#2563EB']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{
-                        borderRadius: 14,
-                        paddingVertical: 14,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        shadowColor: '#3B82F6',
-                        shadowOffset: { width: 0, height: 3 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 6,
-                        elevation: 4,
-                      }}
-                    >
-                      <MessageCircle size={18} color="#fff" strokeWidth={2.5} />
-                      <Text style={{
-                        color: '#fff',
-                        fontSize: 15,
-                        fontWeight: '700',
-                        marginLeft: 10,
-                      }}>
-                        {tr('contactBuyer.chat', 'Chat in App')}
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleEmail(buyer.email)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearGradient
-                      colors={['#6B7280', '#4B5563']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{
-                        borderRadius: 14,
-                        paddingVertical: 14,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        shadowColor: '#6B7280',
-                        shadowOffset: { width: 0, height: 3 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 6,
-                        elevation: 4,
-                      }}
-                    >
-                      <Mail size={18} color="#fff" strokeWidth={2.5} />
-                      <Text style={{
-                        color: '#fff',
-                        fontSize: 15,
-                        fontWeight: '700',
-                        marginLeft: 10,
-                      }}>
-                        {tr('contactBuyer.email', 'Email')} - {buyer.email}
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
-              </LinearGradient>
-            );
-          })}
-        </View>
       </ScrollView>
 
       {/* Notifications Modal */}
@@ -1918,28 +1688,24 @@ export const ContactBuyerScreen = () => {
                 <View className="flex-row bg-gray-100 rounded-xl overflow-hidden">
                   <TouchableOpacity
                     onPress={() => setSelectedUnit('kg')}
-                    className={`px-6 py-3 ${
-                      selectedUnit === 'kg' ? 'bg-green-600' : 'bg-transparent'
-                    }`}
+                    className={`px-6 py-3 ${selectedUnit === 'kg' ? 'bg-green-600' : 'bg-transparent'
+                      }`}
                   >
                     <Text
-                      className={`font-semibold ${
-                        selectedUnit === 'kg' ? 'text-white' : 'text-gray-700'
-                      }`}
+                      className={`font-semibold ${selectedUnit === 'kg' ? 'text-white' : 'text-gray-700'
+                        }`}
                     >
                       kg
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => setSelectedUnit('quintal')}
-                    className={`px-6 py-3 ${
-                      selectedUnit === 'quintal' ? 'bg-green-600' : 'bg-transparent'
-                    }`}
+                    className={`px-6 py-3 ${selectedUnit === 'quintal' ? 'bg-green-600' : 'bg-transparent'
+                      }`}
                   >
                     <Text
-                      className={`font-semibold ${
-                        selectedUnit === 'quintal' ? 'text-white' : 'text-gray-700'
-                      }`}
+                      className={`font-semibold ${selectedUnit === 'quintal' ? 'text-white' : 'text-gray-700'
+                        }`}
                     >
                       quintal
                     </Text>
@@ -2115,11 +1881,10 @@ export const ContactBuyerScreen = () => {
                   }}
                 >
                   <Text
-                    className={`text-base ${
-                      selectedFarmerLocation === location
+                    className={`text-base ${selectedFarmerLocation === location
                         ? 'text-green-600 font-bold'
                         : 'text-gray-900 font-medium'
-                    }`}
+                      }`}
                   >
                     {location === 'Other' ? 'Other (type anything)' : location}
                   </Text>

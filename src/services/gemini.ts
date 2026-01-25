@@ -66,6 +66,8 @@ export interface GeneratedFarmingPlanV1 {
     startDay: number;
     endDay: number;
     everyDays: number;
+    timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
+    timeHHmm?: string;
     title?: LocalizedText3;
     notes?: LocalizedText3;
   }>;
@@ -74,12 +76,16 @@ export interface GeneratedFarmingPlanV1 {
     startDay: number;
     endDay: number;
     everyDays: number;
+    timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
+    timeHHmm?: string;
     title: LocalizedText3;
     notes?: LocalizedText3;
   }>;
   oneOffTasks: Array<{
     type: string;
     dueDateISO: string; // YYYY-MM-DD
+    timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
+    timeHHmm?: string;
     title: LocalizedText3;
     notes?: LocalizedText3;
   }>;
@@ -537,12 +543,14 @@ const tryParseJsonLenient = (text: string): unknown => {
 const buildFarmingPlanSystemInstruction = (): string => {
   return [
     'You are an expert agronomist and farm planner.',
-    'You will generate a complete crop schedule with clear dates and stages.',
+    'You will generate MATHEMATICAL SCHEDULING RULES that expand into daily tasks.',
     'Return STRICT JSON only (no markdown, no code fences, no extra text).',
-    'All farmer-facing text must be provided in three languages: English (en), Hindi (hi), Bengali (bn).',
+    'All farmer-facing text (title, overview, task titles, notes) MUST be provided in ALL THREE languages: English (en), Hindi (hi), Bengali (bn).',
     'Use short, actionable sentences suitable for mobile UI.',
     'Do not invent exact prices, brands, or government policy numbers.',
-    'If the user provided dates, do not change them unless impossible; otherwise estimate harvest date realistically.'
+    'CRITICAL: Use mathematical intervals (startDay, endDay, everyDays) - the system will automatically expand these into daily calendar entries.',
+    'Include a time of day and HH:mm for every task and watering rule.',
+    'If the user provided an expected harvest date, validate it against realistic crop duration and seasonality. If it is unrealistic, correct it and mention the correction in the overview.'
   ].join(' ');
 };
 
@@ -566,20 +574,26 @@ export const generateLocalizedFarmingPlanV1 = async (params: {
   const state = (params.state || '').trim();
 
   const prompt = [
-    'Generate a complete farming plan as STRICT JSON with this exact schema:',
+    'Generate a MATHEMATICAL FARMING SCHEDULE as STRICT JSON with this exact schema:',
     '{',
     '  "version": 1,',
-    '  "title": {"en":"...","hi":"...","bn":"..."},',
-    '  "overview": {"en":"...","hi":"...","bn":"..."},',
+    '  "title": {"en":"Complete title in English","hi":"पूरा शीर्षक हिंदी में","bn":"সম্পূর্ণ শিরোনাম বাংলায়"},',
+    '  "overview": {"en":"Full overview in English","hi":"पूर्ण विवरण हिंदी में","bn":"সম্পূর্ণ সারসংক্ষেপ বাংলায়"},',
     '  "crop": {"cropType":"...","cropName":"...","areaAcres": 0},',
     '  "dates": {"plantingDateISO":"YYYY-MM-DD","expectedHarvestDateISO":"YYYY-MM-DD"},',
-    '  "wateringRules": [{"startDay":0,"endDay":0,"everyDays":1,"title":{"en":"...","hi":"...","bn":"..."},"notes":{"en":"...","hi":"...","bn":"..."}}],',
-    '  "recurringTasks": [{"type":"watering|fertilizer|pest|disease|field|harvest|general","startDay":0,"endDay":0,"everyDays":7,"title":{"en":"...","hi":"...","bn":"..."},"notes":{"en":"...","hi":"...","bn":"..."}}],',
-    '  "oneOffTasks": [{"type":"watering|fertilizer|pest|disease|field|harvest|general","dueDateISO":"YYYY-MM-DD","title":{"en":"...","hi":"...","bn":"..."},"notes":{"en":"...","hi":"...","bn":"..."}}],',
-    '  "preventiveMeasures": {"en":"...","hi":"...","bn":"..."}',
+    '  "wateringRules": [{"startDay":0,"endDay":30,"everyDays":2,"timeOfDay":"morning","timeHHmm":"07:00","title":{"en":"Early irrigation","hi":"प्रारंभिक सिंचाई","bn":"প্রাথমিক সেচ"},"notes":{"en":"Keep soil moist","hi":"मिट्टी को नम रखें","bn":"মাটি আর্দ্র রাখুন"}}],',
+    '  "recurringTasks": [{"type":"fertilizer","startDay":15,"endDay":90,"everyDays":15,"timeOfDay":"morning","timeHHmm":"08:00","title":{"en":"Apply fertilizer","hi":"उर्वरक डालें","bn":"সার প্রয়োগ করুন"},"notes":{"en":"Use organic compost","hi":"जैविक खाद का उपयोग करें","bn":"জৈব সার ব্যবহার করুন"}}],',
+    '  "oneOffTasks": [{"type":"field","dueDateISO":"YYYY-MM-DD","timeOfDay":"morning","timeHHmm":"06:00","title":{"en":"Land preparation","hi":"भूमि तैयारी","bn":"জমি প্রস্তুতি"},"notes":{"en":"Plow and level","hi":"जोतें और समतल करें","bn":"চাষ ও সমতল করুন"}}],',
+    '  "preventiveMeasures": {"en":"English prevention tips","hi":"हिंदी में रोकथाम युक्तियाँ","bn":"বাংলায় প্রতিরোধ টিপস"}',
     '}',
     '',
-    'Inputs:',
+    'MATHEMATICAL INTERVAL EXPLANATION:',
+    '- startDay: days after planting (0 = planting day)',
+    '- endDay: last day to perform this recurring task',
+    '- everyDays: interval between repetitions (2 = every 2 days, 7 = weekly)',
+    '- The calendar will show: day 0, day 2, day 4... or day 15, day 30, day 45...',
+    '',
+    'Farmer Inputs:',
     `- country: ${country}`,
     state ? `- state: ${state}` : '- state: (not provided)',
     `- cropType: ${params.cropType}`,
@@ -587,14 +601,24 @@ export const generateLocalizedFarmingPlanV1 = async (params: {
     `- areaAcres: ${params.areaAcres}`,
     `- plantingDateISO: ${params.plantingDateISO}`,
     params.expectedHarvestDateISO
-      ? `- expectedHarvestDateISO: ${params.expectedHarvestDateISO} (fixed)`
+      ? `- expectedHarvestDateISO: ${params.expectedHarvestDateISO} (user-provided; validate and correct if unrealistic)`
       : '- expectedHarvestDateISO: (not provided; estimate)',
     '',
-    'Rules:',
-    '- dates.expectedHarvestDateISO must be >= plantingDateISO + 1 day.',
-    '- Use realistic, stage-based scheduling and avoid unsafe pesticide instructions; keep it preventive and threshold-based.',
-    '- Provide watering rules as ranges with cadence; also include key milestone oneOffTasks.',
-    '- Keep task counts reasonable for a 3–12 month crop cycle.',
+    'CRITICAL RULES FOR MATHEMATICAL SCHEDULING:',
+    '1. dates.expectedHarvestDateISO must be >= plantingDateISO + 1 day.',
+    '2. Use MATHEMATICAL INTERVALS for recurring work:',
+    '   - wateringRules: {startDay: 0, endDay: 30, everyDays: 2} means \"water every 2 days from day 0 to day 30\"',
+    '   - recurringTasks: {startDay: 10, endDay: 90, everyDays: 7, type: \"fertilizer\"} means \"apply fertilizer every 7 days from day 10 to 90\"',
+    '   - The system will AUTOMATICALLY generate individual calendar entries for each occurrence',
+    '3. Use realistic, stage-based scheduling (germination, vegetative, flowering, maturation).',
+    '4. Avoid unsafe pesticide instructions; keep it preventive and threshold-based.',
+    '5. Provide a time of day (morning/afternoon/evening/night) and HH:mm for EVERY task.',
+    '6. Examples of good mathematical rules:',
+    '   - \"Irrigate every 3 days during first 30 days\" = {startDay: 0, endDay: 30, everyDays: 3}',
+    '   - \"Apply fertilizer every 15 days from day 20 to harvest\" = {startDay: 20, endDay: <maturity>, everyDays: 15}',
+    '   - \"Scout field weekly\" = {startDay: 7, endDay: <maturity>, everyDays: 7}',
+    '7. Provide ALL text in English, Hindi, AND Bengali - no exceptions.',
+    '8. Keep total rules reasonable (3-8 watering rules, 5-12 recurring tasks, 3-8 one-off milestone tasks).',
   ].join('\n');
 
   const baseRequestBody = {
@@ -1166,7 +1190,8 @@ IMPORTANT INSTRUCTIONS:
 3. Make numbers realistic for Indian farming (avoid extreme values)
 4. Use the farmer's Expected Selling Price as the primary reference for marketPricePerKgInr (keep it close unless clearly unrealistic)
 5. Numeric fields MUST be numbers (not strings)
-6. Use the Planting Date and Expected Harvest Date to infer the season (e.g., Kharif/Rabi/Zaid) and typical weather risks for that region.
+6. Validate the Expected Harvest Date against realistic crop duration and seasonality. If the date seems unrealistic (too short/long), adjust to a realistic window and mention the corrected expected harvest date in the recommendation. Use the corrected duration for calculations.
+7. Use the Planting Date and Expected Harvest Date to infer the season (e.g., Kharif/Rabi/Zaid) and typical weather risks for that region.
   - Do NOT claim you have live weather/forecast access.
   - Use typical seasonal patterns for India and mention actionable weather risk mitigation.
 7. Units:

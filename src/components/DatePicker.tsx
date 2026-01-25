@@ -65,6 +65,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         return `${day}/${month}/${year}`;
     };
 
+    const formatDateLocalized = (dateStr: string): string => {
+        if (!dateStr) return '';
+        // dateStr is in DD/MM/YYYY format
+        return localizeNumber(dateStr, i18n.language);
+    };
+
     const openModal = () => {
         setIsModalVisible(true);
         Animated.parallel([
@@ -209,7 +215,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     styles.inputText,
                     !value && styles.placeholderText,
                 ]}>
-                    {value || placeholder}
+                    {value ? formatDateLocalized(value) : placeholder}
                 </Text>
             </TouchableOpacity>
 
