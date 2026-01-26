@@ -820,7 +820,11 @@
       "invalidPlantingDate": "Please enter a valid planting date",
       "invalidHarvestDate": "Please enter a valid harvest date",
       "invalidDateRange": "Harvest date must be after planting date",
-      "invalidSellingPrice": "Please enter a valid selling price"
+      "invalidSellingPrice": "Please enter a valid selling price",
+      "error": "Error",
+      "predictionFailed": "Unable to generate prediction. Please check your input and try again.",
+      "apiTimeout": "Request is taking too long. Please check your internet connection and try again.",
+      "noApiKeys": "Service configuration error. Please contact support."
     }
   },
   "units": {
