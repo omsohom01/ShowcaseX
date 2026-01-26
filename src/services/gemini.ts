@@ -194,7 +194,31 @@ interface ApiCallOptions {
   modelFamilies: ModelFamily[];
   requestBody: any;
   endpoint: string;
+  timeoutMs?: number; // Optional timeout in milliseconds
 }
+
+/**
+ * Creates a fetch request with timeout
+ */
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeoutMs / 1000} seconds`);
+    }
+    throw error;
+  }
+};
 
 /**
  * Advanced API rotation algorithm:
@@ -205,7 +229,7 @@ interface ApiCallOptions {
  * 5. Repeat process with new API key
  */
 const callWithRotation = async (options: ApiCallOptions): Promise<any> => {
-  const { apiKeys, modelFamilies, requestBody, endpoint } = options;
+  const { apiKeys, modelFamilies, requestBody, endpoint, timeoutMs = 45000 } = options;
 
   if (apiKeys.length === 0) {
     throw new Error('No API keys available');
@@ -235,13 +259,17 @@ const callWithRotation = async (options: ApiCallOptions): Promise<any> => {
             model
           )}:${endpoint}?key=${encodeURIComponent(apiKey)}`;
 
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+          const response = await fetchWithTimeout(
+            url,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(requestBody),
             },
-            body: JSON.stringify(requestBody),
-          });
+            timeoutMs
+          );
 
           const responseText = await response.text();
           let json: any = {};
@@ -1285,6 +1313,7 @@ Keep all other text fields concise and actionable.`;
       modelFamilies: CROP_PREDICTION_FAMILIES,
       requestBody,
       endpoint: 'generateContent',
+      timeoutMs: 60000, // 60 second timeout for crop prediction (complex computation)
     });
 
     const contentText = extractContentText(json);
@@ -1398,14 +1427,18 @@ Keep all other text fields concise and actionable.`;
       raw,
     };
   };
+  
   try {
+    console.log('Starting crop prediction...');
     const firstText = await callGeminiOnce(buildBasePrompt());
     const firstParsed = parseAndNormalize(firstText);
 
     if (firstParsed.issues.length === 0) {
+      console.log('Crop prediction successful on first attempt');
       return firstParsed.result;
     }
 
+    console.log('First attempt had issues, requesting correction...');
     // One correction pass via Gemini (still Gemini-generated, but with stricter consistency requirements)
     const fixPrompt = `${buildBasePrompt()}
 
@@ -1423,10 +1456,36 @@ Return JSON only.`;
 
     const fixedText = await callGeminiOnce(fixPrompt);
     const fixedParsed = parseAndNormalize(fixedText);
+    console.log('Crop prediction successful after correction');
     return fixedParsed.result;
-  } catch (parseError) {
-    console.error('Error parsing Gemini prediction response:', parseError);
-    throw new Error('Failed to parse prediction results. Please try again.');
+  } catch (error: any) {
+    console.error('Error in crop prediction:', error);
+    
+    // Provide user-friendly error messages
+    const errorMessage = error.message || '';
+    
+    if (errorMessage.includes('timeout')) {
+      throw new Error('Request is taking too long. Please check your internet connection and try again.');
+    }
+    
+    if (errorMessage.includes('No API keys') || errorMessage.includes('Missing Gemini API key')) {
+      throw new Error('Service configuration error. Please contact support.');
+    }
+    
+    if (errorMessage.includes('quota') || errorMessage.includes('exhausted')) {
+      throw new Error('Service is currently busy. Please try again in a few moments.');
+    }
+    
+    if (errorMessage.includes('blocked') || errorMessage.includes('SAFETY')) {
+      throw new Error('Unable to process your request due to content restrictions. Please check your inputs.');
+    }
+    
+    if (errorMessage.includes('parse') || errorMessage.includes('JSON')) {
+      throw new Error('Unable to process the prediction results. Please try again.');
+    }
+    
+    // Generic error fallback
+    throw new Error('Unable to generate prediction. Please check your input and try again.');
   }
 };
 
