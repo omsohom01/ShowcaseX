@@ -1229,7 +1229,8 @@ export const DocumentAnalyzerScreen = () => {
           paddingHorizontal: 14,
         }}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             style={{ flex: 1 }}
           >
             <View style={{
@@ -1297,6 +1298,7 @@ export const DocumentAnalyzerScreen = () => {
                 style={{ flex: 1, backgroundColor: '#F8FAFC' }}
                 contentContainerStyle={{ padding: 14, paddingBottom: 18 }}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
               >
                 {qaMessages.length === 0 && (
                   <View style={{
